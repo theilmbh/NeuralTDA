@@ -258,6 +258,46 @@ def build_perseus_input(cell_groups, savefile):
 
     return savefile
 
+def build_perseus_persistent_input(cell_groups, savefile):
+    '''
+    Formats cell group information as input 
+    for perseus persistent homology software, but assigns filtration
+    levels for each cell group based on the time order of their appearance
+    in the signal
+
+    Parameters
+    ------
+    cell_groups : list 
+        cell_group information returned by calc_cell_groups
+    savefile : str 
+        File in which to put the formatted cellgroup information
+
+    Yields
+    ------
+    savefile : text File
+        file suitable for running perseus on
+    '''
+    print('Building Perseus persistent input...')
+    with open(savefile, 'w+') as pfile:
+        #write num coords per vertex
+        pfile.write('1\n')
+        for ind, win_grp in enumerate(cell_groups):
+            grp = list(win_grp[1])
+            #debug_print('Cell group: ' + str(grp) +'\n')
+            grp_dim = len(grp) - 1
+            if grp_dim < 0:
+                continue
+            vert_str = str(grp)
+            vert_str = vert_str.replace('[', '')
+            vert_str = vert_str.replace(']', '')
+            vert_str = vert_str.replace(' ', '')
+            vert_str = vert_str.replace(',', ' ')
+            out_str  = str(grp_dim) + ' ' + vert_str + ' {}\n'.format(str(ind+1))
+            #debug_print('Writing: %s' % out_str)
+            pfile.write(out_str)
+
+    return savefile
+
 def run_perseus(pfile):
     ''' 
     Runs perseus persistent homology software on the data in pfile
@@ -285,7 +325,7 @@ def run_perseus(pfile):
     betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
     return betti_file
 
-def calc_bettis(spikes, segment, clusters, pfile, cg_params=DEFAULT_CG_PARAMS):
+def calc_bettis(spikes, segment, clusters, pfile, cg_params=DEFAULT_CG_PARAMS, persistence=False):
     ''' Calculate betti numbers for spike data in segment
 
     Parameters
@@ -300,6 +340,9 @@ def calc_bettis(spikes, segment, clusters, pfile, cg_params=DEFAULT_CG_PARAMS):
         file in which to save simplex data
     cg_params : dict
         Parameters for CG generation
+    persistence : bool, optional 
+        If true, will compute the time dependence of the bettis 
+        by including filtration times in the cell groups
 
     Returns
     ------
@@ -310,9 +353,12 @@ def calc_bettis(spikes, segment, clusters, pfile, cg_params=DEFAULT_CG_PARAMS):
     print('In calc_bettis')
     cell_groups = calc_cell_groups(spikes, segment, clusters, cg_params)
 
-    build_perseus_input(cell_groups, pfile)
-    betti_file = run_perseus(pfile)
+    if persistence:
+        build_perseus_persistent_input(cell_groups, pfile)
+    else:
+        build_perseus_input(cell_groups, pfile)
 
+    betti_file = run_perseus(pfile)
     bettis = []
     with open(betti_file, 'r') as bf:
         for bf_line in bf:
@@ -359,7 +405,7 @@ def get_segment(trial_bounds, fs, segment_info):
 
 
 def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50., 
-                           segment_info=DEFAULT_SEGMENT_INFO):
+                           segment_info=DEFAULT_SEGMENT_INFO, persistence=False):
     '''
     Calculate bettis for each trial in a dataset and report statistics
 
@@ -422,10 +468,11 @@ def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50.,
                                                   str(segment[1])))
             
             bettis = calc_bettis(spikes, segment, 
-                                 clusters, pfile, cg_params)
-            assert (len(bettis) == 1), "Too many filtrations"
-            trial_bettis                         = bettis[0][1]
+                                 clusters, pfile, cg_params, persistence)
+            
+            trial_bettis                         = bettis[-1][1]
             stim_bettis[rep, :len(trial_bettis)] = trial_bettis
+            
 
         stim_bettis_frame = pd.DataFrame(stim_bettis)
         stim_bettis_frame.to_csv(betti_savefile, index_label='rep')
