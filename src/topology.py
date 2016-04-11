@@ -3,8 +3,7 @@ import pandas as pd
 import os, sys
 import subprocess
 
-import events
-import core
+from ephys import events, core
 
 def get_spikes_in_window(spikes, window):
     '''
@@ -449,6 +448,9 @@ def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50.,
 
         betti_savefile = kwikname + '_stim{}'.format(stim) + '_betti.csv'
         betti_savefile = os.path.join(block_path, betti_savefile)
+        betti_persistence_savefile = kwikname + '_stim{}'.format(stim) + '_bettiPersistence.pkl'
+        betti_persistence_savefile = os.path.join(block_path, betti_persistence_savefile)
+        betti_persistence_dict = dict()
         for rep in range(nreps):
             pfile = kwikname + '_stim{}'.format(stim) + \
                     '_rep{}'.format(int(rep)) + '_simplex.txt'
@@ -469,10 +471,14 @@ def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50.,
             
             bettis = calc_bettis(spikes, segment, 
                                  clusters, pfile, cg_params, persistence)
-            
+            # The bettis at the last step of the filtration are our 'total bettis'
             trial_bettis                         = bettis[-1][1]
             stim_bettis[rep, :len(trial_bettis)] = trial_bettis
-            
+            # save time course of bettis
+            betti_persistence_dict['{}'.format(str(rep))] = bettis
 
         stim_bettis_frame = pd.DataFrame(stim_bettis)
         stim_bettis_frame.to_csv(betti_savefile, index_label='rep')
+        if persistence:
+            with open(betti_persistence_savefile, 'w') as bpfile:
+                pickle.dump(betti_persistence_dict, bpfile)
