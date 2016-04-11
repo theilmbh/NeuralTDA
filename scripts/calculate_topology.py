@@ -40,7 +40,7 @@ def main():
 	topology.calc_bettis_on_dataset(block_path, 
 									cluster_group=cluster_group, 
 									windt_ms=windt, 
-									segment_info=segment_info, args.persistence)
+									segment_info=segment_info, persistence=args.persistence)
 
 
 if __name__ == '__main__':
