@@ -434,8 +434,8 @@ def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50.,
 
     spikes   = core.load_spikes(block_path)
     clusters = core.load_clusters(block_path)
-    trials   = events.get_trials(block_path)
-    fs       = core.get_fs(block_path)
+    trials   = events.load_trials(block_path)
+    fs       = core.load_fs(block_path)
 
     windt_samps = np.floor(windt_ms*(fs/1000.))
 
