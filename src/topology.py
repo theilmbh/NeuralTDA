@@ -489,7 +489,7 @@ def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50., n_subwi
 
 def spike_time_subtracter(row, trial_start, trial_end, first_trial_start):
     spiketime = row['time_samples']
-    if (spiketime >= trial_start) and (spike_time <= trial_end):
+    if (spiketime >= trial_start) and (spiketime <= trial_end):
         return spiketime - (trial_start - first_trial_start)
     else:
         return spiketime 
