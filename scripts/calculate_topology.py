@@ -15,6 +15,7 @@ def get_args():
 	parser.add_argument('block_path', type=str, help='Path to folder'
 													 'containing data files')
 	parser.add_argument('-p', action='store_true', default=False, dest='persistence', help='Compute time dependence of bettis')
+	parser.add_argument('-a', action='store_true', default=False, dest='avg', help='Compute bettis on total activity over all trials')
 	parser.add_argument('windt', type=float, help='Window width in ms')
 	parser.add_argument('period', type=str, help='either stim or prestim')
 	parser.add_argument('segstart', type=float, help='Time in milliseconds of ' 
@@ -38,6 +39,14 @@ def main():
 					'segend': args.segend}
 	windt = args.windt
 	
+	if args.avg:
+		topology.calc_bettis_on_dataset_average_activity(block_path, 
+									cluster_group=cluster_group, 
+									windt_ms=windt,
+									n_subwin = args.n_subwin, 
+									segment_info=segment_info, persistence=args.persistence)
+
+	else:
 	topology.calc_bettis_on_dataset(block_path, 
 									cluster_group=cluster_group, 
 									windt_ms=windt,

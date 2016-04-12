@@ -486,3 +486,106 @@ def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50., n_subwi
         if persistence:
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
+
+def spike_time_subtracter(row, trial_start, trial_end, first_trial_start):
+    spiketime = row['time_samples']
+    if (spiketime >= trial_start) and (spike_time <= trial_end):
+        return spiketime - (trial_start - first_trial_start)
+    else:
+        return spiketime 
+
+
+def calc_bettis_on_dataset_average_activity(block_path, cluster_group=None, windt_ms=50., n_subwin=5,
+                           segment_info=DEFAULT_SEGMENT_INFO, persistence=False):
+    '''
+    Calculate bettis for each trial in a dataset and report statistics
+
+    Parameters
+    ------
+    block_path : str 
+        Path to directory containing data files 
+    cluster_group : list
+        list of cluster qualities to include in analysis 
+    windt_ms : float, optional
+        window width in milliseconds
+    n_subwin : int, optional
+        number of sub-subwindows
+    segment_info : dict 
+        dictionary containing information on which segment to compute topology
+        'period' (stim or ?)
+        'segstart' : time in ms of segment start relative to trial start 
+        'segend' : time in ms of segment end relative to trial start
+    
+    Yields
+    ------
+    betti_savefile : file
+        File containing betti numbers for each trial for a given stimulus
+        For all stimuli 
+    '''
+    maxbetti      = 10
+    kwikfile      = core.find_kwik(block_path)
+    kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
+
+    spikes   = core.load_spikes(block_path)
+    clusters = core.load_clusters(block_path)
+    trials   = events.load_trials(block_path)
+    fs       = core.load_fs(block_path)
+
+    windt_samps = np.floor(windt_ms*(fs/1000.))
+
+    stims = set(trials['stimulus'].values)
+    for stim in stims:
+        print('Calculating bettis for stim: {}'.format(stim))
+        stim_trials = trials[trials['stimulus']==stim]
+        nreps       = len(stim_trials.index)
+        stim_bettis = np.zeros([nreps, maxbetti])
+
+        betti_savefile = kwikname + '_stim{}'.format(stim) + '_avg_betti.csv'
+        betti_savefile = os.path.join(block_path, betti_savefile)
+        betti_persistence_savefile = kwikname + '_stim{}'.format(stim) + '_avg_bettiPersistence.pkl'
+        betti_persistence_savefile = os.path.join(block_path, betti_persistence_savefile)
+        betti_persistence_dict = dict()
+
+        pfile = kwikname + '_stim{}'.format(stim) + \
+                '_AllReps' + '_simplex.txt'
+        pfile = os.path.join(block_path, pfile)
+
+        first_trial_start = stim_trials.iloc[0]['time_samples']
+        first_trial_end   = stim_trials.iloc[0]['stimulus_end']
+        segment = get_segment([first_trial_start, first_trial_end], fs, segment_info)
+
+
+        cg_params                   = DEFAULT_CG_PARAMS
+        cg_params['subwin_len']     = windt_samps
+        cg_params['cluster_group']  = cluster_group
+        cg_params['n_subwin']       = n_subwin
+
+        print('Segment bounds: {}  {}'.format(str(segment[0]), 
+                                              str(segment[1])))
+        # realign spikes to all fall within one trial
+        for rep in range(nreps)[1:]:
+
+            trial_start = stim_trials.iloc[rep]['time_samples']
+            trial_end   = stim_trials.iloc[rep]['stimulus_end']
+
+            spikes.apply(lambda row: spike_time_subtracter(row, trial_start, trial_end, first_trial_start), axis=1)
+
+            
+        bettis = calc_bettis(spikes, segment, 
+                                 clusters, pfile, cg_params, persistence)
+        # The bettis at the last step of the filtration are our 'total bettis'
+        trial_bettis                         = bettis[-1][1]
+        stim_bettis[rep, :len(trial_bettis)] = trial_bettis
+        # save time course of bettis
+        betti_persistence_dict['{}'.format(str(rep))] = bettis
+
+        stim_bettis_frame = pd.DataFrame(stim_bettis)
+        stim_bettis_frame.to_csv(betti_savefile, index_label='rep')
+        if persistence:
+            with open(betti_persistence_savefile, 'w') as bpfile:
+                pickle.dump(betti_persistence_dict, bpfile)
+
+
+
+
+
