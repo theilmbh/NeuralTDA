@@ -404,7 +404,7 @@ def get_segment(trial_bounds, fs, segment_info):
     return [seg_start, seg_end]
 
 
-def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50., 
+def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50., n_subwin=5,
                            segment_info=DEFAULT_SEGMENT_INFO, persistence=False):
     '''
     Calculate bettis for each trial in a dataset and report statistics
@@ -417,6 +417,8 @@ def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50.,
         list of cluster qualities to include in analysis 
     windt_ms : float, optional
         window width in milliseconds
+    n_subwin : int, optional
+        number of sub-subwindows
     segment_info : dict 
         dictionary containing information on which segment to compute topology
         'period' (stim or ?)
@@ -463,6 +465,7 @@ def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50.,
             cg_params                   = DEFAULT_CG_PARAMS
             cg_params['subwin_len']     = windt_samps
             cg_params['cluster_group']  = cluster_group
+            cg_params['n_subwin']       = n_subwin
 
             segment = get_segment([trial_start, trial_end], fs, segment_info)
             print('Trial bounds: {}  {}'.format(str(trial_start), 

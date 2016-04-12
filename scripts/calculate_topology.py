@@ -23,6 +23,7 @@ def get_args():
 	parser.add_argument('segend', type=float, help='Time in milliseconds of end'
 												   'to include relative to '
 												   ' stimulus start')
+	parser.add_argument('n_subwin', type=int, help='Number of sub subwindows')
 
 	return parser.parse_args()
 
@@ -39,7 +40,8 @@ def main():
 	
 	topology.calc_bettis_on_dataset(block_path, 
 									cluster_group=cluster_group, 
-									windt_ms=windt, 
+									windt_ms=windt,
+									n_subwin = args.n_subwin, 
 									segment_info=segment_info, persistence=args.persistence)
 
 
