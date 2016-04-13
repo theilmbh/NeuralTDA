@@ -6,7 +6,7 @@ import topology
 
 import pandas as pd
 
-def generate_ring_dataset(N_neurons, times, fr_fact):
+def generate_poisson_ring_dataset(N_neurons, times, fr_fact):
 	''' 
 	Generates a test data set that has a ring structure
 	''' 
@@ -59,8 +59,8 @@ def test_ring_dataset(N_neurons, fs, max_fr):
 	fr_fact = float(max_fr)/float(fs)
 
 	#generate two trials
-	spikes1 = generate_ring_dataset(N_neurons, times, fr_fact)
-	spikes2 = generate_ring_dataset(N_neurons, times2, fr_fact)
+	spikes1 = generate_poisson_ring_dataset(N_neurons, times, fr_fact)
+	spikes2 = generate_poisson_ring_dataset(N_neurons, times2, fr_fact)
 	spikes = spikes1.append(spikes2)
 	trials = pd.DataFrame({'time_samples': [times[0], times2[0]], 
 						   'stimulus': ['test_ring_dataset', 'test_ring_dataset'])
