@@ -1,5 +1,6 @@
 import numpy as np 
 import scipy as sp 
+import os
 
 import topology 
 
@@ -51,6 +52,7 @@ def test_ring_dataset(N_neurons, fs, max_fr):
 	#generate two trials
 	spikes1 = generate_ring_dataset(N_neurons, times, fr_fact)
 	spikes2 = generate_ring_dataset(N_neurons, times2, fr_fact)
+	spikes = spikes1.append(spikes2)
 	trials = pd.DataFrame({'time_samples': [times[0], times2[0]], 
 						   'stimulus': ['test_ring_dataset', 'test_ring_dataset'])
 						   'stimulus_end': [times[-1], times2[-1]]
@@ -58,3 +60,21 @@ def test_ring_dataset(N_neurons, fs, max_fr):
 	clusterIDs = range(N_neurons)
 	qualities = ['Good' for i in range(N_neurons)]
 	clusters = pd.DataFrame({'cluster': clusterIDs, 'quality': qualities})
+	windt_ms = 50.
+	n_subwin = 5
+	segment_info = {'period': 'stim', 
+					'segstart': 0.0, 
+					'segend': 0.0}
+	cluster_group = ['Good']
+	kwikfile = os.path.abspath('./ring_test.kwiktest')
+	kwikname = 'ringt_test'
+	topology.calc_bettis_on_loaded_dataset(spikes, clusters, trials, fs, 
+										   kwikfile, kwikname, 
+                                           cluster_group=cluster_group, windt_ms=windt_ms, 
+                                           n_subwin=5,
+                                  		   segment_info=segment_info, 
+                                  		   persistence=True)
+	
+
+
+
