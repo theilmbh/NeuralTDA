@@ -487,6 +487,58 @@ def calc_bettis_on_dataset(block_path, cluster_group=None, windt_ms=50., n_subwi
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
 
+def calc_bettis_on_loaded_dataset(spikes, clusters, trials, fs, kwikfile, kwikname, 
+                                  cluster_group=None, windt_ms=50., n_subwin=5,
+                                  segment_info=DEFAULT_SEGMENT_INFO, persistence=False):
+
+    maxbetti = 10
+    windt_samps = np.floor(windt_ms*(fs/1000.))
+
+    stims = set(trials['stimulus'].values)
+    for stim in stims:
+        print('Calculating bettis for stim: {}'.format(stim))
+        stim_trials = trials[trials['stimulus']==stim]
+        nreps       = len(stim_trials.index)
+        stim_bettis = np.zeros([nreps, maxbetti])
+
+        betti_savefile = kwikname + '_stim{}'.format(stim) + '_betti.csv'
+        betti_savefile = os.path.join(block_path, betti_savefile)
+        betti_persistence_savefile = kwikname + '_stim{}'.format(stim) + '_bettiPersistence.pkl'
+        betti_persistence_savefile = os.path.join(block_path, betti_persistence_savefile)
+        betti_persistence_dict = dict()
+        for rep in range(nreps):
+            pfile = kwikname + '_stim{}'.format(stim) + \
+                    '_rep{}'.format(int(rep)) + '_simplex.txt'
+            pfile = os.path.join(block_path, pfile)
+
+            trial_start = stim_trials.iloc[rep]['time_samples']
+            trial_end   = stim_trials.iloc[rep]['stimulus_end']
+
+            cg_params                   = DEFAULT_CG_PARAMS
+            cg_params['subwin_len']     = windt_samps
+            cg_params['cluster_group']  = cluster_group
+            cg_params['n_subwin']       = n_subwin
+
+            segment = get_segment([trial_start, trial_end], fs, segment_info)
+            print('Trial bounds: {}  {}'.format(str(trial_start), 
+                                                str(trial_end)))
+            print('Segment bounds: {}  {}'.format(str(segment[0]), 
+                                                  str(segment[1])))
+            
+            bettis = calc_bettis(spikes, segment, 
+                                 clusters, pfile, cg_params, persistence)
+            # The bettis at the last step of the filtration are our 'total bettis'
+            trial_bettis                         = bettis[-1][1]
+            stim_bettis[rep, :len(trial_bettis)] = trial_bettis
+            # save time course of bettis
+            betti_persistence_dict['{}'.format(str(rep))] = bettis
+
+        stim_bettis_frame = pd.DataFrame(stim_bettis)
+        stim_bettis_frame.to_csv(betti_savefile, index_label='rep')
+        if persistence:
+            with open(betti_persistence_savefile, 'w') as bpfile:
+                pickle.dump(betti_persistence_dict, bpfile)
+
 def spike_time_subtracter(row, trial_start, trial_end, first_trial_start):
     spiketime = row['time_samples']
     if (spiketime >= trial_start) and (spiketime <= trial_end):
