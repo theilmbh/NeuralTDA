@@ -41,6 +41,15 @@ def generate_ring_dataset(N_neurons, times, fr_fact):
 def test_ring_dataset(N_neurons, fs, max_fr):
 	'''
 	Runs a topology computation on a ring dataset 
+
+	Parameters
+	------
+	N_neurons : int
+		number of N_neurons
+	fs : float 
+		Sampling rate (Hz)
+	max_fr : float 
+		Maximum firing rate (Hz)
 	'''
 
 	#Generate 1 second of samples:
@@ -74,7 +83,7 @@ def test_ring_dataset(N_neurons, fs, max_fr):
                                            n_subwin=5,
                                   		   segment_info=segment_info, 
                                   		   persistence=True)
-	
+
 
 
 
