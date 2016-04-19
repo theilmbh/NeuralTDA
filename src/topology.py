@@ -3,6 +3,7 @@ import pandas as pd
 import os, sys
 import subprocess
 import pickle
+import h5py
 
 from ephys import events, core
 
@@ -637,7 +638,35 @@ def calc_bettis_on_dataset_average_activity(block_path, cluster_group=None, wind
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
 
+def build_population_embedding(spikes, trials, clusters, win_size, segment_info):
+    '''
+    Embeds binned population activity into R^n
+    '''
 
+    popvec_f = h5py.File(popvec_fname, "w")
 
+    clusters_to_use = clusters[clusters['quality']==clu_quality]
+    nclus = len(clusters_to_use.index)
+    stims = trials['stimulus'].unique()
+    popvec_dict = {}
+
+    for stim in stims:
+        stimgrp = f.create_group(stim)
+        stim_trials = trials[trials['stimulus']==stim]
+        nreps       = len(stim_trials.index)
+
+        stim_dict = {}
+        for rep in range(nreps):
+            trialgrp = stimgrp.create_group(str(rep))
+
+            trial_start = stim_trials.iloc[rep]['time_samples']
+            trial_end   = stim_trials.iloc[rep]['stimulus_end']
+
+            windows = get_windows()
+            nwins = len(windows)
+            popvec_dset = trialgrp.create_dataset('pop_vec', (nclus, nwins), dtype='f')
+
+            for win_ind, win in enumerate(windows):
+                # compute population activity vectors
 
 
