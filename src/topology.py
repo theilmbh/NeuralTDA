@@ -665,8 +665,12 @@ def build_population_embedding(spikes, trials, clusters, win_size, segment_info)
             windows = get_windows()
             nwins = len(windows)
             popvec_dset = trialgrp.create_dataset('pop_vec', (nclus, nwins), dtype='f')
+            popvec_dset = np.zeros((nclus, nwins))
 
             for win_ind, win in enumerate(windows):
                 # compute population activity vectors
+                spikes_in_win = get_spikes_in_window(spikes, win)
+                clus_that_spiked = spikes_in_win['cluster'].unique()
+                
 
 
