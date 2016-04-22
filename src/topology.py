@@ -8,6 +8,8 @@ import time
 
 from ephys import events, core
 
+global alogf
+
 def topology_log(logfile, log_str):
     with open(logfile, 'a+') as lf:
         log_line = str(time.time()) + ' ' + log_str + '\n'
@@ -411,8 +413,8 @@ def get_segment(trial_bounds, fs, segment_info):
     return [seg_start, seg_end]
 
 
-def calc_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt_ms=50., n_subwin=5,
-                           segment_info=DEFAULT_SEGMENT_INFO, persistence=False):
+def calc_CI_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt_ms=50., n_subwin=5,
+                           threshold=6, segment_info=DEFAULT_SEGMENT_INFO, persistence=False):
     '''
     Calculate bettis for each trial in a dataset and report statistics
 
@@ -441,6 +443,7 @@ def calc_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt_ms
         For all stimuli 
     '''
     # Create topology analysis folder
+    global alogf
     analysis_path = os.path.join(block_path, 'topology/{}'.format(analysis_id))
     if not os.path.exists(analysis_path):
         os.mkdirs(analysis_path)
@@ -448,13 +451,11 @@ def calc_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt_ms
     analysis_logfile_name = '{}.log'.format(analysis_id)
     alogf = os.path.join(analysis_path, analysis_logfile_name)
 
-
-
     maxbetti      = 10
     kwikfile      = core.find_kwik(block_path)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
 
-    topology_log(alogf, 'Beginning Curto+Itskov Topological Analysis of: {}'.format(kwikfile))
+    topology_log(alogf, '****** Beginning Curto+Itskov Topological Analysis of: {} ******'.format(kwikfile))
 
     spikes   = core.load_spikes(block_path)
     clusters = core.load_clusters(block_path)
@@ -464,7 +465,11 @@ def calc_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt_ms
     windt_samps = np.floor(windt_ms*(fs/1000.))
     topology_log(alogf, 'Fs: {}'.format(str(fs)))
     topology_log(alogf, 'Window length: {} ms; {} samples'.format(str(windt_ms), str(windt_samps)))
-
+    topology_log(alogf, 'Cluster group: {}'.format(str(cluster_group)))
+    nclu = len(clusters[clusters['quality'].isin(cluster_group)])
+    topology_log(alogf, 'N Clusters: {}'.format(str(nclu)))
+    topology_log(alogf, 'Threshold: {}'.format(str(threshold)))
+    
     stims = set(trials['stimulus'].values)
     for stim in stims:
         print('Calculating bettis for stim: {}'.format(stim))
@@ -475,10 +480,13 @@ def calc_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt_ms
         stim_bettis = np.zeros([nreps, maxbetti])
 
         betti_savefile = kwikname + '_stim{}'.format(stim) + '_betti.csv'
-        betti_savefile = os.path.join(block_path, betti_savefile)
+        betti_savefile = os.path.join(analysis_path, betti_savefile)
+        topology_log(alogf, 'Betti savefile: {}'.format(betti_savefile))
         betti_persistence_savefile = kwikname + '_stim{}'.format(stim) + '_bettiPersistence.pkl'
         betti_persistence_savefile = os.path.join(analysis_path, betti_persistence_savefile)
+        topology_log(alogf, 'Betti persistence savefile: {}'.format(betti_persistence_savefile))
         betti_persistence_dict = dict()
+
         for rep in range(nreps):
             pfile = kwikname + '_stim{}'.format(stim) + \
                     '_rep{}'.format(int(rep)) + '_simplex.txt'
@@ -491,6 +499,7 @@ def calc_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt_ms
             cg_params['subwin_len']     = windt_samps
             cg_params['cluster_group']  = cluster_group
             cg_params['n_subwin']       = n_subwin
+            cg_params['threshold']      = threshold
 
             segment = get_segment([trial_start, trial_end], fs, segment_info)
             print('Trial bounds: {}  {}'.format(str(trial_start), 
@@ -511,8 +520,9 @@ def calc_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt_ms
         if persistence:
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
+        topology_log(alogf, '****** Curto+Itskov Topology Computation Completed ******')
 
-def calc_bettis_on_loaded_dataset(spikes, clusters, trials, fs, kwikfile, kwikname, 
+def calc_CI_bettis_on_loaded_dataset(spikes, clusters, trials, fs, kwikfile, kwikname, 
                                   cluster_group=None, windt_ms=50., n_subwin=5,
                                   segment_info=DEFAULT_SEGMENT_INFO, persistence=False):
 
@@ -572,7 +582,7 @@ def spike_time_subtracter(row, trial_start, trial_end, first_trial_start):
         return spiketime 
 
 
-def calc_bettis_on_dataset_average_activity(block_path, cluster_group=None, windt_ms=50., n_subwin=5,
+def calc_CI_bettis_on_dataset_average_activity(block_path, cluster_group=None, windt_ms=50., n_subwin=5,
                            segment_info=DEFAULT_SEGMENT_INFO, persistence=False):
     '''
     Calculate bettis for each trial in a dataset and report statistics
