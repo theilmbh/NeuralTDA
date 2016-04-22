@@ -565,7 +565,7 @@ def calc_bettis_on_dataset_average_activity(block_path, cluster_group=None, wind
         number of sub-subwindows
     segment_info : dict 
         dictionary containing information on which segment to compute topology
-        'period' (stim or ?)
+        'period' (stim or ?).  If stim, defaults to looking at just stimulus period
         'segstart' : time in ms of segment start relative to trial start 
         'segend' : time in ms of segment end relative to trial start
     
@@ -606,8 +606,6 @@ def calc_bettis_on_dataset_average_activity(block_path, cluster_group=None, wind
         first_trial_start = stim_trials.iloc[0]['time_samples']
         first_trial_end   = stim_trials.iloc[0]['stimulus_end']
         segment = get_segment([first_trial_start, first_trial_end], fs, segment_info)
-
-
         cg_params                   = DEFAULT_CG_PARAMS
         cg_params['subwin_len']     = windt_samps
         cg_params['cluster_group']  = cluster_group
@@ -617,13 +615,10 @@ def calc_bettis_on_dataset_average_activity(block_path, cluster_group=None, wind
                                               str(segment[1])))
         # realign spikes to all fall within one trial
         for rep in range(nreps)[1:]:
-
             trial_start = stim_trials.iloc[rep]['time_samples']
             trial_end   = stim_trials.iloc[rep]['stimulus_end']
+            spikes['time_samples'] = spikes.apply(lambda row: spike_time_subtracter(row, trial_start, trial_end, first_trial_start), axis=1)
 
-            spikes.apply(lambda row: spike_time_subtracter(row, trial_start, trial_end, first_trial_start), axis=1)
-
-            
         bettis = calc_bettis(spikes, segment, 
                                  clusters, pfile, cg_params, persistence)
         # The bettis at the last step of the filtration are our 'total bettis'
