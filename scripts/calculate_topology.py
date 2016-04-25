@@ -40,14 +40,14 @@ def main():
 	windt = args.windt
 	
 	if args.avg:
-		topology.calc_bettis_on_dataset_average_activity(block_path, 
+		topology.calc_CI_bettis_on_dataset_average_activity(block_path, 
 									cluster_group=cluster_group, 
 									windt_ms=windt,
 									n_subwin = args.n_subwin, 
 									segment_info=segment_info, persistence=args.persistence)
 
 	else:
-		topology.calc_bettis_on_dataset(block_path, 
+		topology.calc_CI_bettis_on_dataset_average_activity(block_path, 
 									cluster_group=cluster_group, 
 									windt_ms=windt,
 									n_subwin = args.n_subwin, 
