@@ -360,6 +360,7 @@ def calc_bettis(spikes, segment, clusters, pfile, cg_params=DEFAULT_CG_PARAMS, p
         filtration time and the second being betti numbers
     '''
     print('In calc_bettis')
+    topology_log(alogf, 'In calc_bettis...')
     cell_groups = calc_cell_groups(spikes, segment, clusters, cg_params)
 
     if persistence:
@@ -488,9 +489,11 @@ def calc_CI_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt
         betti_persistence_dict = dict()
 
         for rep in range(nreps):
+            topology_log(alogf, 'Repetition {}'.format(str(rep)))
             pfile = kwikname + '_stim{}'.format(stim) + \
                     '_rep{}'.format(int(rep)) + '_simplex.txt'
             pfile = os.path.join(analysis_path, pfile)
+            topology_log(alogf, 'pfile: {}'.format(pfile))
 
             trial_start = stim_trials.iloc[rep]['time_samples']
             trial_end   = stim_trials.iloc[rep]['stimulus_end']
@@ -505,6 +508,10 @@ def calc_CI_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt
             print('Trial bounds: {}  {}'.format(str(trial_start), 
                                                 str(trial_end)))
             print('Segment bounds: {}  {}'.format(str(segment[0]), 
+                                                  str(segment[1])))
+            topology_log(alogf, 'Trial bounds: {}  {}'.format(str(trial_start), 
+                                                str(trial_end)))
+            topology_log(alogf, 'Segment bounds: {}  {}'.format(str(segment[0]), 
                                                   str(segment[1])))
             
             bettis = calc_bettis(spikes, segment, 
