@@ -677,6 +677,7 @@ def calc_CI_bettis_on_dataset_average_activity(block_path, cluster_group=None, w
 def build_population_embedding(spikes, trials, clusters, win_size, segment_info):
     '''
     Embeds binned population activity into R^n
+    Still need TODO?
     '''
 
     popvec_f = h5py.File(popvec_fname, "w")
@@ -708,5 +709,3 @@ def build_population_embedding(spikes, trials, clusters, win_size, segment_info)
                 spikes_in_win = get_spikes_in_window(spikes, win)
                 clus_that_spiked = spikes_in_win['cluster'].unique()
                 
-
-

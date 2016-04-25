@@ -9,7 +9,7 @@ setup(
     description='Topological Data Analysis for neural data',
     author='Brad Theilman',
     author_email='bradtheilman@gmail.com',
-    packages=find_packages(),         
+    packages=['neuraltda/'],         
     entry_points={
         'console_scripts': [
             'calc_CI_topology = neuraltda.calculate_topology:main',
