@@ -1,7 +1,7 @@
 
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 setup(
     name='NeuralTDA',
@@ -9,8 +9,7 @@ setup(
     description='Topological Data Analysis for neural data',
     author='Brad Theilman',
     author_email='bradtheilman@gmail.com',
-    packages=['neuraltda',
-              ],          
+    packages=find_packages(),         
     entry_points={
         'console_scripts': [
             'calc_CI_topology = neuraltda.calculate_topology:main',
