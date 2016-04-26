@@ -447,7 +447,7 @@ def calc_CI_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt
     global alogf
     analysis_path = os.path.join(block_path, 'topology/{}'.format(analysis_id))
     if not os.path.exists(analysis_path):
-        os.mkdirs(analysis_path)
+        os.makedirs(analysis_path)
 
     analysis_logfile_name = '{}.log'.format(analysis_id)
     alogf = os.path.join(analysis_path, analysis_logfile_name)
