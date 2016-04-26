@@ -43,7 +43,7 @@ def main():
 	
 	if args.avg:
 		topology.calc_CI_bettis_on_dataset_average_activity(block_path,
-									analysis_id 
+									analysis_id, 
 									cluster_group=cluster_group, 
 									windt_ms=windt,
 									n_subwin = args.n_subwin, 
@@ -51,7 +51,7 @@ def main():
 
 	else:
 		topology.calc_CI_bettis_on_dataset_average_activity(block_path,
-									analysis_id 
+									analysis_id, 
 									cluster_group=cluster_group, 
 									windt_ms=windt,
 									n_subwin = args.n_subwin, 
