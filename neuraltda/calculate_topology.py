@@ -12,6 +12,7 @@ def get_args():
 	parser = argparse.ArgumentParser(description='Calculate full-segment' 
 												 'topology of an ' 
 												 'extracellular dataset')
+	parser.add_argument('analysis_id', type=str, help='A unique ID string for this run')
 	parser.add_argument('block_path', type=str, help='Path to folder'
 													 'containing data files')
 	parser.add_argument('-p', action='store_true', default=False, dest='persistence', help='Compute time dependence of bettis')
@@ -38,16 +39,19 @@ def main():
 					'segstart': args.segstart, 
 					'segend': args.segend}
 	windt = args.windt
+	analysis_id = args.analysis_id
 	
 	if args.avg:
-		topology.calc_CI_bettis_on_dataset_average_activity(block_path, 
+		topology.calc_CI_bettis_on_dataset_average_activity(block_path,
+									analysis_id 
 									cluster_group=cluster_group, 
 									windt_ms=windt,
 									n_subwin = args.n_subwin, 
 									segment_info=segment_info, persistence=args.persistence)
 
 	else:
-		topology.calc_CI_bettis_on_dataset_average_activity(block_path, 
+		topology.calc_CI_bettis_on_dataset_average_activity(block_path,
+									analysis_id 
 									cluster_group=cluster_group, 
 									windt_ms=windt,
 									n_subwin = args.n_subwin, 
