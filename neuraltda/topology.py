@@ -13,7 +13,7 @@ global alogf
 def topology_log(logfile, log_str):
     with open(logfile, 'a+') as lf:
         log_line = str(time.time()) + ' ' + log_str + '\n'
-        logfile.write(log_line)
+        lf.write(log_line)
 
 def get_spikes_in_window(spikes, window):
     '''
