@@ -50,7 +50,7 @@ def main():
 									segment_info=segment_info, persistence=args.persistence)
 
 	else:
-		topology.calc_CI_bettis_on_dataset_average_activity(block_path,
+		topology.calc_CI_bettis_on_dataset(block_path,
 									analysis_id, 
 									cluster_group=cluster_group, 
 									windt_ms=windt,
