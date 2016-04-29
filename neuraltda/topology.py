@@ -674,7 +674,7 @@ def calc_CI_bettis_on_dataset_average_activity(block_path, cluster_group=None, w
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
 
-def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_info):
+def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_info, popvec_fname):
     '''
     Embeds binned population activity into R^n
     Still need TODO?
