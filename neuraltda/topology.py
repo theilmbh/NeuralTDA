@@ -683,6 +683,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, segment_info)
     popvec_f = h5py.File(popvec_fname, "w")
 
     clusters_to_use = clusters[clusters['quality']==clu_quality]
+    clusters_list = cluster_to_use['cluster'].unique()
     nclus = len(clusters_to_use.index)
     stims = trials['stimulus'].unique()
     popvec_dict = {}
