@@ -674,10 +674,13 @@ def calc_CI_bettis_on_dataset_average_activity(block_path, cluster_group=None, w
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
 
-def build_population_embedding(spikes, trials, clusters, win_size, segment_info):
+def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_info):
     '''
     Embeds binned population activity into R^n
     Still need TODO?
+
+    win_size : float
+        window size in ms
     '''
 
     popvec_f = h5py.File(popvec_fname, "w")
@@ -693,7 +696,6 @@ def build_population_embedding(spikes, trials, clusters, win_size, segment_info)
         stim_trials = trials[trials['stimulus']==stim]
         nreps       = len(stim_trials.index)
 
-        stim_dict = {}
         for rep in range(nreps):
             trialgrp = stimgrp.create_group(str(rep))
 
@@ -704,9 +706,15 @@ def build_population_embedding(spikes, trials, clusters, win_size, segment_info)
             nwins = len(windows)
             popvec_dset = trialgrp.create_dataset('pop_vec', (nclus, nwins), dtype='f')
             popvec_dset = np.zeros((nclus, nwins))
+            popvec_dset.attr['fs'] = fs
+            popvec_dset.attr['win_size'] = win_size
 
             for win_ind, win in enumerate(windows):
                 # compute population activity vectors
                 spikes_in_win = get_spikes_in_window(spikes, win)
                 clus_that_spiked = spikes_in_win['cluster'].unique()
                 
+                # find spikes from each cluster
+                for clu in clus_that_spiked:
+                    popvec_dset((clusters_list == clu), win_ind) = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/win_size
+
