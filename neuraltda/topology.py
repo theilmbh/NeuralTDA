@@ -683,7 +683,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_i
         window size in ms
     '''
 
-    popvec_f = h5py.File(popvec_fname, "w")
+    popvec_f = h5py.File(popvec_fname, "a")
 
     clusters_to_use = clusters[clusters['quality']==clu_quality]
     clusters_list = cluster_to_use['cluster'].unique()
@@ -705,6 +705,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_i
             windows = get_windows()
             nwins = len(windows)
             popvec_dset = trialgrp.create_dataset('pop_vec', (nclus, nwins), dtype='f')
+            popvec_clu_dset = trialgrp.create_dataset('clusters', data=clusters_list)
             popvec_dset = np.zeros((nclus, nwins))
             popvec_dset.attr['fs'] = fs
             popvec_dset.attr['win_size'] = win_size
@@ -717,4 +718,4 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_i
                 # find spikes from each cluster
                 for clu in clus_that_spiked:
                     popvec_dset((clusters_list == clu), win_ind) = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/win_size
-
+    popvec_f.close()
