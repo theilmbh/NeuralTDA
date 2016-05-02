@@ -701,8 +701,9 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_i
 
             trial_start = stim_trials.iloc[rep]['time_samples']
             trial_end   = stim_trials.iloc[rep]['stimulus_end']
+            win_size_samples = np.round(win_size/1000. * fs)
 
-            windows = get_windows()
+            windows = create_subwindows([trial_start, trial_end], win_size_samples, 1)
             nwins = len(windows)
             popvec_dset = trialgrp.create_dataset('pop_vec', (nclus, nwins), dtype='f')
             popvec_clu_dset = trialgrp.create_dataset('clusters', data=clusters_list)
