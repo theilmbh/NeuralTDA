@@ -113,8 +113,7 @@ def create_subwindows(segment, subwin_len, n_subwin_starts):
     '''
     print('Building subwindows...')
     starts_dt = np.floor(subwin_len / n_subwin_starts)
-    starts = np.arange(segment[0], segment[0]+subwin_len, starts_dt)
-
+    np.floor(np.linspace(segment[0], segment[0]+subwin_len, n_subwin_starts))
     subwindows = []
     for start in starts:
         subwin_front = np.arange(start, segment[1], subwin_len)
@@ -674,7 +673,7 @@ def calc_CI_bettis_on_dataset_average_activity(block_path, cluster_group=None, w
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
 
-def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_info, popvec_fname):
+def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, popvec_fname):
     '''
     Embeds binned population activity into R^n
     Still need TODO?
@@ -683,16 +682,17 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_i
         window size in ms
     '''
 
-    popvec_f = h5py.File(popvec_fname, "a")
+    popvec_f = h5py.File(popvec_fname, "w")
 
-    clusters_to_use = clusters[clusters['quality']==clu_quality]
-    clusters_list = cluster_to_use['cluster'].unique()
+    clusters_to_use = clusters[clusters['quality']==cluster_group]
+    clusters_list = clusters_to_use['cluster'].unique()
+    spikes = spikes[spikes['cluster'].isin(clusters_list)]
     nclus = len(clusters_to_use.index)
     stims = trials['stimulus'].unique()
     popvec_dict = {}
 
     for stim in stims:
-        stimgrp = f.create_group(stim)
+        stimgrp = popvec_f.create_group(stim)
         stim_trials = trials[trials['stimulus']==stim]
         nreps       = len(stim_trials.index)
 
@@ -705,11 +705,11 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_i
 
             windows = create_subwindows([trial_start, trial_end], win_size_samples, 1)
             nwins = len(windows)
-            popvec_dset = trialgrp.create_dataset('pop_vec', (nclus, nwins), dtype='f')
+            popvec_dset_init = np.zeros((nclus, nwins))
+            popvec_dset = trialgrp.create_dataset('pop_vec', data=popvec_dset_init)
             popvec_clu_dset = trialgrp.create_dataset('clusters', data=clusters_list)
-            popvec_dset = np.zeros((nclus, nwins))
-            popvec_dset.attr['fs'] = fs
-            popvec_dset.attr['win_size'] = win_size
+            popvec_dset.attrs['fs'] = fs
+            popvec_dset.attrs['win_size'] = win_size
 
             for win_ind, win in enumerate(windows):
                 # compute population activity vectors
@@ -717,6 +717,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_i
                 clus_that_spiked = spikes_in_win['cluster'].unique()
                 
                 # find spikes from each cluster
-                for clu in clus_that_spiked:
-                    popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/win_size
+                if len(clus_that_spiked) > 0:
+                    for clu in clus_that_spiked:
+                        popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/win_size
     popvec_f.close()
