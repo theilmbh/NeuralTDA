@@ -682,42 +682,41 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
         window size in ms
     '''
 
-    popvec_f = h5py.File(popvec_fname, "w")
+    with h5py.File(popvec_fname, "w") as popvec_f:
 
-    clusters_to_use = clusters[clusters['quality']==cluster_group]
-    clusters_list = clusters_to_use['cluster'].unique()
-    spikes = spikes[spikes['cluster'].isin(clusters_list)]
-    nclus = len(clusters_to_use.index)
-    stims = trials['stimulus'].unique()
-    popvec_dict = {}
+        clusters_to_use = clusters[clusters['quality']==cluster_group]
+        clusters_list = clusters_to_use['cluster'].unique()
+        spikes = spikes[spikes['cluster'].isin(clusters_list)]
+        nclus = len(clusters_to_use.index)
+        stims = trials['stimulus'].unique()
+        popvec_dict = {}
 
-    for stim in stims:
-        stimgrp = popvec_f.create_group(stim)
-        stim_trials = trials[trials['stimulus']==stim]
-        nreps       = len(stim_trials.index)
+        for stim in stims:
+            stimgrp = popvec_f.create_group(stim)
+            stim_trials = trials[trials['stimulus']==stim]
+            nreps       = len(stim_trials.index)
 
-        for rep in range(nreps):
-            trialgrp = stimgrp.create_group(str(rep))
+            for rep in range(nreps):
+                trialgrp = stimgrp.create_group(str(rep))
 
-            trial_start = stim_trials.iloc[rep]['time_samples']
-            trial_end   = stim_trials.iloc[rep]['stimulus_end']
-            win_size_samples = np.round(win_size/1000. * fs)
+                trial_start = stim_trials.iloc[rep]['time_samples']
+                trial_end   = stim_trials.iloc[rep]['stimulus_end']
+                win_size_samples = np.round(win_size/1000. * fs)
 
-            windows = create_subwindows([trial_start, trial_end], win_size_samples, 1)
-            nwins = len(windows)
-            popvec_dset_init = np.zeros((nclus, nwins))
-            popvec_dset = trialgrp.create_dataset('pop_vec', data=popvec_dset_init)
-            popvec_clu_dset = trialgrp.create_dataset('clusters', data=clusters_list)
-            popvec_dset.attrs['fs'] = fs
-            popvec_dset.attrs['win_size'] = win_size
+                windows = create_subwindows([trial_start, trial_end], win_size_samples, 1)
+                nwins = len(windows)
+                popvec_dset_init = np.zeros((nclus, nwins))
+                popvec_dset = trialgrp.create_dataset('pop_vec', data=popvec_dset_init)
+                popvec_clu_dset = trialgrp.create_dataset('clusters', data=clusters_list)
+                popvec_dset.attrs['fs'] = fs
+                popvec_dset.attrs['win_size'] = win_size
 
-            for win_ind, win in enumerate(windows):
+                for win_ind, win in enumerate(windows):
                 # compute population activity vectors
-                spikes_in_win = get_spikes_in_window(spikes, win)
-                clus_that_spiked = spikes_in_win['cluster'].unique()
+                    spikes_in_win = get_spikes_in_window(spikes, win)
+                    clus_that_spiked = spikes_in_win['cluster'].unique()
                 
-                # find spikes from each cluster
-                if len(clus_that_spiked) > 0:
-                    for clu in clus_that_spiked:
-                        popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/win_size
-    popvec_f.close()
+                    # find spikes from each cluster
+                    if len(clus_that_spiked) > 0:
+                        for clu in clus_that_spiked:
+                            popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/(win_size/1000.)
