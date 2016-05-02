@@ -718,5 +718,5 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, segment_i
                 
                 # find spikes from each cluster
                 for clu in clus_that_spiked:
-                    popvec_dset((clusters_list == clu), win_ind) = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/win_size
+                    popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/win_size
     popvec_f.close()
