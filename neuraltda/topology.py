@@ -111,7 +111,7 @@ def create_subwindows(segment, subwin_len, n_subwin_starts):
     subwindows : list 
         list of subwindows
     '''
-    print('Building subwindows...')
+    
     starts_dt = np.floor(subwin_len / n_subwin_starts)
     starts = np.floor(np.linspace(segment[0], segment[0]+subwin_len, n_subwin_starts))
     subwindows = []
@@ -689,8 +689,8 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
 
     with h5py.File(popvec_fname, "w") as popvec_f:
 
-        f.attrs['win_size'] = win_size
-        f.attrs['fs'] = fs 
+        popvec_f.attrs['win_size'] = win_size
+        popvec_f.attrs['fs'] = fs 
         #f.attrs['cluster_group'] = cluster_group
 
         if cluster_group != None:
@@ -757,7 +757,7 @@ def bin_data(block_path, bin_def_file):
         for bdf_line in bdf:
             binning_params = bdf_line.split(' ')
             binning_id = binning_params[0]
-            win_size = binning_params[1]
+            win_size = float(binning_params[1])
             cluster_groups = binning_params[2]
             segment = binning_params[3]
             seg_start = float(binning_params[4])
@@ -765,5 +765,9 @@ def bin_data(block_path, bin_def_file):
             segment_info = {'period': segment[0], 'segstart':seg_start, 'segend': seg_end}
             cluster_group = cluster_groups.split(',')
             binning_path = os.path.join(block_path, 'binned_data/{}.binned'.format(binning_id))
-            assert (not os.path.exists(binning_path)), 'Binning File Already Exists!'
+            if os.path.exists(binning_path):
+                print('Binning file {} already exists, skipping..'.format(binning_path))
+                continue
+            print('Binning data into {}'.format('{}.binned'.format(binning_id)))
             build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, binning_path)
+            print('Done')
