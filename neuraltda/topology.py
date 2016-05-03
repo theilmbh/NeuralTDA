@@ -722,6 +722,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
                 popvec_dset_init = np.zeros((nclus, nwins))
                 popvec_dset = trialgrp.create_dataset('pop_vec', data=popvec_dset_init)
                 popvec_clu_dset = trialgrp.create_dataset('clusters', data=clusters_list)
+                popvec_win_dset = trialgrp.create_dataset('windows', data=np.array(windows))
                 popvec_dset.attrs['fs'] = fs
                 popvec_dset.attrs['win_size'] = win_size
 
@@ -753,6 +754,9 @@ def do_bin_data(block_path, bin_def_file):
     trials   = events.load_trials(block_path)
     fs       = core.load_fs(block_path)
 
+    kwikfile      = core.find_kwik(block_path)
+    kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
+
     with open(bin_def_file, 'r') as bdf:
         for bdf_line in bdf:
             binning_params = bdf_line.split(' ')
@@ -764,10 +768,99 @@ def do_bin_data(block_path, bin_def_file):
             seg_end = float(binning_params[5])
             segment_info = {'period': segment[0], 'segstart':seg_start, 'segend': seg_end}
             cluster_group = cluster_groups.split(',')
-            binning_path = os.path.join(block_path, 'binned_data/{}.binned'.format(binning_id))
+            binning_path = os.path.join(block_path, 'binned_data/{}-{}.binned'.format(kwikname, binning_id))
             if os.path.exists(binning_path):
                 print('Binning file {} already exists, skipping..'.format(binning_path))
                 continue
             print('Binning data into {}'.format('{}.binned'.format(binning_id)))
             build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, binning_path)
             print('Done')
+
+def calc_cell_groups_from_binned_data(binned_dataset):
+
+    bds = np.array(binned_dataset)
+    [clus, nwin] = bds.shape
+
+    mean_frs = np.mean(bds, 1)
+    cell_groups = []
+    for win in range(nwin)
+
+
+def calc_CI_bettis_binned_data(block_path, binned_data_file):
+
+
+    global alogf 
+
+    bdf_name = os.path.splitext(os.path.basename(binned_data_file))
+    analysis_path = os.path.join(block_path, 'topology/{}-{}'.format(bdf_name, analysis_id))
+    if not os.path.exists(analysis_path):
+        os.makedirs(analysis_path)
+
+    analysis_files_prefix = '{}-{}'.format(bdf_name, analysis_id)
+    analysis_logfile_name = '{}-{}.log'.format(bdf_name, analysis_id)
+    alogf = os.path.join(analysis_path, analysis_logfile_name)
+
+    maxbetti      = 10
+    kwikfile      = core.find_kwik(block_path)
+    kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
+
+    topology_log(alogf, '****** Beginning Curto+Itskov Topological Analysis of: {} ******'.format(kwikfile))
+    topology_log(alogf, '****** Using Previously Binned Dataset: {} ******'.format(bdf_name))
+
+    with h5py.File(binned_data_file, 'r') as bdf:
+
+        stims = bdf.keys()
+        nstims = len(stims)
+
+        for stim in stims:
+            topology_log(alogf, 'Calculating bettis for stim: {}'.format(stim))
+            stim_trials = bdf[stim]
+            nreps       = len(stim_trials)
+            topology_log(alogf, 'Number of repetitions for stim {} : {}'.format(stim, str(nreps)))
+            stim_bettis = np.zeros([nreps, maxbetti])
+
+            betti_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-betti.csv'
+            betti_savefile = os.path.join(analysis_path, betti_savefile)
+            topology_log(alogf, 'Betti savefile: {}'.format(betti_savefile))
+            betti_persistence_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-bettiPersistence.pkl'
+            betti_persistence_savefile = os.path.join(analysis_path, betti_persistence_savefile)
+            topology_log(alogf, 'Betti persistence savefile: {}'.format(betti_persistence_savefile))
+            betti_persistence_dict = dict()
+
+            for rep in stim_trials.keys():
+                pfile = analysis_files_prefix + '-stim-{}'.format(stim) + \
+                    '-rep-{}'.format(int(rep)) + '-simplex.txt'
+                pfile = os.path.join(block_path, pfile)
+
+                cell_groups = calc_cell_groups_from_binned_data(stim_trials[rep]['pop_vec'])
+
+                if persistence:
+                    build_perseus_persistent_input(cell_groups, pfile)
+                else:
+                    build_perseus_input(cell_groups, pfile)
+
+                betti_file = run_perseus(pfile)
+                bettis = []
+                with open(betti_file, 'r') as bf:
+                    for bf_line in bf:
+                        if len(bf_line)<2:
+                            continue
+                        betti_data      = bf_line.split()
+                        nbetti          = len(betti_data)-1
+                        filtration_time = int(betti_data[0])
+                        betti_numbers   = map(int, betti_data[1:])
+                        bettis.append([filtration_time, betti_numbers])
+            
+                bettis = calc_bettis(spikes, segment, 
+                                 clusters, pfile, cg_params, persistence)
+            # The bettis at the last step of the filtration are our 'total bettis'
+            trial_bettis                         = bettis[-1][1]
+            stim_bettis[rep, :len(trial_bettis)] = trial_bettis
+            # save time course of bettis
+            betti_persistence_dict['{}'.format(str(rep))] = bettis
+
+        stim_bettis_frame = pd.DataFrame(stim_bettis)
+        stim_bettis_frame.to_csv(betti_savefile, index_label='rep')
+        if persistence:
+            with open(betti_persistence_savefile, 'w') as bpfile:
+                pickle.dump(betti_persistence_dict, bpfile)
