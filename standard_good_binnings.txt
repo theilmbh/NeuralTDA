@@ -1,0 +1,10 @@
+good_50ms_stim 50 Good stim 0.0 0.0 
+good_100ms_stim 100 Good stim 0.0 0.0 
+good_150ms_stim 150 Good stim 0.0 0.0 
+good_200ms_stim 200 Good stim 0.0 0.0 
+good_25ms_stim 25 Good stim 0.0 0.0 
+good_50ms_prestim 50 Good prestim -2.0 0.0 
+good_100ms_prestim 100 Good prestim -2.0 0.0 
+good_150ms_prestim 150 Good prestim -2.0 0.0 
+good_200ms_prestim 200 Good prestim -2.0 0.0 
+good_25ms_prestim 25 Good prestim -2.0 0.0 
