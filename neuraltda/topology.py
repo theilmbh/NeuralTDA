@@ -678,13 +678,27 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
     Embeds binned population activity into R^n
     Still need TODO?
 
+    Parameters
+    ------
+    spikes : pandas dataframe 
+        Spike frame from ephys.core 
+
     win_size : float
         window size in ms
     '''
 
     with h5py.File(popvec_fname, "w") as popvec_f:
 
-        clusters_to_use = clusters[clusters['quality']==cluster_group]
+        f.attrs['win_size'] = win_size
+        f.attrs['fs'] = fs 
+        #f.attrs['cluster_group'] = cluster_group
+
+        if cluster_group != None:
+            mask = np.ones(len(clusters.index)) < 0
+            for grp in cluster_group:
+                mask = np.logical_or(mask, clusters['quality'] == grp)
+        clusters_to_use = clusters[mask]
+
         clusters_list = clusters_to_use['cluster'].unique()
         spikes = spikes[spikes['cluster'].isin(clusters_list)]
         nclus = len(clusters_to_use.index)
@@ -720,3 +734,36 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
                     if len(clus_that_spiked) > 0:
                         for clu in clus_that_spiked:
                             popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/(win_size/1000.)
+
+def bin_data(block_path, bin_def_file):
+    '''
+    Bins the data using build_population_embedding 
+    Parameters are given in bin_def_file
+    Each line of bin_def_file contains the parameters for each binning
+    '''
+
+    # Try to make a folder to store the binnings
+    global alogf
+    binning_folder = os.path.join(block_path, 'binned_data')
+    if not os.path.exists(binning_folder):
+        os.makedirs(binning_folder)
+
+    spikes   = core.load_spikes(block_path)
+    clusters = core.load_clusters(block_path)
+    trials   = events.load_trials(block_path)
+    fs       = core.load_fs(block_path)
+
+    with open(bin_def_file, 'r') as bdf:
+        for bdf_line in bdf:
+            binning_params = bdf_line.split(' ')
+            binning_id = binning_params[0]
+            win_size = binning_params[1]
+            cluster_groups = binning_params[2]
+            segment = binning_params[3]
+            seg_start = float(binning_params[4])
+            seg_end = float(binning_params[5])
+            segment_info = {'period': segment[0], 'segstart':seg_start, 'segend': seg_end}
+            cluster_group = cluster_groups.split(',')
+            binning_path = os.path.join(block_path, 'binned_data/{}.binned'.format(binning_id))
+            assert (not os.path.exists(binning_path)), 'Binning File Already Exists!'
+            build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, binning_path)
