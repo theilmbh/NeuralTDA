@@ -778,13 +778,39 @@ def do_bin_data(block_path, bin_def_file):
 
 def calc_cell_groups_from_binned_data(binned_dataset):
 
-    bds = np.array(binned_dataset)
+    bds = np.array(binned_dataset['pop_vec'])
+    clusters = np.array(binned_dataset['clusters'])
     [clus, nwin] = bds.shape
 
     mean_frs = np.mean(bds, 1)
     cell_groups = []
-    for win in range(nwin)
+    for win in range(nwin):
+        acty = bds[:, win]
+        above_thresh = np.greater(acty, thresh*mean_frs)
+        clus_in_group = clusters[above_thresh]
+        cell_groups.append([win, clus_in_group])
+    return cell_groups
 
+def calc_bettis_from_binned_data(binned_dataset, pfile):
+    cell_groups = calc_cell_groups_from_binned_data(binned_dataset)
+
+    if persistence:
+        build_perseus_persistent_input(cell_groups, pfile)
+    else:
+        build_perseus_input(cell_groups, pfile)
+
+    betti_file = run_perseus(pfile)
+    bettis = []
+    with open(betti_file, 'r') as bf:
+        for bf_line in bf:
+            if len(bf_line)<2:
+                continue
+            betti_data      = bf_line.split()
+            nbetti          = len(betti_data)-1
+            filtration_time = int(betti_data[0])
+            betti_numbers   = map(int, betti_data[1:])
+            bettis.append([filtration_time, betti_numbers])
+    return bettis
 
 def calc_CI_bettis_binned_data(block_path, binned_data_file):
 
@@ -831,28 +857,8 @@ def calc_CI_bettis_binned_data(block_path, binned_data_file):
                 pfile = analysis_files_prefix + '-stim-{}'.format(stim) + \
                     '-rep-{}'.format(int(rep)) + '-simplex.txt'
                 pfile = os.path.join(block_path, pfile)
-
-                cell_groups = calc_cell_groups_from_binned_data(stim_trials[rep]['pop_vec'])
-
-                if persistence:
-                    build_perseus_persistent_input(cell_groups, pfile)
-                else:
-                    build_perseus_input(cell_groups, pfile)
-
-                betti_file = run_perseus(pfile)
-                bettis = []
-                with open(betti_file, 'r') as bf:
-                    for bf_line in bf:
-                        if len(bf_line)<2:
-                            continue
-                        betti_data      = bf_line.split()
-                        nbetti          = len(betti_data)-1
-                        filtration_time = int(betti_data[0])
-                        betti_numbers   = map(int, betti_data[1:])
-                        bettis.append([filtration_time, betti_numbers])
-            
-                bettis = calc_bettis(spikes, segment, 
-                                 clusters, pfile, cg_params, persistence)
+                bettis = calc_bettis_from_binned_data(stim_trials[rep], pfile)
+                
             # The bettis at the last step of the filtration are our 'total bettis'
             trial_bettis                         = bettis[-1][1]
             stim_bettis[rep, :len(trial_bettis)] = trial_bettis
