@@ -12,6 +12,7 @@ setup(
     entry_points={
         'console_scripts': [
             'calc_CI_topology = neuraltda.calculate_topology:main',
+            'bin_data = neuraltda.bin_data:main'
         ],
     },
 )

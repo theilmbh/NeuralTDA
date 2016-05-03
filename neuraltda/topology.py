@@ -735,7 +735,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
                         for clu in clus_that_spiked:
                             popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/(win_size/1000.)
 
-def bin_data(block_path, bin_def_file):
+def do_bin_data(block_path, bin_def_file):
     '''
     Bins the data using build_population_embedding 
     Parameters are given in bin_def_file
