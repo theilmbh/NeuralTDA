@@ -867,6 +867,7 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
 
         stim_bettis_frame = pd.DataFrame(stim_bettis)
         stim_bettis_frame.to_csv(betti_savefile, index_label='rep')
+        persistence = True
         if persistence:
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
