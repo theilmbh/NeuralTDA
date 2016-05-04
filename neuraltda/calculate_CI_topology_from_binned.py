@@ -26,7 +26,7 @@ def main():
 	binned_data_files = glob.glob(os.path.join(block_path, 'binned_data/*.binned'))
 	
 	for bdf in binned_data_files:
-		topology.calc_CI_bettis_binned_data(analysis_id, bdf, block_path)
+		topology.calc_CI_bettis_binned_data(analysis_id, bdf, block_path, args.threshold)
 
 if __name__ == '__main__':
 	main()
