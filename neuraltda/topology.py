@@ -776,7 +776,7 @@ def do_bin_data(block_path, bin_def_file):
             build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, binning_path)
             print('Done')
 
-def calc_cell_groups_from_binned_data(binned_dataset):
+def calc_cell_groups_from_binned_data(binned_dataset, thresh):
 
     bds = np.array(binned_dataset['pop_vec'])
     clusters = np.array(binned_dataset['clusters'])
@@ -791,8 +791,8 @@ def calc_cell_groups_from_binned_data(binned_dataset):
         cell_groups.append([win, clus_in_group])
     return cell_groups
 
-def calc_bettis_from_binned_data(binned_dataset, pfile):
-    cell_groups = calc_cell_groups_from_binned_data(binned_dataset)
+def calc_bettis_from_binned_data(binned_dataset, pfile, thresh):
+    cell_groups = calc_cell_groups_from_binned_data(binned_dataset, thresh)
 
     if persistence:
         build_perseus_persistent_input(cell_groups, pfile)
@@ -812,7 +812,7 @@ def calc_bettis_from_binned_data(binned_dataset, pfile):
             bettis.append([filtration_time, betti_numbers])
     return bettis
 
-def calc_CI_bettis_binned_data(analysis_id,  binned_data_file, block_path):
+def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh):
 
 
     global alogf 
@@ -857,7 +857,7 @@ def calc_CI_bettis_binned_data(analysis_id,  binned_data_file, block_path):
                 pfile = analysis_files_prefix + '-stim-{}'.format(stim) + \
                     '-rep-{}'.format(int(rep)) + '-simplex.txt'
                 pfile = os.path.join(block_path, pfile)
-                bettis = calc_bettis_from_binned_data(stim_trials[rep], pfile)
+                bettis = calc_bettis_from_binned_data(stim_trials[rep], pfile, thresh)
 
             # The bettis at the last step of the filtration are our 'total bettis'
             trial_bettis                         = bettis[-1][1]

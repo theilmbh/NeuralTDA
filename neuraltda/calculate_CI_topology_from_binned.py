@@ -11,6 +11,7 @@ def get_args():
 												 'topology of an ' 
 												 'extracellular dataset')
 	parser.add_argument('analysis_id', type=str, help='A unique ID string for this run')
+	parser.add_argument('threshold', type=float, help= 'Threshold for Cell Groups')
 	parser.add_argument('block_path', type=str, help='Path to folder'
 													 'containing data files')
 
