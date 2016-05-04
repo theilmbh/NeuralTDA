@@ -814,7 +814,7 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
 
     global alogf 
 
-    bdf_name = os.path.splitext(os.path.basename(binned_data_file))
+    bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path, 'topology/{}-{}'.format(bdf_name, analysis_id))
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
@@ -853,7 +853,7 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
             for rep in stim_trials.keys():
                 pfile = analysis_files_prefix + '-stim-{}'.format(stim) + \
                     '-rep-{}'.format(int(rep)) + '-simplex.txt'
-                pfile = os.path.join(block_path, pfile)
+                pfile = os.path.join(analysis_path, pfile)
                 bettis = calc_bettis_from_binned_data(stim_trials[rep], pfile, thresh)
 
             # The bettis at the last step of the filtration are our 'total bettis'
