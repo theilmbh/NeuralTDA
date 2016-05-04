@@ -829,7 +829,7 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
 
     topology_log(alogf, '****** Beginning Curto+Itskov Topological Analysis of: {} ******'.format(kwikfile))
     topology_log(alogf, '****** Using Previously Binned Dataset: {} ******'.format(bdf_name))
-
+    topolog_log(alogf, 'Theshold: {}'.format(thresh))
     with h5py.File(binned_data_file, 'r') as bdf:
 
         stims = bdf.keys()
