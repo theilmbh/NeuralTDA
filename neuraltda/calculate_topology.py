@@ -2,8 +2,7 @@
 import sys
 import os
 import argparse
-# sys.path.append('/home/btheilma/code/NeuralTDA/src')
-# sys.path.append('/home/btheilma/code/gentnerlab/ephys-analysis')
+
 import topology
 
 

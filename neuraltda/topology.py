@@ -812,7 +812,7 @@ def calc_bettis_from_binned_data(binned_dataset, pfile):
             bettis.append([filtration_time, betti_numbers])
     return bettis
 
-def calc_CI_bettis_binned_data(block_path, binned_data_file):
+def calc_CI_bettis_binned_data(analysis_id,  binned_data_file, block_path):
 
 
     global alogf 
@@ -858,7 +858,7 @@ def calc_CI_bettis_binned_data(block_path, binned_data_file):
                     '-rep-{}'.format(int(rep)) + '-simplex.txt'
                 pfile = os.path.join(block_path, pfile)
                 bettis = calc_bettis_from_binned_data(stim_trials[rep], pfile)
-                
+
             # The bettis at the last step of the filtration are our 'total bettis'
             trial_bettis                         = bettis[-1][1]
             stim_bettis[rep, :len(trial_bettis)] = trial_bettis
