@@ -782,7 +782,7 @@ def calc_cell_groups_from_binned_data(binned_dataset, thresh):
     bds = np.array(binned_dataset['pop_vec'])
     clusters = np.array(binned_dataset['clusters'])
     [clus, nwin] = bds.shape
-    topolog_log(alogf, 'Number of Clusters: {}'.format(clus))
+    topology_log(alogf, 'Number of Clusters: {}'.format(clus))
 
     mean_frs = np.mean(bds, 1)
     cell_groups = []
