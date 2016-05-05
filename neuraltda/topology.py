@@ -778,9 +778,11 @@ def do_bin_data(block_path, bin_def_file):
 
 def calc_cell_groups_from_binned_data(binned_dataset, thresh):
 
+    global alogf
     bds = np.array(binned_dataset['pop_vec'])
     clusters = np.array(binned_dataset['clusters'])
     [clus, nwin] = bds.shape
+    topolog_log(alogf, 'Number of Clusters: {}'.format(clus))
 
     mean_frs = np.mean(bds, 1)
     cell_groups = []
@@ -815,7 +817,7 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
     global alogf 
 
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
-    analysis_path = os.path.join(block_path, 'topology/{}-{}'.format(bdf_name, analysis_id))
+    analysis_path = os.path.join(block_path, 'topology/{}/{}'.format(analysis_id, bdf_name))
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
 
