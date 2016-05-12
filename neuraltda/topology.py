@@ -736,7 +736,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
                         for clu in clus_that_spiked:
                             popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/(win_size/1000.)
 
-def prep_and_bin_data(block_path, bin_def_file):
+def prep_and_bin_data(block_path, bin_def_file, bin_id):
 
     spikes   = core.load_spikes(block_path)
     clusters = core.load_clusters(block_path)
@@ -745,9 +745,9 @@ def prep_and_bin_data(block_path, bin_def_file):
 
     kwikfile      = core.find_kwik(block_path)
 
-    do_bin_data(spikes, clusters, trials, fs, kwikfile, bin_def_file)
+    do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
 
-def do_bin_data(spikes, clusters, trials, fs, kwikfile, bin_def_file):
+def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id):
     '''
     Bins the data using build_population_embedding 
     Parameters are given in bin_def_file
@@ -756,7 +756,7 @@ def do_bin_data(spikes, clusters, trials, fs, kwikfile, bin_def_file):
 
     # Try to make a folder to store the binnings
     global alogf
-    binning_folder = os.path.join(block_path, 'binned_data')
+    binning_folder = os.path.join(block_path, 'binned_data/{}'.format(bin_id))
     if not os.path.exists(binning_folder):
         os.makedirs(binning_folder)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
@@ -772,7 +772,7 @@ def do_bin_data(spikes, clusters, trials, fs, kwikfile, bin_def_file):
             seg_end = float(binning_params[5])
             segment_info = {'period': segment[0], 'segstart':seg_start, 'segend': seg_end}
             cluster_group = cluster_groups.split(',')
-            binning_path = os.path.join(block_path, 'binned_data/{}-{}.binned'.format(kwikname, binning_id))
+            binning_path = os.path.join(binning_folder, '{}-{}.binned'.format(kwikname, binning_id))
             if os.path.exists(binning_path):
                 print('Binning file {} already exists, skipping..'.format(binning_path))
                 continue
