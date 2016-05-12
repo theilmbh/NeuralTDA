@@ -21,7 +21,7 @@ def main():
 	args = get_args()
 	block_path = os.path.abspath(args.block_path)
 	bin_def_file = os.path.abspath(args.bin_def_file)
-	topology.do_bin_data(block_path, bin_def_file)
+	topology.prep_and_bin_data(block_path, bin_def_file)
 
 if __name__ == '__main__':
 	main()
