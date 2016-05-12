@@ -829,7 +829,7 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
     analysis_logfile_name = '{}-{}.log'.format(bdf_name, analysis_id)
     alogf = os.path.join(analysis_path, analysis_logfile_name)
 
-    maxbetti      = 10
+    maxbetti      = 50
     kwikfile      = core.find_kwik(block_path)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
 
