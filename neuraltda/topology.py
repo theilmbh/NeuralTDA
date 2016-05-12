@@ -736,7 +736,18 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
                         for clu in clus_that_spiked:
                             popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/(win_size/1000.)
 
-def do_bin_data(block_path, bin_def_file):
+def prep_and_bin_data(block_path, bin_def_file):
+
+    spikes   = core.load_spikes(block_path)
+    clusters = core.load_clusters(block_path)
+    trials   = events.load_trials(block_path)
+    fs       = core.load_fs(block_path)
+
+    kwikfile      = core.find_kwik(block_path)
+
+    do_bin_data(spikes, clusters, trials, fs, kwikfile, bin_def_file)
+
+def do_bin_data(spikes, clusters, trials, fs, kwikfile, bin_def_file):
     '''
     Bins the data using build_population_embedding 
     Parameters are given in bin_def_file
@@ -748,13 +759,6 @@ def do_bin_data(block_path, bin_def_file):
     binning_folder = os.path.join(block_path, 'binned_data')
     if not os.path.exists(binning_folder):
         os.makedirs(binning_folder)
-
-    spikes   = core.load_spikes(block_path)
-    clusters = core.load_clusters(block_path)
-    trials   = events.load_trials(block_path)
-    fs       = core.load_fs(block_path)
-
-    kwikfile      = core.find_kwik(block_path)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
 
     with open(bin_def_file, 'r') as bdf:
