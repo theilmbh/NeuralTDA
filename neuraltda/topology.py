@@ -321,6 +321,7 @@ def run_perseus(pfile):
         file containing resultant betti numbers
 
     '''
+    global alogf
     print('Running Perseus...')
     of_string, ext = os.path.splitext(pfile)
     perseus_command = "/home/btheilma/bin/perseus" 
@@ -328,7 +329,7 @@ def run_perseus(pfile):
 
     perseus_return_code = subprocess.call([perseus_command, 'nmfsimtop', pfile, 
                                            of_string])
-    assert (perseus_return_code == 0), "Peseus Error!"
+    topology_log(alogf, 'perseus return code: {}'.format(perseus_return_code))
     betti_file = of_string+'_betti.txt'
     betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
     return betti_file
