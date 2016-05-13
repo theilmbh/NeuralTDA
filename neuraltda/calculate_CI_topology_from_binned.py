@@ -24,7 +24,7 @@ def main():
 
 	block_path = os.path.abspath(args.block_path)
 	analysis_id = args.analysis_id
-	binned_data_files = glob.glob(os.path.join(binned_path, '*.binned'))
+	binned_data_files = glob.glob(os.path.join(args.binned_path, '*.binned'))
 	
 	for bdf in binned_data_files:
 		topology.calc_CI_bettis_binned_data(analysis_id, bdf, block_path, args.threshold)
