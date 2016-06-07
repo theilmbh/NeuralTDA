@@ -687,7 +687,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
     win_size : float
         window size in ms
     '''
-
+    global alogf 
     with h5py.File(popvec_fname, "w") as popvec_f:
 
         popvec_f.attrs['win_size'] = win_size
@@ -717,9 +717,10 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
                 trial_start = stim_trials.iloc[rep]['time_samples']
                 trial_end   = stim_trials.iloc[rep]['stimulus_end']
                 seg_start, seg_end = get_segment([trial_start, trial_end], fs, segment_info)
+                topology_log(alogf, "segments: {} {}".format(seg_start, seg_end))
                 win_size_samples = np.round(win_size/1000. * fs)
 
-                windows = create_subwindows([trial_start, trial_end], win_size_samples, 1)
+                windows = create_subwindows([seg_start, seg_end], win_size_samples, 1)
                 nwins = len(windows)
                 popvec_dset_init = np.zeros((nclus, nwins))
                 popvec_dset = trialgrp.create_dataset('pop_vec', data=popvec_dset_init)
@@ -740,6 +741,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
 
 def prep_and_bin_data(block_path, bin_def_file, bin_id):
 
+    global alogf
     spikes   = core.load_spikes(block_path)
     clusters = core.load_clusters(block_path)
     trials   = events.load_trials(block_path)
@@ -748,6 +750,7 @@ def prep_and_bin_data(block_path, bin_def_file, bin_id):
     kwikfile      = core.find_kwik(block_path)
 
     do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
+
 
 def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id):
     '''
@@ -762,6 +765,7 @@ def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file
     if not os.path.exists(binning_folder):
         os.makedirs(binning_folder)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
+    alogf = os.path.join(binning_folder, 'binning.log')
 
     with open(bin_def_file, 'r') as bdf:
         for bdf_line in bdf:
