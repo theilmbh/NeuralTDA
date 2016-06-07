@@ -774,6 +774,7 @@ def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file
             win_size = float(binning_params[1])
             cluster_groups = binning_params[2]
             segment = binning_params[3]
+            topology_log(alogf, 'seg specifier: {}'.format(segment))
             seg_start = float(binning_params[4])
             seg_end = float(binning_params[5])
             segment_info = {'period': segment[0], 'segstart':seg_start, 'segend': seg_end}
