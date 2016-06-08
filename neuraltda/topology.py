@@ -382,7 +382,7 @@ def calc_bettis(spikes, segment, clusters, pfile, cg_params=DEFAULT_CG_PARAMS, p
     return bettis
 
 
-DEFAULT_SEGMENT_INFO = {'period': 'stim'}
+DEFAULT_SEGMENT_INFO = {'period': 1}
 def get_segment(trial_bounds, fs, segment_info):
     '''
     Use segment info to determine segment to compute topology for 
@@ -395,7 +395,7 @@ def get_segment(trial_bounds, fs, segment_info):
         The sampling rate 
     segment_info : dict
         Dictionary containing:
-        'period' (stim or ?)
+        'period' (1 for stim, 0 for other)
         'segstart' : time in ms of segment start relative to trial start 
         'segend' : time in ms of segment end relative to trial start
 
@@ -406,7 +406,7 @@ def get_segment(trial_bounds, fs, segment_info):
 
     '''
 
-    if segment_info['period'] == 'stim':
+    if segment_info['period'] == 1:
         return trial_bounds
     else:
         seg_start = trial_bounds[0] + np.floor(segment_info['segstart']*(fs/1000.))
@@ -773,11 +773,11 @@ def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file
             binning_id = binning_params[0]
             win_size = float(binning_params[1])
             cluster_groups = binning_params[2]
-            segment = binning_params[3]
+            segment = int(binning_params[3])
             topology_log(alogf, 'seg specifier: {}'.format(segment))
             seg_start = float(binning_params[4])
             seg_end = float(binning_params[5])
-            segment_info = {'period': segment[0], 'segstart':seg_start, 'segend': seg_end}
+            segment_info = {'period': segment, 'segstart':seg_start, 'segend': seg_end}
             cluster_group = cluster_groups.split(',')
             binning_path = os.path.join(binning_folder, '{}-{}.binned'.format(kwikname, binning_id))
             if os.path.exists(binning_path):
