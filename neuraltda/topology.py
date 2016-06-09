@@ -703,6 +703,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
         clusters_list = clusters_to_use['cluster'].unique()
         spikes = spikes[spikes['cluster'].isin(clusters_list)]
         nclus = len(clusters_to_use.index)
+        popvec_f.attrs['nclus'] = nclus
         stims = trials['stimulus'].unique()
         popvec_dict = {}
 
@@ -880,3 +881,49 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
         topology_log(alogf, 'Completed All Stimuli')
+
+def permute_binned_data(binned_data_file, n_cells_in_perm):
+    '''
+    Bins the data using build_population_embedding 
+    Parameters are given in bin_def_file
+    Each line of bin_def_file contains the parameters for each binning
+    '''
+
+    # Try to make a folder to store the binnings
+    global alogf
+        '''
+    Embeds binned population activity into R^n
+    Still need TODO?
+
+    Parameters
+    ------
+    spikes : pandas dataframe 
+        Spike frame from ephys.core 
+
+    win_size : float
+        window size in ms
+    '''
+    global alogf 
+    
+    with h5py.File(binned_data_file, "r") as popvec_f:
+
+
+        winsize = popvec_f.attrs['win_size'] 
+        fs = popvec_f.attrs['fs'] 
+        nclus = popvec_f.attrs['nclus']
+        permt = np.random.permutation(nclus)
+        permt = permt[0:n_cells_in_perm]
+        stims = popvec_f.keys()
+
+        for stim in stims:
+            stimdata = popvec_f[stim]
+            trials = stimdata.keys()
+            for trial in trials:
+                trialdata = stimdata[trial]
+                clusters = trialdata['clusters']
+                popvec = trialdata['pop_vec']
+                windows = trialdata['windows']
+
+                clusters_to_save = clusters[permt]
+                popvec_save = popvec[permt]
+
