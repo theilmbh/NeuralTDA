@@ -882,7 +882,7 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
                 pickle.dump(betti_persistence_dict, bpfile)
         topology_log(alogf, 'Completed All Stimuli')
 
-def permute_binned_data(binned_data_file, n_cells_in_perm):
+def permute_binned_data(binned_data_file, n_cells_in_perm, n_perm):
     '''
     Bins the data using build_population_embedding 
     Parameters are given in bin_def_file
@@ -914,16 +914,27 @@ def permute_binned_data(binned_data_file, n_cells_in_perm):
         permt = np.random.permutation(nclus)
         permt = permt[0:n_cells_in_perm]
         stims = popvec_f.keys()
+        with h5py.File(permuted_data_file, "w") as perm_f:
+            perm_f.attrs['win_size'] = win_size
+            perm_f.attrs['permuted'] = '1'
+            perm_f.attrs['fs']  = fs 
 
-        for stim in stims:
-            stimdata = popvec_f[stim]
-            trials = stimdata.keys()
-            for trial in trials:
-                trialdata = stimdata[trial]
-                clusters = trialdata['clusters']
-                popvec = trialdata['pop_vec']
-                windows = trialdata['windows']
-
-                clusters_to_save = clusters[permt]
-                popvec_save = popvec[permt]
-
+            for stim in stims:
+                perm_stimgrp = perm_f.create_group(stim)
+                stimdata = popvec_f[stim]
+                trials = stimdata.keys()
+                for trial in trials:
+                    perm_trialgrp = perm_stimgrp.create_group(trial)
+                    trialdata = stimdata[trial]
+                    clusters = trialdata['clusters']
+                    popvec = trialdata['pop_vec']
+                    windows = trialdata['windows']
+                    for perm_num in range(nperm):
+                            permt = np.random.permutation(nclus)
+                            permt = permt[0:n_cells_in_perm]
+                            clusters_to_save = clusters[permt]
+                            popvec_save = popvec[permt]
+                            perm_permgrp = perm_trialgrp.create_group(str(perm_num))
+                            perm_permgrp.create_dataset('pop_vec', data=popvec_save)
+                            perm_permgrp.create_dataset('clusters', data=clusters_to_save)
+                            perm_permgrp.create_dataset('windows', data=windows)
