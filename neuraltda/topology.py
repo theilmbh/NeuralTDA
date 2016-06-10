@@ -882,7 +882,7 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
                 pickle.dump(betti_persistence_dict, bpfile)
         topology_log(alogf, 'Completed All Stimuli')
 
-def permute_binned_data(binned_data_file, n_cells_in_perm, n_perm):
+def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perm):
     '''
     Bins the data using build_population_embedding 
     Parameters are given in bin_def_file
@@ -936,3 +936,5 @@ def permute_binned_data(binned_data_file, n_cells_in_perm, n_perm):
                             perm_permgrp.create_dataset('pop_vec', data=popvec_save)
                             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
                             perm_permgrp.create_dataset('windows', data=windows)
+
+
