@@ -1013,7 +1013,8 @@ def make_shuffled_controls(path_to_binned, nshuffs):
 
     # Try to make shuffled_controls folder
     shuffled_controls_folder = os.path.join(path_to_binned, 'shuffled_controls')
-    os.makedirs(shuffled_controls_folder)
+    if not os.path.exists(shuffled_controls_folder):
+        os.makedirs(shuffled_controls_folder)
 
     for binned_data_file in binned_data_files:
 
