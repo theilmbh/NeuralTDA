@@ -970,8 +970,6 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
         winsize = popvec_f.attrs['win_size'] 
         fs = popvec_f.attrs['fs'] 
         nclus = popvec_f.attrs['nclus']
-        permt = np.random.permutation(nclus)
-        permt = permt[0:n_cells_in_perm]
         stims = popvec_f.keys()
         with h5py.File(permuted_data_file, "w") as perm_f:
             perm_f.attrs['win_size'] = win_size
