@@ -873,7 +873,7 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
                 pfile = analysis_files_prefix + '-stim-{}'.format(stim) + \
                     '-rep-{}'.format(repkey) + '-simplex.txt'
                 pfile = os.path.join(analysis_path, pfile)
-                bettis = calc_bettis_from_binned_data(stim_trials[rep], pfile, thresh)
+                bettis = calc_bettis_from_binned_data(stim_trials[repkey], pfile, thresh)
 
                 # The bettis at the last step of the filtration are our 'total bettis'
                 trial_bettis                         = bettis[-1][1]
