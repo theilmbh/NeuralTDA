@@ -911,7 +911,7 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
     global alogf 
     
     with h5py.File(binned_data_file, "r") as popvec_f:
-        winsize = popvec_f.attrs['win_size'] 
+        win_size = popvec_f.attrs['win_size'] 
         fs = popvec_f.attrs['fs'] 
         nclus = popvec_f.attrs['nclus']
         permt = np.random.permutation(nclus)
@@ -967,7 +967,7 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
     global alogf 
     
     with h5py.File(binned_data_file, "r") as popvec_f:
-        winsize = popvec_f.attrs['win_size'] 
+        win_size = popvec_f.attrs['win_size'] 
         fs = popvec_f.attrs['fs'] 
         nclus = popvec_f.attrs['nclus']
         stims = popvec_f.keys()
