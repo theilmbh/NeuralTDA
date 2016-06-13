@@ -740,7 +740,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
                         for clu in clus_that_spiked:
                             popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/(win_size/1000.)
 
-def prep_and_bin_data(block_path, bin_def_file, bin_id):
+def prep_and_bin_data(block_path, bin_def_file, bin_id, nshuffs):
 
     global alogf
     spikes   = core.load_spikes(block_path)
@@ -895,7 +895,7 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
 
     # Try to make a folder to store the binnings
     global alogf
-        '''
+    '''
     Embeds binned population activity into R^n
     Still need TODO?
 
@@ -951,7 +951,7 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
 
     # Try to make a folder to store the binnings
     global alogf
-        '''
+    '''
     Embeds binned population activity into R^n
     Still need TODO?
 
