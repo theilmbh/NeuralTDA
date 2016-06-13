@@ -1,4 +1,4 @@
-import numpy as np
+ import numpy as np
 import pandas as pd
 import os, sys
 import subprocess
@@ -915,6 +915,7 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
         with h5py.File(permuted_data_file, "w") as perm_f:
             perm_f.attrs['win_size'] = win_size
             perm_f.attrs['permuted'] = '1'
+            perm_f.attrs['shuffled'] = '0'
             perm_f.attrs['fs']  = fs 
 
             for stim in stims:
@@ -937,4 +938,61 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
                             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
                             perm_permgrp.create_dataset('windows', data=windows)
 
+def shuffle_control_binned_data(binned_data_file, permuted_data_file, n_perm):
+    '''
+    Bins the data using build_population_embedding 
+    Parameters are given in bin_def_file
+    Each line of bin_def_file contains the parameters for each binning
+    '''
+
+    # Try to make a folder to store the binnings
+    global alogf
+        '''
+    Embeds binned population activity into R^n
+    Still need TODO?
+
+    Parameters
+    ------
+    spikes : pandas dataframe 
+        Spike frame from ephys.core 
+
+    win_size : float
+        window size in ms
+    '''
+    global alogf 
+    
+    with h5py.File(binned_data_file, "r") as popvec_f:
+        winsize = popvec_f.attrs['win_size'] 
+        fs = popvec_f.attrs['fs'] 
+        nclus = popvec_f.attrs['nclus']
+        permt = np.random.permutation(nclus)
+        permt = permt[0:n_cells_in_perm]
+        stims = popvec_f.keys()
+        with h5py.File(permuted_data_file, "w") as perm_f:
+            perm_f.attrs['win_size'] = win_size
+            perm_f.attrs['permuted'] = '0'
+            perm_f.attrs['shuffled'] = '1'
+            perm_f.attrs['fs']  = fs 
+
+            for stim in stims:
+                perm_stimgrp = perm_f.create_group(stim)
+                stimdata = popvec_f[stim]
+                trials = stimdata.keys()
+                for trial in trials:
+                    perm_trialgrp = perm_stimgrp.create_group(trial)
+                    trialdata = stimdata[trial]
+                    clusters = trialdata['clusters']
+                    popvec = trialdata['pop_vec']
+                    windows = trialdata['windows']
+                    nwins = len(windows)
+                    for perm_num in range(nperm):
+                        clusters_to_save = clusters
+                        popvec_save = popvec
+                        for clu_num in range(nclus):
+                            permt = np.random.permutation(nwins)
+                            np.random.shuffle(popvec_save[clu_num, :])
+                            perm_permgrp = perm_trialgrp.create_group(str(perm_num))
+                            perm_permgrp.create_dataset('pop_vec', data=popvec_save)
+                            perm_permgrp.create_dataset('clusters', data=clusters_to_save)
+                            perm_permgrp.create_dataset('windows', data=windows)
 
