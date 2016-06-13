@@ -991,14 +991,13 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
                     for perm_num in range(nshuffs):
                         clusters_to_save = clusters
                         popvec_save = popvec
+                        perm_permgrp = perm_trialgrp.create_group('perm'+str(perm_num))
                         for clu_num in range(nclus):
                             permt = np.random.permutation(nwins)
                             np.random.shuffle(popvec_save[clu_num, :])
-                            print('perm'+str(perm_num))
-                            perm_permgrp = perm_trialgrp.create_group('perm'+str(perm_num))
-                            perm_permgrp.create_dataset('pop_vec', data=popvec_save)
-                            perm_permgrp.create_dataset('clusters', data=clusters_to_save)
-                            perm_permgrp.create_dataset('windows', data=windows)
+                        perm_permgrp.create_dataset('pop_vec', data=popvec_save)
+                        perm_permgrp.create_dataset('clusters', data=clusters_to_save)
+                        perm_permgrp.create_dataset('windows', data=windows)
 
 def make_shuffled_controls(path_to_binned, nshuffs):
     '''
