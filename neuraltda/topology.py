@@ -750,7 +750,10 @@ def prep_and_bin_data(block_path, bin_def_file, bin_id):
 
     kwikfile      = core.find_kwik(block_path)
 
-    do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
+    binning_folder = do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
+    if nshuffs:
+        print('Making Shuffled Controls')
+        make_shuffled_controls(binning_folder, nshuffs)
 
 
 def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id):
@@ -787,6 +790,7 @@ def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file
             print('Binning data into {}'.format('{}.binned'.format(binning_id)))
             build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, binning_path)
             print('Done')
+    return binning_folder
 
 def calc_cell_groups_from_binned_data(binned_dataset, thresh):
 
