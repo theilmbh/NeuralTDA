@@ -869,9 +869,9 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
             topology_log(alogf, 'Betti persistence savefile: {}'.format(betti_persistence_savefile))
             betti_persistence_dict = dict()
 
-            for rep in stim_trials.keys():
+            for rep, repkey in enumerate(stim_trials.keys()):
                 pfile = analysis_files_prefix + '-stim-{}'.format(stim) + \
-                    '-rep-{}'.format(rep) + '-simplex.txt'
+                    '-rep-{}'.format(repkey) + '-simplex.txt'
                 pfile = os.path.join(analysis_path, pfile)
                 bettis = calc_bettis_from_binned_data(stim_trials[rep], pfile, thresh)
 
