@@ -928,7 +928,7 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
                     clusters = trialdata['clusters']
                     popvec = trialdata['pop_vec']
                     windows = trialdata['windows']
-                    for perm_num in range(nperm):
+                    for perm_num in range(n_perm):
                             permt = np.random.permutation(nclus)
                             permt = permt[0:n_cells_in_perm]
                             clusters_to_save = clusters[permt]
@@ -938,7 +938,7 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
                             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
                             perm_permgrp.create_dataset('windows', data=windows)
 
-def shuffle_control_binned_data(binned_data_file, permuted_data_file, n_perm):
+def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
     '''
     Bins the data using build_population_embedding 
     Parameters are given in bin_def_file
@@ -985,7 +985,7 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, n_perm):
                     popvec = trialdata['pop_vec']
                     windows = trialdata['windows']
                     nwins = len(windows)
-                    for perm_num in range(nperm):
+                    for perm_num in range(shuffs):
                         clusters_to_save = clusters
                         popvec_save = popvec
                         for clu_num in range(nclus):
@@ -996,3 +996,27 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, n_perm):
                             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
                             perm_permgrp.create_dataset('windows', data=windows)
 
+def make_shuffled_controls(path_to_binned, nshuffs):
+    '''
+    Takes a folder containing .binned files and makes shuffled controls from them
+    '''
+
+    # get list of binned data files
+    path_to_binned = os.path.abspath(path_to_binned)
+    binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
+    if not binned_data_files:
+        print('Error: No binned data files!')
+        sys.exit(-1)
+
+    # Try to make shuffled_controls folder
+    shuffled_controls_folder = os.path.join(path_to_binned, 'shuffled_controls')
+    os.makedirs(shuffled_controls_folder)
+
+    for binned_data_file in binned_data_files:
+
+        bdf_fold, bdf_full_name = os.path.split(binned_data_file)
+        bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
+        scf_name = bdf_name + '_shuffled-control.binned'
+        shuffled_control_file = os.path.join(shuffled_controls_folder, scf_name)
+
+        shuffle_control_binned_data(binned_data_file, shuffled_control_file, nshuffs)
