@@ -5,6 +5,7 @@ import subprocess
 import pickle
 import h5py
 import time
+import glob
 
 from ephys import events, core
 
