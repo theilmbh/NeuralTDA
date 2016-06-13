@@ -994,6 +994,7 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
                         for clu_num in range(nclus):
                             permt = np.random.permutation(nwins)
                             np.random.shuffle(popvec_save[clu_num, :])
+                            print('perm'+str(perm_num))
                             perm_permgrp = perm_trialgrp.create_group('perm'+str(perm_num))
                             perm_permgrp.create_dataset('pop_vec', data=popvec_save)
                             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
