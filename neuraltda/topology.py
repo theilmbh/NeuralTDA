@@ -988,7 +988,7 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
                     popvec = trialdata['pop_vec']
                     windows = trialdata['windows']
                     nwins = len(windows)
-                    for perm_num in range(shuffs):
+                    for perm_num in range(nshuffs):
                         clusters_to_save = clusters
                         popvec_save = popvec
                         for clu_num in range(nclus):
