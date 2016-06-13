@@ -982,7 +982,6 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
                 stimdata = popvec_f[stim]
                 trials = stimdata.keys()
                 for trial in trials:
-                    perm_trialgrp = perm_stimgrp.create_group(trial)
                     trialdata = stimdata[trial]
                     clusters = trialdata['clusters']
                     popvec = trialdata['pop_vec']
@@ -991,7 +990,7 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
                     for perm_num in range(nshuffs):
                         clusters_to_save = clusters
                         popvec_save = popvec
-                        perm_permgrp = perm_trialgrp.create_group('perm'+str(perm_num))
+                        perm_permgrp = perm_stimgrp.create_group('trial'+str(trial)+'perm'+str(perm_num))
                         for clu_num in range(nclus):
                             permt = np.random.permutation(nwins)
                             np.random.shuffle(popvec_save[clu_num, :])
