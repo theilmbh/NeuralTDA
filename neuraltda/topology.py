@@ -1054,3 +1054,37 @@ def make_shuffled_controls(path_to_binned, nshuffs):
         shuffled_control_file = os.path.join(shuffled_controls_folder, scf_name)
 
         shuffle_control_binned_data(binned_data_file, shuffled_control_file, nshuffs)
+
+def make_permuted_binned_data(path_to_binned, n_cells_in_perm, n_perms):
+    '''
+    Takes a folder containing .binned files and makes permuted subsets of them. 
+
+    Parameters
+    ------
+    path_to_binned : str 
+        Path to a folder containing all the .binned hdf5 files you'd like to make controls for 
+    nperms : int
+        Number of permutations
+    '''
+
+    path_to_binned = os.path.abspath(path_to_binned)
+    binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
+    if not binned_data_files:
+        print('Error: No binned data files!')
+        sys.exit(-1) 
+    
+    permuted_binned_folder = os.path.join(path_to_binned, 'permuted_binned')
+    if not os.path.exists(permuted_binned_folder):
+        os.makedirs(permuted_binned_folder)
+        
+    for binned_data_file in binned_data_files:
+
+        bdf_fold, bdf_full_name = os.path.split(binned_data_file)
+        bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
+        pbd_name = bdf_name + '-permuted.binned'
+        permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
+
+        permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perm)
+
+
+
