@@ -7,9 +7,7 @@ import topology
 
 def get_args():
 
-	parser = argparse.ArgumentParser(description='Calculate full-segment' 
-												 'topology of an ' 
-												 'extracellular dataset')
+	parser = argparse.ArgumentParser(description='Bin Spiking Data')
 	parser.add_argument('block_path', type=str, help='Path to folder'
 													 'containing data files')
 	parser.add_argument('bin_def_file', type=str, help='location of the file describing the binning parameters')
