@@ -1076,7 +1076,7 @@ def make_permuted_binned_data(path_to_binned, n_cells_in_perm, n_perms):
     permuted_binned_folder = os.path.join(path_to_binned, 'permuted_binned')
     if not os.path.exists(permuted_binned_folder):
         os.makedirs(permuted_binned_folder)
-        
+
     for binned_data_file in binned_data_files:
 
         bdf_fold, bdf_full_name = os.path.split(binned_data_file)
@@ -1084,7 +1084,7 @@ def make_permuted_binned_data(path_to_binned, n_cells_in_perm, n_perms):
         pbd_name = bdf_name + '-permuted.binned'
         permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
 
-        permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perm)
+        permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perms)
 
 
 
