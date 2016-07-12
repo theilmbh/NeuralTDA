@@ -762,6 +762,25 @@ def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file
     Bins the data using build_population_embedding 
     Parameters are given in bin_def_file
     Each line of bin_def_file contains the parameters for each binning
+
+    Parameters
+    ------
+    block_path : str 
+        Path to the folder containing all the original datafiles 
+    spikes : Pandas DataFrame
+        Dataframe containing spike data 
+    clusters : Pandas DataFrame
+        DataFrame containing cluster information 
+    trials : PD DataFrame
+        Containing trial information 
+    fs : int 
+        sampling rate
+    kwikfile: str 
+        path to kwikfile 
+    bin_def_file : str 
+        Path to file containing parameters for each binning 
+    bin_id : str 
+        Identifyer for this particular binning run 
     '''
 
     # Try to make a folder to store the binnings
@@ -829,8 +848,20 @@ def calc_bettis_from_binned_data(binned_dataset, pfile, thresh):
     return bettis
 
 def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh):
+    '''
+    Given a binned data file, compute the betti numbers of the Curto-Itskov style complex 
 
-
+    Parameters
+    ------
+    analysis_id : str 
+        A string to identify this particular analysis run 
+    binned_data_file : str 
+        Path to the binned data file on which to compute topology 
+    block_path : str 
+        Path to the folder containing the data for the block 
+    thresh : float 
+        Threshold to use when identifying cell groups 
+    '''
     global alogf 
 
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
@@ -889,26 +920,23 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
 
 def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perm):
     '''
-    Bins the data using build_population_embedding 
-    Parameters are given in bin_def_file
-    Each line of bin_def_file contains the parameters for each binning
+    Given a binned data file, make a new binned data file containing the vectors 
+    taken from random subsets of the whole population 
+
+    Parameters
+    ------
+    binned_data_file : str 
+        Path to the binned data file on which to act 
+    permuted_data_file : str 
+        Path to file to store the resulting permuations 
+    n_cells_in_perm : int 
+        Number of cells to include in each subset 
+    n_perm : int 
+        Number of subsets to extract 
     '''
 
     # Try to make a folder to store the binnings
     global alogf
-    '''
-    Embeds binned population activity into R^n
-    Still need TODO?
-
-    Parameters
-    ------
-    spikes : pandas dataframe 
-        Spike frame from ephys.core 
-
-    win_size : float
-        window size in ms
-    '''
-    global alogf 
     
     with h5py.File(binned_data_file, "r") as popvec_f:
         win_size = popvec_f.attrs['win_size'] 
@@ -948,23 +976,19 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
     Bins the data using build_population_embedding 
     Parameters are given in bin_def_file
     Each line of bin_def_file contains the parameters for each binning
+
+    Parameters
+    ------
+    binned_data_file : str
+        Path to an hdf5 file containing the previously binned population vectors
+    permuted_data_file : str
+        Path to store the resulting hdf5 file that contains the shuffled vectors 
+    nshuffs : int 
+        Number of shuffles to perform
     '''
 
     # Try to make a folder to store the binnings
     global alogf
-    '''
-    Embeds binned population activity into R^n
-    Still need TODO?
-
-    Parameters
-    ------
-    spikes : pandas dataframe 
-        Spike frame from ephys.core 
-
-    win_size : float
-        window size in ms
-    '''
-    global alogf 
     
     with h5py.File(binned_data_file, "r") as popvec_f:
         win_size = popvec_f.attrs['win_size'] 
@@ -1001,6 +1025,13 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
 def make_shuffled_controls(path_to_binned, nshuffs):
     '''
     Takes a folder containing .binned files and makes shuffled controls from them
+
+    Parameters
+    ------
+    path_to_binned : str 
+        Path to a folder containing all the .binned hdf5 files you'd like to make controls for 
+    nshuffs : int
+        Number of shuffles per control 
     '''
 
     # get list of binned data files
