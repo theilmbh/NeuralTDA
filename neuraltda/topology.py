@@ -964,8 +964,12 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
                     for perm_num in range(n_perm):
                             permt = np.random.permutation(nclus)
                             permt = permt[0:n_cells_in_perm].tolist()
-                            clusters_to_save = clusters[permt]
-                            popvec_save = popvec[permt]
+                            clusters_to_save = np.zeros(clusters.shape)
+                            popvec_save = np.zeros(popvec.shape)
+                            popvec.read_direct(popvec_save)
+                            clusters.read_direct(clusters_to_save)
+                            clusters_to_save = clusters_to_save[permt]
+                            popvec_save = popvec_save[permt]
                             perm_permgrp = perm_trialgrp.create_group(str(perm_num))
                             perm_permgrp.create_dataset('pop_vec', data=popvec_save)
                             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
