@@ -918,6 +918,77 @@ def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh
                 pickle.dump(betti_persistence_dict, bpfile)
         topology_log(alogf, 'Completed All Stimuli')
 
+def calc_CI_bettis_permuted_binned_data(analysis_id, binned_data_file, block_path, thresh):
+    '''
+    Given a binned data file, compute the betti numbers of the Curto-Itskov style complex 
+
+    Parameters
+    ------
+    analysis_id : str 
+        A string to identify this particular analysis run 
+    binned_data_file : str 
+        Path to the binned data file on which to compute topology 
+    block_path : str 
+        Path to the folder containing the data for the block 
+    thresh : float 
+        Threshold to use when identifying cell groups 
+    '''
+    global alogf 
+
+    bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
+    analysis_path = os.path.join(block_path, 'topology/{}/{}'.format(analysis_id, bdf_name))
+    if not os.path.exists(analysis_path):
+        os.makedirs(analysis_path)
+
+    analysis_files_prefix = '{}-{}'.format(bdf_name, analysis_id)
+    analysis_logfile_name = '{}-{}.log'.format(bdf_name, analysis_id)
+    alogf = os.path.join(analysis_path, analysis_logfile_name)
+
+    maxbetti      = 50
+    kwikfile      = core.find_kwik(block_path)
+    kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
+
+    topology_log(alogf, '****** Beginning Curto+Itskov Topological Analysis of: {} ******'.format(kwikfile))
+    topology_log(alogf, '****** Using Previously Binned Dataset: {} ******'.format(bdf_name))
+    topology_log(alogf, 'Theshold: {}'.format(thresh))
+    with h5py.File(binned_data_file, 'r') as bdf:
+
+        stims = bdf.keys()
+        nstims = len(stims)
+
+        for stim in stims:
+            topology_log(alogf, 'Calculating bettis for stim: {}'.format(stim))
+            stim_trials = bdf[stim]
+            nreps       = len(stim_trials)
+            topology_log(alogf, 'Number of repetitions for stim {} : {}'.format(stim, str(nreps)))
+            stim_bettis = np.zeros([nreps, maxbetti])
+
+            betti_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-betti.csv'
+            betti_savefile = os.path.join(analysis_path, betti_savefile)
+            topology_log(alogf, 'Betti savefile: {}'.format(betti_savefile))
+            betti_persistence_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-bettiPersistence.pkl'
+            betti_persistence_savefile = os.path.join(analysis_path, betti_persistence_savefile)
+            topology_log(alogf, 'Betti persistence savefile: {}'.format(betti_persistence_savefile))
+            betti_persistence_dict = dict()
+
+            for rep, repkey in enumerate(stim_trials.keys()):
+                stim_trial_rep = stim_trials[repkey]
+                betti_persistence_perm_dict = dict()
+                for perm, permkey in enumerate(stim_trial_rep.keys()):
+
+                    pfile = analysis_files_prefix + '-stim-{}'.format(stim) + \
+                        '-rep-{}-perm-{}'.format(repkey, permkey) + '-simplex.txt'
+                    pfile = os.path.join(analysis_path, pfile)
+                    bettis = calc_bettis_from_binned_data(stim_trials[permkey], pfile, thresh)
+
+                    # The bettis at the last step of the filtration are our 'total bettis'
+                    # save time course of bettis
+                    betti_persistence_perm_dict['{}'.format(str(perm))] = bettis
+                betti_persistence_dict['{}'.format(str(rep))] = betti_persistence_perm_dict
+            with open(betti_persistence_savefile, 'w') as bpfile:
+                pickle.dump(betti_persistence_dict, bpfile)
+        topology_log(alogf, 'Completed All Stimuli')
+
 def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perm):
     '''
     Given a binned data file, make a new binned data file containing the vectors 
