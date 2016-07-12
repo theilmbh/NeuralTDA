@@ -963,7 +963,7 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
                     windows = trialdata['windows']
                     for perm_num in range(n_perm):
                             permt = np.random.permutation(nclus)
-                            permt = permt[0:n_cells_in_perm]
+                            permt = permt[0:n_cells_in_perm].to_list()
                             clusters_to_save = clusters[permt]
                             popvec_save = popvec[permt]
                             perm_permgrp = perm_trialgrp.create_group(str(perm_num))
