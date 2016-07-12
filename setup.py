@@ -15,7 +15,7 @@ setup(
             'bin_data = neuraltda.bin_data:main',
             'calc_CI_topology_binned = neuraltda.calculate_CI_topology_from_binned:main',
             'permute_data = neuraltda.permute_binned_data:main',
-            'shuffle_data = neuraltda.make_shuffled_binned_data:main'
+            'shuffle_data = neuraltda.make_shuffled_binned_controls:main'
         ],
     },
 )
