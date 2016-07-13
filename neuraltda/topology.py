@@ -979,7 +979,7 @@ def calc_CI_bettis_permuted_binned_data(analysis_id, binned_data_file, block_pat
                     pfile = analysis_files_prefix + '-stim-{}'.format(stim) + \
                         '-rep-{}-perm-{}'.format(repkey, permkey) + '-simplex.txt'
                     pfile = os.path.join(analysis_path, pfile)
-                    bettis = calc_bettis_from_binned_data(stim_trials[permkey], pfile, thresh)
+                    bettis = calc_bettis_from_binned_data(stim_trial_rep[permkey], pfile, thresh)
 
                     # The bettis at the last step of the filtration are our 'total bettis'
                     # save time course of bettis
