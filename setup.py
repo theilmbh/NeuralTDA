@@ -16,7 +16,7 @@ setup(
             'calc_CI_topology_binned = neuraltda.calculate_CI_topology_from_binned:main',
             'permute_data = neuraltda.permute_binned_data:main',
             'shuffle_data = neuraltda.make_shuffled_binned_controls:main',
-            'calc_CI_topology_permuted_binned = neuraltda.calculate_CI_topology_from_permuted_binned:main'
+            'calc_CI_topology_permuted_binned = neuraltda.calculate_CI_topology_from_permuted_binned:main',
             'calc_CI_topology_hierarchical = neuraltda.calc_CI_topology_hierarchical_binned:main'
         ],
     },
