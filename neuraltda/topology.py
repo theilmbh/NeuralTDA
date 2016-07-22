@@ -1162,7 +1162,6 @@ def make_permuted_binned_data(path_to_binned, n_cells_in_perm, n_perms):
         permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perms)
 
 def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analysis_path, thresh):
-    print('In compute recursive')
     if 'pop_vec' in data_group.keys():
         pfile = pfile_stem + '-simplex.txt'
         pfile = os.path.join(analysis_path, pfile)
@@ -1170,14 +1169,10 @@ def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analy
         return bettis
     else:
         for perm, permkey in enumerate(data_group.keys()):
-            print(len(data_group.keys()))
             new_data_group = data_group[permkey]
-            print(permkey)
             new_pfile_stem = pfile_stem + '-{}'.format(permkey)
             new_bpp_dict = dict()
-            print('calling compute recursive')
             bettis = compute_recursive(new_data_group, new_pfile_stem, new_bpp_dict, analysis_path, thresh)
-            print('returned from compute recursive inside compute recursvie')
             betti_persistence_perm_dict['{}'.format(permkey)] = bettis
         return betti_persistence_perm_dict
 
