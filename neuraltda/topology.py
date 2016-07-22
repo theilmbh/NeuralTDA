@@ -1179,7 +1179,7 @@ def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analy
             bettis = compute_recursive(new_data_group, new_pfile_stem, new_bpp_dict, analysis_path, thresh)
             print('returned from compute recursive inside compute recursvie')
             betti_persistence_perm_dict['{}'.format(permkey)] = bettis
-            return betti_persistence_perm_dict
+        return betti_persistence_perm_dict
 
 def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block_path, thresh):
     '''
