@@ -1173,7 +1173,7 @@ def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analy
             new_data_group = data_group[permkey]
             new_pfile_stem = pfile_stem + '-{}'.format(permkey)
             new_bpp_dict = dict()
-            bettis = compute_recursive(new_data_group, new_pfile_stim, new_bpp_dict, analysis_path, thresh)
+            bettis = compute_recursive(new_data_group, new_pfile_stem, new_bpp_dict, analysis_path, thresh)
             betti_persistence_perm_dict['{}'.format(permkey)] = bettis
             return betti_persistence_perm_dict
 
