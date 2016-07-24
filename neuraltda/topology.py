@@ -1139,6 +1139,39 @@ def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
                         perm_permgrp.create_dataset('clusters', data=clusters_to_save)
                         perm_permgrp.create_dataset('windows', data=windows)
 
+def make_shuffled_controls_recursive(path_to_binned, nshuffs):
+    '''
+    Takes a folder containing .binned files and makes shuffled controls from them
+
+    Parameters
+    ------
+    path_to_binned : str 
+        Path to a folder containing all the .binned hdf5 files you'd like to make controls for 
+    nshuffs : int
+        Number of shuffles per control 
+    '''
+
+    # get list of binned data files
+    path_to_binned = os.path.abspath(path_to_binned)
+    binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
+    if not binned_data_files:
+        print('Error: No binned data files!')
+        sys.exit(-1)
+
+    # Try to make shuffled_controls folder
+    shuffled_controls_folder = os.path.join(path_to_binned, 'shuffled_controls')
+    if not os.path.exists(shuffled_controls_folder):
+        os.makedirs(shuffled_controls_folder)
+
+    for binned_data_file in binned_data_files:
+
+        bdf_fold, bdf_full_name = os.path.split(binned_data_file)
+        bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
+        scf_name = bdf_name + '-shuffled_control.binned'
+        shuffled_control_file = os.path.join(shuffled_controls_folder, scf_name)
+
+        shuffle_binned_data_recursive(binned_data_file, shuffled_control_file, nshuffs)
+
 def make_shuffled_controls(path_to_binned, nshuffs):
     '''
     Takes a folder containing .binned files and makes shuffled controls from them
