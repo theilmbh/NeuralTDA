@@ -1065,7 +1065,7 @@ def shuffle_recursive(data_group, perm_group, nshuffs):
             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
             perm_permgrp.create_dataset('windows', data=windows)
     else:
-        for inst_num, inst in data_group.keys():
+        for inst_num, inst in enumerate(data_group.keys()):
             new_perm_group = perm_group.create_group(inst)
             permute_recursive(data_group[inst], new_perm_group, nshuffs)
 
