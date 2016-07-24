@@ -1067,7 +1067,7 @@ def shuffle_recursive(data_group, perm_group, nshuffs):
     else:
         for inst_num, inst in enumerate(data_group.keys()):
             new_perm_group = perm_group.create_group(inst)
-            permute_recursive(data_group[inst], new_perm_group, nshuffs)
+            shuffle_recursive(data_group[inst], new_perm_group, nshuffs)
 
 def shuffle_binned_data_recursive(binned_data_file, permuted_data_file, nshuffs):
 
