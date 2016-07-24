@@ -1050,9 +1050,9 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
 def shuffle_recursive(data_group, perm_group, nshuffs):
 
     if 'pop_vec' in data_group.keys():
-        clusters = trialdata['clusters']
-        popvec = trialdata['pop_vec']
-        windows = trialdata['windows']
+        clusters = data_group['clusters']
+        popvec = data_group['pop_vec']
+        windows = data_group['windows']
         nwins = len(windows)
         for perm_num in range(nshuffs):
             clusters_to_save = clusters
