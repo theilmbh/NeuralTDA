@@ -1054,6 +1054,7 @@ def shuffle_recursive(data_group, perm_group, nshuffs):
         popvec = data_group['pop_vec']
         windows = data_group['windows']
         nwins = len(windows)
+        nclus = len(clusters)
         for perm_num in range(nshuffs):
             clusters_to_save = clusters
             popvec_save = popvec
