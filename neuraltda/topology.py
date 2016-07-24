@@ -1021,6 +1021,7 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
             perm_f.attrs['permuted'] = '1'
             perm_f.attrs['shuffled'] = '0'
             perm_f.attrs['fs']  = fs 
+            perm_f.attrs['nclus'] = nclus
 
             for stim in stims:
                 perm_stimgrp = perm_f.create_group(stim)
