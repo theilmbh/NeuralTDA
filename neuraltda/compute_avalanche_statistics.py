@@ -21,7 +21,8 @@ def calc_avalanche_frequencies(binned_data, nbins):
 				trial_popvec_summed = np.sum(trial_popvec, 0) #Sum along cluster axis 
 				stim_popvec_sums.append(trial_popvec_summed)
 		
-		stim_popvec_sums = np.array(stim_popvec_sums)
+		stim_popvec_sums = np.ndarray(stim_popvec_sums)
+
 		avalanche_histograms, edges = np.histogramdd(stim_popvec_sums, bins=nbins)
 		return (avalanche_histograms, edges)
 

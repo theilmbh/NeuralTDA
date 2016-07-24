@@ -1046,6 +1046,48 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
                             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
                             perm_permgrp.create_dataset('windows', data=windows)
 
+def shuffle_recursive(data_group, perm_group, nshuffs):
+
+    if 'pop_vec' in data_group.keys():
+        clusters = trialdata['clusters']
+        popvec = trialdata['pop_vec']
+        windows = trialdata['windows']
+        nwins = len(windows)
+        for perm_num in range(nshuffs):
+            clusters_to_save = clusters
+            popvec_save = popvec
+            perm_permgrp = perm_group.create_group(str(perm_num))
+            for clu_num in range(nclus):
+                permt = np.random.permutation(nwins)
+                np.random.shuffle(popvec_save[clu_num, :])
+            perm_permgrp.create_dataset('pop_vec', data=popvec_save)
+            perm_permgrp.create_dataset('clusters', data=clusters_to_save)
+            perm_permgrp.create_dataset('windows', data=windows)
+    else:
+        for inst_num, inst in data_group.keys():
+            new_perm_group = perm_group.create_group(inst)
+            permute_recursive(data_group[inst], new_perm_group, nshuffs)
+
+def shuffle_binned_data_recursive(binned_data_file, permuted_data_file, nshuffs):
+
+    global alogf
+    
+    with h5py.File(binned_data_file, "r") as popvec_f:
+        win_size = popvec_f.attrs['win_size'] 
+        fs = popvec_f.attrs['fs'] 
+        nclus = popvec_f.attrs['nclus']
+        stims = popvec_f.keys()
+        with h5py.File(permuted_data_file, "w") as perm_f:
+            perm_f.attrs['win_size'] = win_size
+            perm_f.attrs['permuted'] = '0'
+            perm_f.attrs['shuffled'] = '1'
+            perm_f.attrs['fs']  = fs 
+
+            for stim in stims:
+                perm_stimgrp = perm_f.create_group(stim)
+                stimdata = popvec_f[stim]
+                shuffle_recursive(stimdata, perm_stimgrp, nshuffs)
+
 def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
     '''
     Bins the data using build_population_embedding 
@@ -1160,6 +1202,7 @@ def make_permuted_binned_data(path_to_binned, n_cells_in_perm, n_perms):
         permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
 
         permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perms)
+
 
 def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analysis_path, thresh):
     if 'pop_vec' in data_group.keys():
