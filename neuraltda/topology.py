@@ -1057,11 +1057,11 @@ def shuffle_recursive(data_group, perm_group, nshuffs):
         nclus = len(clusters)
         for perm_num in range(nshuffs):
             clusters_to_save = clusters
-            popvec_save = popvec
+            popvec_save = np.array(popvec)
             perm_permgrp = perm_group.create_group(str(perm_num))
             for clu_num in range(nclus):
                 permt = np.random.permutation(nwins)
-                popvec_save[clu_num, :] = np.random.permutation(popvec_save[clu_num, :])
+                np.random.shuffle(popvec_save[clu_num, :])
             perm_permgrp.create_dataset('pop_vec', data=popvec_save)
             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
             perm_permgrp.create_dataset('windows', data=windows)
