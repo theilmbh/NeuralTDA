@@ -1061,7 +1061,7 @@ def shuffle_recursive(data_group, perm_group, nshuffs):
             perm_permgrp = perm_group.create_group(str(perm_num))
             for clu_num in range(nclus):
                 permt = np.random.permutation(nwins)
-                np.random.shuffle(popvec_save[clu_num, :])
+                popvec_save[clu_num, :] = np.random.permutation(popvec_save[clu_num, :])
             perm_permgrp.create_dataset('pop_vec', data=popvec_save)
             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
             perm_permgrp.create_dataset('windows', data=windows)
@@ -1316,6 +1316,7 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
             #    pfile_stem = analysis_files_prefix + '-stim-{}'.format(stim) + '-rep-{}'.format(repkey)
             #    betti_persistence_dict = compute_recursive(stim_trial_rep, pfile_stem, betti_persistence_dict, analysis_path, thresh)
             
+
             pfile_stem = analysis_files_prefix + '-stim-{}'.format(stim) + '-rep-'
             betti_persistence_dict = compute_recursive(stim_trials, pfile_stem, betti_persistence_dict, analysis_path, thresh)
 
