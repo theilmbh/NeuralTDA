@@ -1309,12 +1309,16 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
             topology_log(alogf, 'Betti persistence savefile: {}'.format(betti_persistence_savefile))
             betti_persistence_dict = dict()
 
-            for rep, repkey in enumerate(stim_trials.keys()):
-                stim_trial_rep = stim_trials[repkey]
-                betti_persistence_perm_dict = dict()
-                # Now we have to find the bottom level permutation
-                pfile_stem = analysis_files_prefix + '-stim-{}'.format(stim) + '-rep-{}'.format(repkey)
-                betti_persistence_dict = compute_recursive(stim_trial_rep, pfile_stem, betti_persistence_dict, analysis_path, thresh)
+            #for rep, repkey in enumerate(stim_trials.keys()):
+            #    stim_trial_rep = stim_trials[repkey]
+            #    betti_persistence_perm_dict = dict()
+            #   # Now we have to find the bottom level permutation
+            #    pfile_stem = analysis_files_prefix + '-stim-{}'.format(stim) + '-rep-{}'.format(repkey)
+            #    betti_persistence_dict = compute_recursive(stim_trial_rep, pfile_stem, betti_persistence_dict, analysis_path, thresh)
+            
+            pfile_stem = analysis_files_prefix + '-stim-{}'.format(stim) + '-rep-'
+            betti_persistence_dict = compute_recursive(stim_trials, pfile_stem, betti_persistence_dict, analysis_path, thresh)
+
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
         topology_log(alogf, 'Completed All Stimuli')
