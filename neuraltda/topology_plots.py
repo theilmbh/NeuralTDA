@@ -99,7 +99,8 @@ def extract_metadata(topology_file):
 	return metadata_dict
 
 
-def plot_average_betti(persistence_files, betti, maxt, figsize):
+def plot_average_betti(persistence_files, betti, maxt, figsize, plot_savepath):
+	plot_savepath = os.path.abspath(plot_savepath)
 	t = np.linspace(0, maxt, num=1000)
 	bettiStimspline=[]
 	
@@ -128,12 +129,13 @@ def plot_average_betti(persistence_files, betti, maxt, figsize):
 	plt.savefig(plot_savepath+'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, betti, dt, prd))
 
 
-def plot_all_bettis(persistence_files, maxbetti, maxt, figsize):
+def plot_all_bettis(persistence_files, maxbetti, maxt, figsize, plot_savepath):
 
 	for betti in range(maxbetti):
-		plot_average_betti(persistence_files, betti, maxt, figsize)
+		plot_average_betti(persistence_files, betti, maxt, figsize, plot_savepath)
 
-def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffled, betti, maxt, figsize, difference=False):
+def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffled, betti, maxt, figsize, plot_savepath, difference=False):
+	plot_savepath = os.path.abspath(plot_savepath)
 	t = np.linspace(0, maxt, num=1000)
 	bettiStimspline=[]
 	
@@ -170,13 +172,14 @@ def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffl
 	    ax.set_ylabel('Betti {} Value'.format(betti))
 	plt.savefig(plot_savepath+'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, betti, dt, prd))
 
-def plot_all_bettis_with_shuffled(persistence_files, persistence_files_shuffled, maxbetti, maxt, figsize):
+def plot_all_bettis_with_shuffled(persistence_files, persistence_files_shuffled, maxbetti, maxt, figsize, plot_savepath):
 
 	for betti in range(maxbetti):
-		plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffled, betti, maxt, figsize)
+		plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffled, betti, maxt, figsize, plot_savepath)
 
-def plot_all_bettis_together(persistence_files, maxbetti, maxt, figsize):
+def plot_all_bettis_together(persistence_files, maxbetti, maxt, figsize, plot_savepath):
 
+	plot_savepath = os.path.abspath(plot_savepath)
 	t = np.linspace(0, maxt, num=1000)
 	bettiStimspline=[]
 	
