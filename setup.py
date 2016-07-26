@@ -18,7 +18,8 @@ setup(
             'shuffle_data = neuraltda.make_shuffled_binned_controls:main',
             'shuffle_data_recursive = neuraltda.make_shuffled_binned_controls_hierarchical:main',
             'calc_CI_topology_permuted_binned = neuraltda.calculate_CI_topology_from_permuted_binned:main',
-            'calc_CI_topology_hierarchical = neuraltda.calculate_CI_topology_hierarchical_binned:main'
+            'calc_CI_topology_hierarchical = neuraltda.calculate_CI_topology_hierarchical_binned:main', 
+            'make_plots = neuraltda.make_plots:main'
         ],
     },
 )
