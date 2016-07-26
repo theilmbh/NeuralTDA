@@ -208,4 +208,22 @@ def plot_all_bettis_together(persistence_files, maxbetti, maxt, figsize, plot_sa
 	    ax.set_ylabel('Betti Value'.format(betti))
 	plt.savefig(plot_savepath+'B{}_AllBetti_{}ms_{}_permuted_avg.png'.format(bird, betti, dt, prd))
 
+def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
+
+	real_topology_folder = os.path.join(block_path, 'topology/{}-real/'.format(analysis_id))
+	shuffled_topology_folder = os.path.join(block_path, 'topology/{}-shuffled'.format(analysis_id))
+
+	# make figures dir
+	figs_folder = os.path.join(block_path,  'figures/{}/'.format(analysis_id))
+	if not os.path.exists(figs_folder):
+    	os.makedirs(figs_folder)
+
+    real_pfs = get_persistence_files(real_topology_folder)
+    shuff_pfs = get_persistence_files(shuffled_topology_folder)
+
+    print('Plotting Bettis with Shuffled...')
+    plot_all_bettis_with_shuffled(real_pfs, shuff_pfs, maxbetti, maxt, figsize, figs_folder)
+
+    print('Plotting All Bettis Together...')
+    plot_all_bettis_together(real_pfs, maxbetti, maxt, figsize, figs_folder)
 
