@@ -11,8 +11,9 @@ import string
 from scipy.io import wavfile
 import scipy.signal as signal
 from scipy.interpolate import interp1d
+from intertools import groupby
 
-def compute_avg_betti_recursive(bettidata, betticurves, t):
+def compute_avg_betti_recursive(bettidata, betticurves, betti, windt, t):
     
     if type(bettidata) is dict:
         for permnum, perm in enumerate(bettidata.keys()):
@@ -80,16 +81,128 @@ def extract_metadata(topology_file):
 	penID = pen_split[2]
 	siteID = pen_split[3]
 
+	dt_parsed = [''.join(g) for _, g in groupby(dt, str.isalpha)]
+	dt_value = float(dt_parsed[0])
+	dt_units = dt_parsed[1]
 	metadata_dict = dict()
 	metadata_dict['birdID'] = birdID
 	metadata_dict['penID'] = penID
 	metadata_dict['siteID'] = siteID
 
-	metadata_dict['dt'] = dt
+	metadata_dict['dt'] = dt_value
+	metadata_dict['dt_units'] = dt_units
 	metadata_dict['period'] = period
 	metadata_dict['stimname'] = stimname
 	metadata_dict['analysis_id'] = analysis_id
 	metadata_dict['cluster_group'] = cluster_group
+	metadata_dict['tf_name'] = tf_name
 	return metadata_dict
+
+
+def plot_average_betti(persistence_files, betti, maxt, figsize):
+	t = np.linspace(0, maxt, num=1000)
+	bettiStimspline=[]
 	
+	nplots = len(persistence_files)
+	nsubplotrows = np.round(nplots/4)
+	subplot_shape = (nsubplotrows, 4)
+	fig, axs = plt.subplots(subplot_shape, figsize=figsize)
+
+
+	for pf_num, pf in enumerate(persistence_files):
+		pf_metadata = extract_metadata(pf)
+	    stimname = pf_metadata['stimname']
+	    dt = pf_metadata['dt']
+	    prd = pf_metadata['period']
+	    pdata = pickle.load(open(pf, 'r'))
+	    upper=0
+	    bettiTrialspline=[]
+	    ax = axs.flatten()[pf_num]
+	    betticurves = np.empty_like(t)
+	    betticurves = compute_avg_betti_recursive(pdata, betticurves, betti, dt, t)
+	    avgbetticurve = np.mean(betticurves[1:], axis=0)
+	    ax.plot(t, avgbetticurve, lw=2)
+	    ax.set_title('Stimulus: {}'.format(stimname))
+	    ax.set_xlabel('Time (seconds)')
+	    ax.set_ylabel('Betti {} Value'.format(betti))
+	plt.savefig(plot_savepath+'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, betti, dt, prd))
+
+
+def plot_all_bettis(persistence_files, maxbetti, maxt, figsize):
+
+	for betti in range(maxbetti):
+		plot_average_betti(persistence_files, betti, maxt, figsize)
+
+def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffled, betti, maxt, figsize, difference=False):
+	t = np.linspace(0, maxt, num=1000)
+	bettiStimspline=[]
+	
+	nplots = len(persistence_files)
+	nsubplotrows = np.round(nplots/4)
+	subplot_shape = (nsubplotrows, 4)
+	fig, axs = plt.subplots(subplot_shape, figsize=figsize)
+
+
+	for pf_num, pf, pf_shuff in enumerate(zip(persistence_files, persistence_files_shuffled)):
+		pf_metadata = extract_metadata(pf)
+	    stimname = pf_metadata['stimname']
+	    dt = pf_metadata['dt']
+	    prd = pf_metadata['period']
+
+	    ax = axs.flatten()[pf_num]
+
+		pdata = pickle.load(open(pf, 'r'))
+    	pdata_shuff = pickle.load(open(pf_shuff, 'r'))
+    	betticurves = np.empty_like(t)
+    	betticurves = compute_avg_betti_recursive(pdata, betticurves, betti, dt, t)
+    	avgbetticurve = np.mean(betticurves[1:], axis=0)
+    
+    	bc_shuff = np.empty_like(t)
+    	bc_shuff = compute_avg_betti_recursive(pdata_shuff, bc_shuff, betti, dt, t)
+    	avgbcshuff = np.mean(bc_shuff[1:], axis=0)
+    	if difference:
+    		ax.plot(t, avgbetticurve-avgbcshuff, 'b', lw=2)
+    	else:
+    		ax.plot(t, avgbetticurve, 'r',lw=2)
+    		ax.plot(t, avgbcshuff, 'b', lw=2)
+	    ax.set_title('Stimulus: {}'.format(stimname))
+	    ax.set_xlabel('Time (seconds)')
+	    ax.set_ylabel('Betti {} Value'.format(betti))
+	plt.savefig(plot_savepath+'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, betti, dt, prd))
+
+def plot_all_bettis_with_shuffled(persistence_files, persistence_files_shuffled, maxbetti, maxt, figsize):
+
+	for betti in range(maxbetti):
+		plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffled, betti, maxt, figsize)
+
+def plot_all_bettis_together(persistence_files, maxbetti, maxt, figsize):
+
+	t = np.linspace(0, maxt, num=1000)
+	bettiStimspline=[]
+	
+	nplots = len(persistence_files)
+	nsubplotrows = np.round(nplots/4)
+	subplot_shape = (nsubplotrows, 4)
+	fig, axs = plt.subplots(subplot_shape, figsize=figsize)
+
+
+	for pf_num, pf in enumerate(persistence_files):
+		pf_metadata = extract_metadata(pf)
+	    stimname = pf_metadata['stimname']
+	    dt = pf_metadata['dt']
+	    prd = pf_metadata['period']
+	    pdata = pickle.load(open(pf, 'r'))
+	    upper=0
+	    bettiTrialspline=[]
+	    ax = axs.flatten()[pf_num]
+	    for betti in range(maxbetti):
+	    	betticurves = np.empty_like(t)
+	    	betticurves = compute_avg_betti_recursive(pdata, betticurves, betti, dt, t)
+	    	avgbetticurve = np.mean(betticurves[1:], axis=0)
+	    	ax.plot(t, avgbetticurve, lw=2)
+	    ax.set_title('Stimulus: {}'.format(stimname))
+	    ax.set_xlabel('Time (seconds)')
+	    ax.set_ylabel('Betti Value'.format(betti))
+	plt.savefig(plot_savepath+'B{}_AllBetti_{}ms_{}_permuted_avg.png'.format(bird, betti, dt, prd))
+
 
