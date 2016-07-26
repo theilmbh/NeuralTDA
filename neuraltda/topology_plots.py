@@ -11,7 +11,7 @@ import string
 from scipy.io import wavfile
 import scipy.signal as signal
 from scipy.interpolate import interp1d
-from intertools import groupby
+from itertools import groupby
 
 def compute_avg_betti_recursive(bettidata, betticurves, betti, windt, t):
     
