@@ -119,6 +119,7 @@ def plot_average_betti(persistence_files, betti, maxt, figsize, plot_savepath):
         stimname = pf_metadata['stimname']
         dt = pf_metadata['dt']
         prd = pf_metadata['period']
+        bird = pf_metadata['birdID']
         pdata = pickle.load(open(pf, 'r'))
         upper=0
         bettiTrialspline=[]
@@ -156,7 +157,7 @@ def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffl
         stimname = pf_metadata['stimname']
         dt = pf_metadata['dt']
         prd = pf_metadata['period']
-
+        bird = pf_metadata['birdID']
         ax = axs.flatten()[pf_num]
 
         pdata = pickle.load(open(pf, 'r'))
@@ -202,6 +203,7 @@ def plot_all_bettis_together(persistence_files, maxbetti, maxt, figsize, plot_sa
         stimname = pf_metadata['stimname']
         dt = pf_metadata['dt']
         prd = pf_metadata['period']
+        bird = pf_metadata['birdID']
         pdata = pickle.load(open(pf, 'r'))
         upper=0
         bettiTrialspline=[]
