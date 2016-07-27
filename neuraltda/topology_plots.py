@@ -151,7 +151,7 @@ def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffl
     fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
 
 
-    for pf_num, pf, pf_shuff in enumerate(zip(persistence_files, persistence_files_shuffled)):
+    for pf_num, (pf, pf_shuff) in enumerate(zip(persistence_files, persistence_files_shuffled)):
         pf_metadata = extract_metadata(pf)
         stimname = pf_metadata['stimname']
         dt = pf_metadata['dt']
