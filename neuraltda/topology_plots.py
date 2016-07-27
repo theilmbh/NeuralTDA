@@ -226,13 +226,15 @@ def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
     if not os.path.exists(figs_folder):
         os.makedirs(figs_folder)
 
-    real_pfs = get_persistence_files(real_topology_folder)
-    print(real_pfs)
-    shuff_pfs = get_persistence_files(shuffled_topology_folder)
+    real_topology_folders = sorted(glob.glob(real_topology_folder+'*'))
+    shuffled_topology_folders = sorted(glob.glob(shuffled_topology_folder+'*'))
 
-    print('Plotting Bettis with Shuffled...')
-    plot_all_bettis_with_shuffled(real_pfs, shuff_pfs, maxbetti, maxt, figsize, figs_folder)
-
-    print('Plotting All Bettis Together...')
-    plot_all_bettis_together(real_pfs, maxbetti, maxt, figsize, figs_folder)
+    for s_real, s_shuff in zip(real_topology_folders, shuffled_topology_folders):
+        print('Real: {}     Shuffled: {}'.format(s_real, s_shuff))
+        real_pfs = get_persistence_files(s_real)
+        shuff_pfs = get_persistence_files(s_shuff)
+        print('Plotting Bettis with Shuffled...')
+        plot_all_bettis_with_shuffled(real_pfs, shuff_pfs, maxbetti, maxt, figsize, figs_folder)
+        print('Plotting All Bettis Together...')
+        plot_all_bettis_together(real_pfs, maxbetti, maxt, figsize, figs_folder)
 
