@@ -19,7 +19,7 @@ def compute_avg_betti_recursive(bettidata, betticurves, betti, windt, t):
     
     if type(bettidata) is dict:
         for permnum, perm in enumerate(bettidata.keys()):
-            betticurves = compute_avg_betti_recursive(bettidata[perm], betticurves, t)
+            betticurves = compute_avg_betti_recursive(bettidata[perm], betticurves, betti, windt, t)
         return betticurves
     else:
         betti1 = np.zeros([len(bettidata), 2])
