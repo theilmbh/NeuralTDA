@@ -131,7 +131,7 @@ def plot_average_betti(persistence_files, betti, maxt, figsize, plot_savepath):
         ax.set_title('Stimulus: {}'.format(stimname))
         ax.set_xlabel('Time (seconds)')
         ax.set_ylabel('Betti {} Value'.format(betti))
-    plt.savefig(plot_savepath+'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, betti, dt, prd))
+    plt.savefig(os.path.join(plot_savepath, 'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, betti, dt, prd)))
 
 
 def plot_all_bettis(persistence_files, maxbetti, maxt, figsize, plot_savepath):
@@ -177,7 +177,7 @@ def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffl
         ax.set_title('Stimulus: {}'.format(stimname))
         ax.set_xlabel('Time (seconds)')
         ax.set_ylabel('Betti {} Value'.format(betti))
-    plt.savefig(plot_savepath+'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, betti, dt, prd))
+    plt.savefig(os.path.join(plot_savepath, 'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, betti, dt, prd)))
 
 def plot_all_bettis_with_shuffled(persistence_files, persistence_files_shuffled, maxbetti, maxt, figsize, plot_savepath):
 
@@ -216,22 +216,23 @@ def plot_all_bettis_together(persistence_files, maxbetti, maxt, figsize, plot_sa
         ax.set_title('Stimulus: {}'.format(stimname))
         ax.set_xlabel('Time (seconds)')
         ax.set_ylabel('Betti Value'.format(betti))
-    plt.savefig(plot_savepath+'B{}_AllBetti_{}ms_{}_permuted_avg.png'.format(bird, betti, dt, prd))
+    plt.savefig(os.path.join(plot_savepath, 'B{}_AllBetti_{}ms_{}_permuted_avg.png'.format(bird, betti, dt, prd)))
 
 def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
     block_path = os.path.abspath(block_path)
-    real_topology_folder = os.path.join(block_path, 'topology/{}-real/'.format(analysis_id))
-    shuffled_topology_folder = os.path.join(block_path, 'topology/{}-shuffled/'.format(analysis_id))
+    real_topology_folder = os.path.join(block_path, 'topology/{}_real/'.format(analysis_id))
+    shuffled_topology_folder = os.path.join(block_path, 'topology/{}_shuffled/'.format(analysis_id))
     print(real_topology_folder)
     # make figures dir
-    figs_folder = os.path.join(block_path,  'figures/{}/'.format(analysis_id))
-    if not os.path.exists(figs_folder):
-        os.makedirs(figs_folder)
+
 
     real_topology_folders = sorted(glob.glob(real_topology_folder+'*'))
     shuffled_topology_folders = sorted(glob.glob(shuffled_topology_folder+'*'))
 
     for s_real, s_shuff in zip(real_topology_folders, shuffled_topology_folders):
+        figs_folder = os.path.join(block_path,  'figures/{}/{}/'.format(analysis_id, s_real))
+        if not os.path.exists(figs_folder):
+            os.makedirs(figs_folder)
         print('Real: {}     Shuffled: {}'.format(s_real, s_shuff))
         real_pfs = get_persistence_files(s_real)
         shuff_pfs = get_persistence_files(s_shuff)
