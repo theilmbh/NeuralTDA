@@ -234,6 +234,7 @@ def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
         if not os.path.exists(figs_folder):
             os.makedirs(figs_folder)
         print('Real: {}     Shuffled: {}'.format(s_real, s_shuff))
+        print(figs_folder)
         real_pfs = get_persistence_files(s_real)
         shuff_pfs = get_persistence_files(s_shuff)
         print('Plotting Bettis with Shuffled...')
