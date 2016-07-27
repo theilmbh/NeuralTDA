@@ -230,7 +230,7 @@ def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
     shuffled_topology_folders = sorted(glob.glob(shuffled_topology_folder+'*'))
 
     for s_real, s_shuff in zip(real_topology_folders, shuffled_topology_folders):
-        figs_folder = os.path.join(block_path,  'figures/{}/{}/'.format(analysis_id, s_real))
+        figs_folder = os.path.join(block_path,  'figures/{}'.format(analysis_id))
         if not os.path.exists(figs_folder):
             os.makedirs(figs_folder)
         print('Real: {}     Shuffled: {}'.format(s_real, s_shuff))
