@@ -217,12 +217,12 @@ def plot_all_bettis_together(persistence_files, maxbetti, maxt, figsize, plot_sa
     plt.savefig(plot_savepath+'B{}_AllBetti_{}ms_{}_permuted_avg.png'.format(bird, betti, dt, prd))
 
 def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
-
-    real_topology_folder = os.path.join(block_path, '/topology/{}-real/'.format(analysis_id))
-    shuffled_topology_folder = os.path.join(block_path, '/topology/{}-shuffled/'.format(analysis_id))
+    block_path = os.path.abspath(block_path)
+    real_topology_folder = os.path.join(block_path, 'topology/{}-real/'.format(analysis_id))
+    shuffled_topology_folder = os.path.join(block_path, 'topology/{}-shuffled/'.format(analysis_id))
     print(real_topology_folder)
     # make figures dir
-    figs_folder = os.path.join(block_path,  '/figures/{}/'.format(analysis_id))
+    figs_folder = os.path.join(block_path,  'figures/{}/'.format(analysis_id))
     if not os.path.exists(figs_folder):
         os.makedirs(figs_folder)
 
