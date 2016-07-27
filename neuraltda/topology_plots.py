@@ -109,7 +109,7 @@ def plot_average_betti(persistence_files, betti, maxt, figsize, plot_savepath):
     nplots = len(persistence_files)
     nsubplotrows = np.round(nplots/4)
     subplot_shape = (nsubplotrows, 4)
-    fig, axs = plt.subplots(subplot_shape, figsize=figsize)
+    fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
 
 
     for pf_num, pf in enumerate(persistence_files):
@@ -144,7 +144,7 @@ def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffl
     nplots = len(persistence_files)
     nsubplotrows = np.round(nplots/4)
     subplot_shape = (nsubplotrows, 4)
-    fig, axs = plt.subplots(subplot_shape, figsize=figsize)
+    fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
 
 
     for pf_num, pf, pf_shuff in enumerate(zip(persistence_files, persistence_files_shuffled)):
@@ -188,7 +188,7 @@ def plot_all_bettis_together(persistence_files, maxbetti, maxt, figsize, plot_sa
     nplots = len(persistence_files)
     nsubplotrows = np.round(nplots/4)
     subplot_shape = (nsubplotrows, 4)
-    fig, axs = plt.subplots(subplot_shape, figsize=figsize)
+    fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
 
 
     for pf_num, pf in enumerate(persistence_files):
