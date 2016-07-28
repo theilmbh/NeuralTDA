@@ -216,7 +216,7 @@ def plot_all_bettis_together(persistence_files, maxbetti, maxt, figsize, plot_sa
         ax.set_title('Stimulus: {}'.format(stimname))
         ax.set_xlabel('Time (seconds)')
         ax.set_ylabel('Betti Value'.format(betti))
-    plt.savefig(os.path.join(plot_savepath, 'B{}_AllBetti_{}ms_{}_permuted_avg.png'.format(bird, betti, dt, prd)))
+    plt.savefig(os.path.join(plot_savepath, 'B{}_AllBetti_{}ms_{}_permuted_avg.png'.format(bird, dt, prd)))
 
 def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
     block_path = os.path.abspath(block_path)
