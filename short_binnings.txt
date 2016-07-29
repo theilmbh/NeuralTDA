@@ -1,0 +1,8 @@
+good-05ms-stim 05 Good 1 0.0 0.0
+good-10ms-stim 10 Good 1 0.0 0.0
+good-50ms-stim 50 Good 1 0.0 0.0 
+good-25ms-stim 25 Good 1 0.0 0.0 
+good-05ms-prestim 05 Good 1 -2000.0 0.0
+good-10ms-prestim 10 Good 1 -2000.0 0.0
+good-50ms-prestim 50 Good 1 -2000.0 0.0 
+good-25ms-prestim 25 Good 1 -2000.0 0.0 
