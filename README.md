@@ -1,8 +1,5 @@
 [CI]: http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1000205
-# NeuralTDA
-
-## Topological Data Analysis for Extracellular Neural Recordings
-## Brad Theilman
+# NeuralTDA: Topological Data Analysis for Extracellular Neural Recordings
 
 * * *
 
