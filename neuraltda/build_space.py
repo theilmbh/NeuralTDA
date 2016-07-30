@@ -44,6 +44,30 @@ def compute_gamma_q(graph):
 	gamma_q = nx.Graph()
 	for (u,v, e_name) in graph.edges(data='name'):
 		gamma_q.add_node(e_name)
-		for (u_new, v_new, e_new_name) in nx.edges(graph, [u, v]):
-			gamma_q.add_edge(e_name, e_new_name)
+		for (u_new, v_new, e_new_name) in graph.edges([u, v], data='name'):
+			if (u_new != u) or (v_new != v):
+				gamma_q.add_edge(e_name, e_new_name)
 	return gamma_q 
+
+def compute_ideal_generators(gamma_q):
+
+	generators = []
+
+	# Relation 1: x^2 = x
+	for vert in gamma_q.nodes():
+		gen_str = '{}^2 - {}'.format(vert)
+		generators.append(gen_str)
+
+	# Relation 2: x*y = 0 if no edge between x, y
+	for (ned1, ned2) in nx.non_edges(gamma_q):
+		gen_str = '{}*{}'.format(ned1, ned2)
+		generators.append(gen_str)
+
+	# Relation 3: x*y*x = x if edge between x, y
+	for (ed1, ed2) in gamma_q.edges():
+		gen_str1 = '{}*{}*{} - {}'.format(ed1, ed2, ed1, ed1)
+		gen_str2 = '{}*{}*{} - {}'.format(ed2, ed1, ed2, ed2)
+		generators.append(gen_str1)
+		generators.append(gen_str2)
+
+	# Relation 4: 
