@@ -41,7 +41,9 @@ def generate_test_dataset(n_cells, maxt, fs, dthetadt, kappa, maxfr):
 
 	return (spikes_dataframe, clus_dataframe, trials_dataframe)
 
-def bin_test_data(block_path, kwikfile, bin_id, bin_def_file, spikes, clusters, trials, fs):
+def generate_and_bin_test_data(block_path, kwikfile, bin_id, bin_def_file, n_cells, maxt, fs, dthetadt, kappa, maxfr):
+
+	spikes, clusters, trials = generate_test_dataset(n_cells, maxt, fs, dthetadt, kappa, maxfr)
 
 	top.do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
 
