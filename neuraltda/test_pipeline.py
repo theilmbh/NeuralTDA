@@ -1,5 +1,6 @@
 import numpy as np 
 import pandas as pd 
+import topology as top 
 
 def generate_test_dataset(n_cells, maxt, fs, dthetadt, kappa, maxfr):
 
@@ -36,7 +37,17 @@ def generate_test_dataset(n_cells, maxt, fs, dthetadt, kappa, maxfr):
 	spikes_dataframe.sort(columns='time_samples', inplace=True)
 	clus_dataframe = pd.DataFrame({'cluster': range(n_cells), 'cluster_group': n_cells*['Good']})
 
-	return (spikes_dataframe, clus_dataframe)
+	trials_dataframe = pd.DataFrame({'time_samples': [0], 'stimulus': ['test_pipeline_stimulus'], 'stimulus_end':[N]})
+
+	return (spikes_dataframe, clus_dataframe, trials_dataframe)
+
+def bin_test_data(block_path, kwikfile, bin_id, bin_def_file, spikes, clusters, trials, fs):
+
+	top.do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
+
+
+
+
 
 
 
