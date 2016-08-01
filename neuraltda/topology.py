@@ -1067,14 +1067,14 @@ def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
             clusters.read_direct(clusters_to_save)
             clusters_to_save = clusters_to_save[permt]
             popvec_save = popvec_save[permt]
-            perm_permgrp = perm_grop.create_group(str(perm_num))
+            perm_permgrp = perm_group.create_group(str(perm_num))
             perm_permgrp.create_dataset('pop_vec', data=popvec_save)
             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
             perm_permgrp.create_dataset('windows', data=windows)
     else:
         for inst_num, inst in enumerate(data_group.keys()):
             new_perm_group = perm_group.create_group(inst)
-            shuffle_recursive(data_group[inst], new_perm_group, n_cells_in_perm, nperms)        
+            permute_recursive(data_group[inst], new_perm_group, n_cells_in_perm, nperms)        
 
 def shuffle_recursive(data_group, perm_group, nshuffs):
 
