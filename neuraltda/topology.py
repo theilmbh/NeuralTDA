@@ -1352,7 +1352,7 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
         Threshold to use when identifying cell groups 
     '''
     global alogf 
-
+    print('calc_CI_bettis_hierarchical_binned_data')
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path, 'topology/{}/{}'.format(analysis_id, bdf_name))
     if not os.path.exists(analysis_path):
