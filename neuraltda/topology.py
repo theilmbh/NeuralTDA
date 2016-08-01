@@ -1047,6 +1047,35 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
                             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
                             perm_permgrp.create_dataset('windows', data=windows)
 
+def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
+
+    if 'pop_vec' in data_group.keys():
+        clusters = data_group['clusters']
+        popvec = data_group['pop_vec']
+        windows = data_group['windows']
+        nwins = len(windows)
+        nclus = len(clusters)
+        for perm_num in range(nperms):
+            permt = np.random.permutation(nclus)
+            if len(clusters) >= n_cells_in_perm:
+                permt = permt[0:n_cells_in_perm].tolist()
+            else:
+                permt = permt[0:].tolist()
+            clusters_to_save = np.zeros(clusters.shape)
+            popvec_save = np.zeros(popvec.shape)
+            popvec.read_direct(popvec_save)
+            clusters.read_direct(clusters_to_save)
+            clusters_to_save = clusters_to_save[permt]
+            popvec_save = popvec_save[permt]
+            perm_permgrp = perm_grop.create_group(str(perm_num))
+            perm_permgrp.create_dataset('pop_vec', data=popvec_save)
+            perm_permgrp.create_dataset('clusters', data=clusters_to_save)
+            perm_permgrp.create_dataset('windows', data=windows)
+    else:
+        for inst_num, inst in enumerate(data_group.keys()):
+            new_perm_group = perm_group.create_group(inst)
+            shuffle_recursive(data_group[inst], new_perm_group, n_cells_in_perm, nperms)        
+
 def shuffle_recursive(data_group, perm_group, nshuffs):
 
     if 'pop_vec' in data_group.keys():
@@ -1089,6 +1118,26 @@ def shuffle_binned_data_recursive(binned_data_file, permuted_data_file, nshuffs)
                 perm_stimgrp = perm_f.create_group(stim)
                 stimdata = popvec_f[stim]
                 shuffle_recursive(stimdata, perm_stimgrp, nshuffs)
+
+def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_in_perm, nperms):
+
+    global alogf
+    
+    with h5py.File(binned_data_file, "r") as popvec_f:
+        win_size = popvec_f.attrs['win_size'] 
+        fs = popvec_f.attrs['fs'] 
+        nclus = popvec_f.attrs['nclus']
+        stims = popvec_f.keys()
+        with h5py.File(permuted_data_file, "w") as perm_f:
+            perm_f.attrs['win_size'] = win_size
+            perm_f.attrs['permuted'] = '0'
+            perm_f.attrs['shuffled'] = '1'
+            perm_f.attrs['fs']  = fs 
+
+            for stim in stims:
+                perm_stimgrp = perm_f.create_group(stim)
+                stimdata = popvec_f[stim]
+                shuffle_recursive(stimdata, perm_stimgrp, n_cells_in_perm, nperms)
 
 def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
     '''
@@ -1237,6 +1286,37 @@ def make_permuted_binned_data(path_to_binned, n_cells_in_perm, n_perms):
         permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
 
         permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perms)
+
+def make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, n_perms):
+    '''
+    Takes a folder containing .binned files and makes permuted subsets of them. 
+
+    Parameters
+    ------
+    path_to_binned : str 
+        Path to a folder containing all the .binned hdf5 files you'd like to make controls for 
+    nperms : int
+        Number of permutations
+    '''
+
+    path_to_binned = os.path.abspath(path_to_binned)
+    binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
+    if not binned_data_files:
+        print('Error: No binned data files!')
+        sys.exit(-1) 
+    
+    permuted_binned_folder = os.path.join(path_to_binned, 'permuted_binned')
+    if not os.path.exists(permuted_binned_folder):
+        os.makedirs(permuted_binned_folder)
+
+    for binned_data_file in binned_data_files:
+
+        bdf_fold, bdf_full_name = os.path.split(binned_data_file)
+        bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
+        pbd_name = bdf_name + '-permuted.binned'
+        permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
+
+        permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_in_perm, n_perms)
 
 
 def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analysis_path, thresh):
