@@ -700,7 +700,6 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
             for grp in cluster_group:
                 mask = np.logical_or(mask, clusters['quality'] == grp)
         clusters_to_use = clusters[mask]
-
         clusters_list = clusters_to_use['cluster'].unique()
         spikes = spikes[spikes['cluster'].isin(clusters_list)]
         nclus = len(clusters_to_use.index)
@@ -735,7 +734,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
                 # compute population activity vectors
                     spikes_in_win = get_spikes_in_window(spikes, win)
                     clus_that_spiked = spikes_in_win['cluster'].unique()
-                
+                    
                     # find spikes from each cluster
                     if len(clus_that_spiked) > 0:
                         for clu in clus_that_spiked:
