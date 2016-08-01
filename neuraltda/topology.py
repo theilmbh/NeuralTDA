@@ -1137,7 +1137,7 @@ def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_
             for stim in stims:
                 perm_stimgrp = perm_f.create_group(stim)
                 stimdata = popvec_f[stim]
-                shuffle_recursive(stimdata, perm_stimgrp, n_cells_in_perm, nperms)
+                permute_recursive(stimdata, perm_stimgrp, n_cells_in_perm, nperms)
 
 def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
     '''
