@@ -1112,6 +1112,7 @@ def shuffle_binned_data_recursive(binned_data_file, permuted_data_file, nshuffs)
             perm_f.attrs['permuted'] = '0'
             perm_f.attrs['shuffled'] = '1'
             perm_f.attrs['fs']  = fs 
+            perm_f.attrs['nclus'] = nclus
 
             for stim in stims:
                 perm_stimgrp = perm_f.create_group(stim)
@@ -1129,9 +1130,10 @@ def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_
         stims = popvec_f.keys()
         with h5py.File(permuted_data_file, "w") as perm_f:
             perm_f.attrs['win_size'] = win_size
-            perm_f.attrs['permuted'] = '0'
-            perm_f.attrs['shuffled'] = '1'
-            perm_f.attrs['fs']  = fs 
+            perm_f.attrs['permuted'] = '1'
+            perm_f.attrs['shuffled'] = '0'
+            perm_f.attrs['fs']  = fs
+            perm_f.attrs['nclus'] = nclus 
 
             for stim in stims:
                 perm_stimgrp = perm_f.create_group(stim)
