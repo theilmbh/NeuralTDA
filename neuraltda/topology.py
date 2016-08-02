@@ -11,6 +11,10 @@ from ephys import events, core
 
 global alogf
 
+#################################
+###### Auxiliary Functions ######
+#################################
+
 def topology_log(logfile, log_str):
     with open(logfile, 'a+') as lf:
         log_line = str(time.time()) + ' ' + log_str + '\n'
@@ -415,6 +419,18 @@ def get_segment(trial_bounds, fs, segment_info):
     return [seg_start, seg_end]
 
 
+def spike_time_subtracter(row, trial_start, trial_end, first_trial_start):
+    spiketime = row['time_samples']
+    if (spiketime >= trial_start) and (spiketime <= trial_end):
+        return spiketime - (trial_start - first_trial_start)
+    else:
+        return spiketime 
+
+
+################################################
+###### Old Topology Computation Functions ######
+################################################
+
 def calc_CI_bettis_on_dataset(block_path, analysis_id, cluster_group=None, windt_ms=50., n_subwin=5,
                            threshold=6, segment_info=DEFAULT_SEGMENT_INFO, persistence=False):
     '''
@@ -582,14 +598,6 @@ def calc_CI_bettis_on_loaded_dataset(spikes, clusters, trials, fs, kwikfile, kwi
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
 
-def spike_time_subtracter(row, trial_start, trial_end, first_trial_start):
-    spiketime = row['time_samples']
-    if (spiketime >= trial_start) and (spiketime <= trial_end):
-        return spiketime - (trial_start - first_trial_start)
-    else:
-        return spiketime 
-
-
 def calc_CI_bettis_on_dataset_average_activity(block_path, cluster_group=None, windt_ms=50., n_subwin=5,
                            segment_info=DEFAULT_SEGMENT_INFO, persistence=False):
     '''
@@ -675,176 +683,6 @@ def calc_CI_bettis_on_dataset_average_activity(block_path, cluster_group=None, w
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
 
-def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, popvec_fname):
-    '''
-    Embeds binned population activity into R^n
-    Still need TODO?
-
-    Parameters
-    ------
-    spikes : pandas dataframe 
-        Spike frame from ephys.core 
-
-    win_size : float
-        window size in ms
-    '''
-    global alogf 
-    with h5py.File(popvec_fname, "w") as popvec_f:
-
-        popvec_f.attrs['win_size'] = win_size
-        popvec_f.attrs['fs'] = fs 
-        #f.attrs['cluster_group'] = cluster_group
-
-        if cluster_group != None:
-            mask = np.ones(len(clusters.index)) < 0
-            for grp in cluster_group:
-                mask = np.logical_or(mask, clusters['quality'] == grp)
-        clusters_to_use = clusters[mask]
-        clusters_list = clusters_to_use['cluster'].unique()
-        spikes = spikes[spikes['cluster'].isin(clusters_list)]
-        nclus = len(clusters_to_use.index)
-        popvec_f.attrs['nclus'] = nclus
-        stims = trials['stimulus'].unique()
-        popvec_dict = {}
-
-        for stim in stims:
-            stimgrp = popvec_f.create_group(stim)
-            stim_trials = trials[trials['stimulus']==stim]
-            nreps       = len(stim_trials.index)
-
-            for rep in range(nreps):
-                trialgrp = stimgrp.create_group(str(rep))
-
-                trial_start = stim_trials.iloc[rep]['time_samples']
-                trial_end   = stim_trials.iloc[rep]['stimulus_end']
-                seg_start, seg_end = get_segment([trial_start, trial_end], fs, segment_info)
-                topology_log(alogf, "segments: {} {}".format(seg_start, seg_end))
-                win_size_samples = np.round(win_size/1000. * fs)
-
-                windows = create_subwindows([seg_start, seg_end], win_size_samples, 1)
-                nwins = len(windows)
-                popvec_dset_init = np.zeros((nclus, nwins))
-                popvec_dset = trialgrp.create_dataset('pop_vec', data=popvec_dset_init)
-                popvec_clu_dset = trialgrp.create_dataset('clusters', data=clusters_list)
-                popvec_win_dset = trialgrp.create_dataset('windows', data=np.array(windows))
-                popvec_dset.attrs['fs'] = fs
-                popvec_dset.attrs['win_size'] = win_size
-
-                for win_ind, win in enumerate(windows):
-                # compute population activity vectors
-                    spikes_in_win = get_spikes_in_window(spikes, win)
-                    clus_that_spiked = spikes_in_win['cluster'].unique()
-                    
-                    # find spikes from each cluster
-                    if len(clus_that_spiked) > 0:
-                        for clu in clus_that_spiked:
-                            popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/(win_size/1000.)
-
-def prep_and_bin_data(block_path, bin_def_file, bin_id, nshuffs):
-
-    global alogf
-    spikes   = core.load_spikes(block_path)
-    clusters = core.load_clusters(block_path)
-    trials   = events.load_trials(block_path)
-    fs       = core.load_fs(block_path)
-
-    kwikfile      = core.find_kwik(block_path)
-
-    binning_folder = do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
-    if nshuffs:
-        print('Making Shuffled Controls')
-        make_shuffled_controls(binning_folder, nshuffs)
-
-
-def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id):
-    '''
-    Bins the data using build_population_embedding 
-    Parameters are given in bin_def_file
-    Each line of bin_def_file contains the parameters for each binning
-
-    Parameters
-    ------
-    block_path : str 
-        Path to the folder containing all the original datafiles 
-    spikes : Pandas DataFrame
-        Dataframe containing spike data 
-    clusters : Pandas DataFrame
-        DataFrame containing cluster information 
-    trials : PD DataFrame
-        Containing trial information 
-    fs : int 
-        sampling rate
-    kwikfile: str 
-        path to kwikfile 
-    bin_def_file : str 
-        Path to file containing parameters for each binning 
-    bin_id : str 
-        Identifyer for this particular binning run 
-    '''
-
-    # Try to make a folder to store the binnings
-    global alogf
-    binning_folder = os.path.join(block_path, 'binned_data/{}'.format(bin_id))
-    if not os.path.exists(binning_folder):
-        os.makedirs(binning_folder)
-    kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
-    alogf = os.path.join(binning_folder, 'binning.log')
-
-    with open(bin_def_file, 'r') as bdf:
-        for bdf_line in bdf:
-            binning_params = bdf_line.split(' ')
-            binning_id = binning_params[0]
-            win_size = float(binning_params[1])
-            cluster_groups = binning_params[2]
-            segment = int(binning_params[3])
-            topology_log(alogf, 'seg specifier: {}'.format(segment))
-            seg_start = float(binning_params[4])
-            seg_end = float(binning_params[5])
-            segment_info = {'period': segment, 'segstart':seg_start, 'segend': seg_end}
-            cluster_group = cluster_groups.split(',')
-            binning_path = os.path.join(binning_folder, '{}-{}.binned'.format(kwikname, binning_id))
-            if os.path.exists(binning_path):
-                print('Binning file {} already exists, skipping..'.format(binning_path))
-                continue
-            print('Binning data into {}'.format('{}.binned'.format(binning_id)))
-            build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, binning_path)
-            print('Done')
-    return binning_folder
-
-def calc_cell_groups_from_binned_data(binned_dataset, thresh):
-
-    global alogf
-    bds = np.array(binned_dataset['pop_vec'])
-    clusters = np.array(binned_dataset['clusters'])
-    [clus, nwin] = bds.shape
-    topology_log(alogf, 'Number of Clusters: {}'.format(clus))
-
-    mean_frs = np.mean(bds, 1)
-    cell_groups = []
-    for win in range(nwin):
-        acty = bds[:, win]
-        above_thresh = np.greater(acty, thresh*mean_frs)
-        clus_in_group = clusters[above_thresh]
-        cell_groups.append([win, clus_in_group])
-    return cell_groups
-
-def calc_bettis_from_binned_data(binned_dataset, pfile, thresh):
-    cell_groups = calc_cell_groups_from_binned_data(binned_dataset, thresh)
-
-    build_perseus_persistent_input(cell_groups, pfile)
-
-    betti_file = run_perseus(pfile)
-    bettis = []
-    with open(betti_file, 'r') as bf:
-        for bf_line in bf:
-            if len(bf_line)<2:
-                continue
-            betti_data      = bf_line.split()
-            nbetti          = len(betti_data)-1
-            filtration_time = int(betti_data[0])
-            betti_numbers   = map(int, betti_data[1:])
-            bettis.append([filtration_time, betti_numbers])
-    return bettis
 
 def calc_CI_bettis_binned_data(analysis_id, binned_data_file, block_path, thresh):
     '''
@@ -988,6 +826,62 @@ def calc_CI_bettis_permuted_binned_data(analysis_id, binned_data_file, block_pat
                 pickle.dump(betti_persistence_dict, bpfile)
         topology_log(alogf, 'Completed All Stimuli')
 
+
+###################################
+###### Old Bin Data Routines ######
+###################################
+
+def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
+    '''
+    Bins the data using build_population_embedding 
+    Parameters are given in bin_def_file
+    Each line of bin_def_file contains the parameters for each binning
+
+    Parameters
+    ------
+    binned_data_file : str
+        Path to an hdf5 file containing the previously binned population vectors
+    permuted_data_file : str
+        Path to store the resulting hdf5 file that contains the shuffled vectors 
+    nshuffs : int 
+        Number of shuffles to perform
+    '''
+
+    # Try to make a folder to store the binnings
+    global alogf
+    
+    with h5py.File(binned_data_file, "r") as popvec_f:
+        win_size = popvec_f.attrs['win_size'] 
+        fs = popvec_f.attrs['fs'] 
+        nclus = popvec_f.attrs['nclus']
+        stims = popvec_f.keys()
+        with h5py.File(permuted_data_file, "w") as perm_f:
+            perm_f.attrs['win_size'] = win_size
+            perm_f.attrs['permuted'] = '0'
+            perm_f.attrs['shuffled'] = '1'
+            perm_f.attrs['fs']  = fs 
+
+            for stim in stims:
+                perm_stimgrp = perm_f.create_group(stim)
+                stimdata = popvec_f[stim]
+                trials = stimdata.keys()
+                for trial in trials:
+                    trialdata = stimdata[trial]
+                    clusters = trialdata['clusters']
+                    popvec = trialdata['pop_vec']
+                    windows = trialdata['windows']
+                    nwins = len(windows)
+                    for perm_num in range(nshuffs):
+                        clusters_to_save = clusters
+                        popvec_save = popvec
+                        perm_permgrp = perm_stimgrp.create_group('trial'+str(trial)+'perm'+str(perm_num))
+                        for clu_num in range(nclus):
+                            permt = np.random.permutation(nwins)
+                            np.random.shuffle(popvec_save[clu_num, :])
+                        perm_permgrp.create_dataset('pop_vec', data=popvec_save)
+                        perm_permgrp.create_dataset('clusters', data=clusters_to_save)
+                        perm_permgrp.create_dataset('windows', data=windows)
+
 def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perm):
     '''
     Given a binned data file, make a new binned data file containing the vectors 
@@ -1045,6 +939,251 @@ def permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n
                             perm_permgrp.create_dataset('pop_vec', data=popvec_save)
                             perm_permgrp.create_dataset('clusters', data=clusters_to_save)
                             perm_permgrp.create_dataset('windows', data=windows)
+
+
+def make_shuffled_controls(path_to_binned, nshuffs):
+    '''
+    Takes a folder containing .binned files and makes shuffled controls from them
+
+    Parameters
+    ------
+    path_to_binned : str 
+        Path to a folder containing all the .binned hdf5 files you'd like to make controls for 
+    nshuffs : int
+        Number of shuffles per control 
+    '''
+
+    # get list of binned data files
+    path_to_binned = os.path.abspath(path_to_binned)
+    binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
+    if not binned_data_files:
+        print('Error: No binned data files!')
+        sys.exit(-1)
+
+    # Try to make shuffled_controls folder
+    shuffled_controls_folder = os.path.join(path_to_binned, 'shuffled_controls')
+    if not os.path.exists(shuffled_controls_folder):
+        os.makedirs(shuffled_controls_folder)
+
+    for binned_data_file in binned_data_files:
+
+        bdf_fold, bdf_full_name = os.path.split(binned_data_file)
+        bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
+        scf_name = bdf_name + '_shuffled-control.binned'
+        shuffled_control_file = os.path.join(shuffled_controls_folder, scf_name)
+
+        shuffle_control_binned_data(binned_data_file, shuffled_control_file, nshuffs)
+
+def make_permuted_binned_data(path_to_binned, n_cells_in_perm, n_perms):
+    '''
+    Takes a folder containing .binned files and makes permuted subsets of them. 
+
+    Parameters
+    ------
+    path_to_binned : str 
+        Path to a folder containing all the .binned hdf5 files you'd like to make controls for 
+    nperms : int
+        Number of permutations
+    '''
+
+    path_to_binned = os.path.abspath(path_to_binned)
+    binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
+    if not binned_data_files:
+        print('Error: No binned data files!')
+        sys.exit(-1) 
+    
+    permuted_binned_folder = os.path.join(path_to_binned, 'permuted_binned')
+    if not os.path.exists(permuted_binned_folder):
+        os.makedirs(permuted_binned_folder)
+
+    for binned_data_file in binned_data_files:
+
+        bdf_fold, bdf_full_name = os.path.split(binned_data_file)
+        bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
+        pbd_name = bdf_name + '-permuted.binned'
+        permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
+
+        permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perms)
+
+#############################################
+###### Binned Data Auxiliary Functions ######
+#############################################
+
+def calc_cell_groups_from_binned_data(binned_dataset, thresh):
+
+    global alogf
+    bds = np.array(binned_dataset['pop_vec'])
+    clusters = np.array(binned_dataset['clusters'])
+    [clus, nwin] = bds.shape
+    topology_log(alogf, 'Number of Clusters: {}'.format(clus))
+
+    mean_frs = np.mean(bds, 1)
+    cell_groups = []
+    for win in range(nwin):
+        acty = bds[:, win]
+        above_thresh = np.greater(acty, thresh*mean_frs)
+        clus_in_group = clusters[above_thresh]
+        cell_groups.append([win, clus_in_group])
+    return cell_groups
+
+def calc_bettis_from_binned_data(binned_dataset, pfile, thresh):
+    cell_groups = calc_cell_groups_from_binned_data(binned_dataset, thresh)
+
+    build_perseus_persistent_input(cell_groups, pfile)
+
+    betti_file = run_perseus(pfile)
+    bettis = []
+    with open(betti_file, 'r') as bf:
+        for bf_line in bf:
+            if len(bf_line)<2:
+                continue
+            betti_data      = bf_line.split()
+            nbetti          = len(betti_data)-1
+            filtration_time = int(betti_data[0])
+            betti_numbers   = map(int, betti_data[1:])
+            bettis.append([filtration_time, betti_numbers])
+    return bettis
+
+
+#######################################
+###### Current Binning Functions ######
+#######################################
+
+def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, popvec_fname):
+    '''
+    Embeds binned population activity into R^n
+    Still need TODO?
+
+    Parameters
+    ------
+    spikes : pandas dataframe 
+        Spike frame from ephys.core 
+
+    win_size : float
+        window size in ms
+    '''
+    global alogf 
+    with h5py.File(popvec_fname, "w") as popvec_f:
+
+        popvec_f.attrs['win_size'] = win_size
+        popvec_f.attrs['fs'] = fs 
+        #f.attrs['cluster_group'] = cluster_group
+
+        if cluster_group != None:
+            mask = np.ones(len(clusters.index)) < 0
+            for grp in cluster_group:
+                mask = np.logical_or(mask, clusters['quality'] == grp)
+        clusters_to_use = clusters[mask]
+        clusters_list = clusters_to_use['cluster'].unique()
+        spikes = spikes[spikes['cluster'].isin(clusters_list)]
+        nclus = len(clusters_to_use.index)
+        popvec_f.attrs['nclus'] = nclus
+        stims = trials['stimulus'].unique()
+        popvec_dict = {}
+
+        for stim in stims:
+            stimgrp = popvec_f.create_group(stim)
+            stim_trials = trials[trials['stimulus']==stim]
+            nreps       = len(stim_trials.index)
+
+            for rep in range(nreps):
+                trialgrp = stimgrp.create_group(str(rep))
+
+                trial_start = stim_trials.iloc[rep]['time_samples']
+                trial_end   = stim_trials.iloc[rep]['stimulus_end']
+                seg_start, seg_end = get_segment([trial_start, trial_end], fs, segment_info)
+                topology_log(alogf, "segments: {} {}".format(seg_start, seg_end))
+                win_size_samples = np.round(win_size/1000. * fs)
+
+                windows = create_subwindows([seg_start, seg_end], win_size_samples, 1)
+                nwins = len(windows)
+                popvec_dset_init = np.zeros((nclus, nwins))
+                popvec_dset = trialgrp.create_dataset('pop_vec', data=popvec_dset_init)
+                popvec_clu_dset = trialgrp.create_dataset('clusters', data=clusters_list)
+                popvec_win_dset = trialgrp.create_dataset('windows', data=np.array(windows))
+                popvec_dset.attrs['fs'] = fs
+                popvec_dset.attrs['win_size'] = win_size
+
+                for win_ind, win in enumerate(windows):
+                # compute population activity vectors
+                    spikes_in_win = get_spikes_in_window(spikes, win)
+                    clus_that_spiked = spikes_in_win['cluster'].unique()
+                    
+                    # find spikes from each cluster
+                    if len(clus_that_spiked) > 0:
+                        for clu in clus_that_spiked:
+                            popvec_dset[(clusters_list == clu), win_ind] = float(len(spikes_in_win[spikes_in_win['cluster']==clu]))/(win_size/1000.)
+
+def prep_and_bin_data(block_path, bin_def_file, bin_id, nshuffs):
+
+    global alogf
+    spikes   = core.load_spikes(block_path)
+    clusters = core.load_clusters(block_path)
+    trials   = events.load_trials(block_path)
+    fs       = core.load_fs(block_path)
+
+    kwikfile      = core.find_kwik(block_path)
+
+    binning_folder = do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
+    if nshuffs:
+        print('Making Shuffled Controls')
+        make_shuffled_controls(binning_folder, nshuffs)
+
+
+def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id):
+    '''
+    Bins the data using build_population_embedding 
+    Parameters are given in bin_def_file
+    Each line of bin_def_file contains the parameters for each binning
+
+    Parameters
+    ------
+    block_path : str 
+        Path to the folder containing all the original datafiles 
+    spikes : Pandas DataFrame
+        Dataframe containing spike data 
+    clusters : Pandas DataFrame
+        DataFrame containing cluster information 
+    trials : PD DataFrame
+        Containing trial information 
+    fs : int 
+        sampling rate
+    kwikfile: str 
+        path to kwikfile 
+    bin_def_file : str 
+        Path to file containing parameters for each binning 
+    bin_id : str 
+        Identifyer for this particular binning run 
+    '''
+
+    # Try to make a folder to store the binnings
+    global alogf
+    binning_folder = os.path.join(block_path, 'binned_data/{}'.format(bin_id))
+    if not os.path.exists(binning_folder):
+        os.makedirs(binning_folder)
+    kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
+    alogf = os.path.join(binning_folder, 'binning.log')
+
+    with open(bin_def_file, 'r') as bdf:
+        for bdf_line in bdf:
+            binning_params = bdf_line.split(' ')
+            binning_id = binning_params[0]
+            win_size = float(binning_params[1])
+            cluster_groups = binning_params[2]
+            segment = int(binning_params[3])
+            topology_log(alogf, 'seg specifier: {}'.format(segment))
+            seg_start = float(binning_params[4])
+            seg_end = float(binning_params[5])
+            segment_info = {'period': segment, 'segstart':seg_start, 'segend': seg_end}
+            cluster_group = cluster_groups.split(',')
+            binning_path = os.path.join(binning_folder, '{}-{}.binned'.format(kwikname, binning_id))
+            if os.path.exists(binning_path):
+                print('Binning file {} already exists, skipping..'.format(binning_path))
+                continue
+            print('Binning data into {}'.format('{}.binned'.format(binning_id)))
+            build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, binning_path)
+            print('Done')
+    return binning_folder
 
 def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
 
@@ -1140,57 +1279,6 @@ def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_
                 stimdata = popvec_f[stim]
                 permute_recursive(stimdata, perm_stimgrp, n_cells_in_perm, nperms)
 
-def shuffle_control_binned_data(binned_data_file, permuted_data_file, nshuffs):
-    '''
-    Bins the data using build_population_embedding 
-    Parameters are given in bin_def_file
-    Each line of bin_def_file contains the parameters for each binning
-
-    Parameters
-    ------
-    binned_data_file : str
-        Path to an hdf5 file containing the previously binned population vectors
-    permuted_data_file : str
-        Path to store the resulting hdf5 file that contains the shuffled vectors 
-    nshuffs : int 
-        Number of shuffles to perform
-    '''
-
-    # Try to make a folder to store the binnings
-    global alogf
-    
-    with h5py.File(binned_data_file, "r") as popvec_f:
-        win_size = popvec_f.attrs['win_size'] 
-        fs = popvec_f.attrs['fs'] 
-        nclus = popvec_f.attrs['nclus']
-        stims = popvec_f.keys()
-        with h5py.File(permuted_data_file, "w") as perm_f:
-            perm_f.attrs['win_size'] = win_size
-            perm_f.attrs['permuted'] = '0'
-            perm_f.attrs['shuffled'] = '1'
-            perm_f.attrs['fs']  = fs 
-
-            for stim in stims:
-                perm_stimgrp = perm_f.create_group(stim)
-                stimdata = popvec_f[stim]
-                trials = stimdata.keys()
-                for trial in trials:
-                    trialdata = stimdata[trial]
-                    clusters = trialdata['clusters']
-                    popvec = trialdata['pop_vec']
-                    windows = trialdata['windows']
-                    nwins = len(windows)
-                    for perm_num in range(nshuffs):
-                        clusters_to_save = clusters
-                        popvec_save = popvec
-                        perm_permgrp = perm_stimgrp.create_group('trial'+str(trial)+'perm'+str(perm_num))
-                        for clu_num in range(nclus):
-                            permt = np.random.permutation(nwins)
-                            np.random.shuffle(popvec_save[clu_num, :])
-                        perm_permgrp.create_dataset('pop_vec', data=popvec_save)
-                        perm_permgrp.create_dataset('clusters', data=clusters_to_save)
-                        perm_permgrp.create_dataset('windows', data=windows)
-
 def make_shuffled_controls_recursive(path_to_binned, nshuffs):
     '''
     Takes a folder containing .binned files and makes shuffled controls from them
@@ -1224,70 +1312,6 @@ def make_shuffled_controls_recursive(path_to_binned, nshuffs):
 
         shuffle_binned_data_recursive(binned_data_file, shuffled_control_file, nshuffs)
 
-def make_shuffled_controls(path_to_binned, nshuffs):
-    '''
-    Takes a folder containing .binned files and makes shuffled controls from them
-
-    Parameters
-    ------
-    path_to_binned : str 
-        Path to a folder containing all the .binned hdf5 files you'd like to make controls for 
-    nshuffs : int
-        Number of shuffles per control 
-    '''
-
-    # get list of binned data files
-    path_to_binned = os.path.abspath(path_to_binned)
-    binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
-    if not binned_data_files:
-        print('Error: No binned data files!')
-        sys.exit(-1)
-
-    # Try to make shuffled_controls folder
-    shuffled_controls_folder = os.path.join(path_to_binned, 'shuffled_controls')
-    if not os.path.exists(shuffled_controls_folder):
-        os.makedirs(shuffled_controls_folder)
-
-    for binned_data_file in binned_data_files:
-
-        bdf_fold, bdf_full_name = os.path.split(binned_data_file)
-        bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
-        scf_name = bdf_name + '_shuffled-control.binned'
-        shuffled_control_file = os.path.join(shuffled_controls_folder, scf_name)
-
-        shuffle_control_binned_data(binned_data_file, shuffled_control_file, nshuffs)
-
-def make_permuted_binned_data(path_to_binned, n_cells_in_perm, n_perms):
-    '''
-    Takes a folder containing .binned files and makes permuted subsets of them. 
-
-    Parameters
-    ------
-    path_to_binned : str 
-        Path to a folder containing all the .binned hdf5 files you'd like to make controls for 
-    nperms : int
-        Number of permutations
-    '''
-
-    path_to_binned = os.path.abspath(path_to_binned)
-    binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
-    if not binned_data_files:
-        print('Error: No binned data files!')
-        sys.exit(-1) 
-    
-    permuted_binned_folder = os.path.join(path_to_binned, 'permuted_binned')
-    if not os.path.exists(permuted_binned_folder):
-        os.makedirs(permuted_binned_folder)
-
-    for binned_data_file in binned_data_files:
-
-        bdf_fold, bdf_full_name = os.path.split(binned_data_file)
-        bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
-        pbd_name = bdf_name + '-permuted.binned'
-        permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
-
-        permute_binned_data(binned_data_file, permuted_data_file, n_cells_in_perm, n_perms)
-
 def make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, n_perms):
     '''
     Takes a folder containing .binned files and makes permuted subsets of them. 
@@ -1319,6 +1343,10 @@ def make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, n_perms
 
         permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_in_perm, n_perms)
 
+
+#######################################################
+###### Current Topological Computation Functions ######
+#######################################################
 
 def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analysis_path, thresh):
     if 'pop_vec' in data_group.keys():
