@@ -1,6 +1,7 @@
 import numpy as np 
 import pandas as pd 
 import topology as top 
+import topology_plots as topplt
 import os
 import glob
 
@@ -45,24 +46,38 @@ def generate_test_dataset(n_cells, maxt, fs, dthetadt, kappa, maxfr):
 def generate_and_bin_test_data(block_path, kwikfile, bin_id, bin_def_file, n_cells, maxt, fs, dthetadt, kappa, maxfr):
 
 	spikes, clusters, trials = generate_test_dataset(n_cells, maxt, fs, dthetadt, kappa, maxfr)
-	print(spikes.head())
 
 	top.do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
 
 
-def test_pipeline(block_path, kwikfile, bin_id, analysis_id, bin_def_file, n_cells, maxt, fs, dthetadt, kappa, maxfr, n_cells_in_perm, nperms, thresh):
+def test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells, maxt, fs, dthetadt, kappa, maxfr, n_cells_in_perm, nperms, thresh):
 
+	kwikfile = 'B999_P00_S00.kwik'
 	generate_and_bin_test_data(block_path, kwikfile, bin_id, bin_def_file, n_cells, maxt, fs, dthetadt, kappa, maxfr)
 
 	binned_folder = os.path.join(block_path, 'binned_data/{}'.format(bin_id))
 	top.make_permuted_binned_data_recursive(binned_folder, n_cells_in_perm, nperms)
+	permuted_folder = os.path.join(binned_folder, 'permuted_binned/')
+	shuffled_permuted_folder = os.path.join(permuted_folder, 'shuffled_controls/')
+	top.make_shuffled_controls_recursive(permuted_folder, 1)
 
 	# compute topology for permuted data:
 	binned_data_files = glob.glob(os.path.join(binned_folder, '*.binned'))
+	permuted_data_files = glob.glob(os.path.join(permuted_folder, '*.binned'))
+	shuffled_permuted_data_files = glob.glob(os.path.join(shuffled_permuted_folder, '*.binned'))
 	
 	for bdf in binned_data_files:
-		top.calc_CI_bettis_hierarchical_binned_data(analysis_id, bdf, block_path, thresh)
+		op.calc_CI_bettis_hierarchical_binned_data(analysis_id, bdf, block_path, thresh)t
 
+	for pdf in permuted_data_files:
+		op.calc_CI_bettis_hierarchical_binned_data(analysis_id+'_real', pdf, block_path, thresh)
+
+	for spdf in shuffled_permuted_data_files:
+		op.calc_CI_bettis_hierarchical_binned_data(analysis_id+'_shuffled', spdf, block_path, thresh)
+
+	maxbetti = 5
+	figsize=(22,22)
+	topplt.make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize)
 
 
 

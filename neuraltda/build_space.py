@@ -3,11 +3,11 @@ import itertools
 import topology
 import numpy as np 
 
-def build_graph_recursive(graph, cell_group, parent_name,):
+def build_graph_recursive(graph, cell_group, parent_name):
 
 	cell_group_name = ''.join(cell_group)
 	graph.add_node(cell_group_name)
-	if parent_name is not '':
+	if parent_name:
 		graph.add_edge(cell_group_name, parent_name)
 		graph.edge[cell_group_name][parent_name]['name'] = cell_group_name+parent_name
 	n_cells_in_group = len(cell_group)
@@ -24,6 +24,7 @@ def build_graph_from_cell_groups(cell_groups):
 	for win, group in cell_groups:
 		group_s = [str(s) for s in group]
 		graph = build_graph_recursive(graph, group_s, '')
+	graph.remove_node('')
 	return graph
 
 def build_graph_from_binned_dataset(binned_dataset, thresh):
