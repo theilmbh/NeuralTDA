@@ -67,13 +67,13 @@ def test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells, maxt, 
 	shuffled_permuted_data_files = glob.glob(os.path.join(shuffled_permuted_folder, '*.binned'))
 	
 	for bdf in binned_data_files:
-		op.calc_CI_bettis_hierarchical_binned_data(analysis_id, bdf, block_path, thresh)t
+		top.calc_CI_bettis_hierarchical_binned_data(analysis_id, bdf, block_path, thresh)
 
 	for pdf in permuted_data_files:
-		op.calc_CI_bettis_hierarchical_binned_data(analysis_id+'_real', pdf, block_path, thresh)
+		top.calc_CI_bettis_hierarchical_binned_data(analysis_id+'_real', pdf, block_path, thresh)
 
 	for spdf in shuffled_permuted_data_files:
-		op.calc_CI_bettis_hierarchical_binned_data(analysis_id+'_shuffled', spdf, block_path, thresh)
+		top.calc_CI_bettis_hierarchical_binned_data(analysis_id+'_shuffled', spdf, block_path, thresh)
 
 	maxbetti = 5
 	figsize=(22,22)
