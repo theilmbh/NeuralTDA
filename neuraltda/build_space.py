@@ -8,26 +8,58 @@ def build_graph_recursive(graph, cell_group, parent_name):
 
 	cell_group_name = ''.join(cell_group)
 	graph.add_node(cell_group_name)
-	
+	n_cells_in_group = len(cell_group)
+
 	graph.add_edge(cell_group_name, parent_name)
 	graph.edge[cell_group_name][parent_name]['name'] = cell_group_name+parent_name
-	n_cells_in_group = len(cell_group)
+	
 	if n_cells_in_group > 1:
 		for subgrp in itertools.combinations(cell_group, n_cells_in_group-1):
 			build_graph_recursive(graph, subgrp, cell_group_name)
 
 	return graph
 
+def build_metric_graph_recursive(graph, cell_group, parent_name, Ncells, tau):
+
+	cell_group_name = ''.join(cell_group)
+	graph.add_node(cell_group_name)
+	n_cells_in_group = len(cell_group)
+	muk = 1.0
+	muk = 1.0-np.pi*np.sqrt(float(n_cells_in_group-1)/float(Ncells))
+	if n_cells_in_group==0:
+		muk=1.0
+	muk = np.exp(-tau*n_cells_in_group/float(Ncells))
+	graph.add_edge(cell_group_name, parent_name, weight=muk)
+	graph.edge[cell_group_name][parent_name]['name'] = cell_group_name+parent_name
+	graph.edge[cell_group_name][parent_name]['weight'] = muk
+	if n_cells_in_group > 1:
+		for subgrp in itertools.combinations(cell_group, n_cells_in_group-1):
+			build_metric_graph_recursive(graph, subgrp, cell_group_name, Ncells, tau)
+
+	return graph
 
 def build_graph_from_cell_groups(cell_groups):
 
 	graph = nx.Graph()
 	prev=''
 	for win, group in cell_groups:
-		group_s = [str(s)+'-' for s in group]
+		group_s = [str(s)+'-' for s in sorted(group)]
 		cell_group_name = ''.join(group_s)
 		graph = build_graph_recursive(graph, group_s, '')
 		graph.add_edge(prev, cell_group_name)
+		prev=cell_group_name
+
+	return graph
+
+def build_metric_graph_from_cell_groups(cell_groups, Ncells, tau):
+
+	graph = nx.Graph()
+	prev=''
+	for win, group in cell_groups:
+		group_s = [str(s)+'-' for s in sorted(group)]
+		cell_group_name = ''.join(group_s)
+		graph = build_metric_graph_recursive(graph, group_s, '', Ncells, tau)
+		graph.add_edge(prev, cell_group_name, weight=1.0)
 		prev=cell_group_name
 
 	return graph
@@ -41,7 +73,7 @@ def build_graph_from_binned_dataset(binned_dataset, thresh):
 def build_graph_from_cell_groups_incremental(cell_groups, t):
 	graph = nx.Graph()
 	for win, group in cell_groups[:t]:
-		group_s = [str(s) for s in group]
+		group_s = [str(s) for s in sorted(group)]
 		graph = build_graph_recursive(graph, group_s, '')
 	return graph
 
