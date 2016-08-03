@@ -2,14 +2,15 @@ import networkx as nx
 import itertools
 import topology
 import numpy as np 
+import h5py as h5 
 
 def build_graph_recursive(graph, cell_group, parent_name):
 
 	cell_group_name = ''.join(cell_group)
 	graph.add_node(cell_group_name)
-	if parent_name:
-		graph.add_edge(cell_group_name, parent_name)
-		graph.edge[cell_group_name][parent_name]['name'] = cell_group_name+parent_name
+	
+	graph.add_edge(cell_group_name, parent_name)
+	graph.edge[cell_group_name][parent_name]['name'] = cell_group_name+parent_name
 	n_cells_in_group = len(cell_group)
 	if n_cells_in_group > 1:
 		for subgrp in itertools.combinations(cell_group, n_cells_in_group-1):
@@ -21,10 +22,14 @@ def build_graph_recursive(graph, cell_group, parent_name):
 def build_graph_from_cell_groups(cell_groups):
 
 	graph = nx.Graph()
+	prev=''
 	for win, group in cell_groups:
-		group_s = [str(s) for s in group]
+		group_s = [str(s)+'-' for s in group]
+		cell_group_name = ''.join(group_s)
 		graph = build_graph_recursive(graph, group_s, '')
-	graph.remove_node('')
+		graph.add_edge(prev, cell_group_name)
+		prev=cell_group_name
+
 	return graph
 
 def build_graph_from_binned_dataset(binned_dataset, thresh):
@@ -39,6 +44,25 @@ def build_graph_from_cell_groups_incremental(cell_groups, t):
 		group_s = [str(s) for s in group]
 		graph = build_graph_recursive(graph, group_s, '')
 	return graph
+
+def get_cell_group_trajectory(cell_groups):
+	vert_list = []
+	for win, group in cell_groups:
+		group_s = [str(s)+'-' for s in group]
+		group_s = ''.join(group_s)
+		vert_list.append(group_s)
+	return vert_list
+
+def concatenate_all_trial_cell_groups(binned_datafile, stimulus, thresh):
+
+	cg_concat = []
+	with h5.File(binned_datafile, 'r') as f:
+		stimdata = f[stimulus]
+		for trial in stimdata.keys():
+			bds = stimdata[trial]
+			cgs = topology.calc_cell_groups_from_binned_data(bds, thresh)
+			cg_concat = cg_concat + cgs 
+	return cg_concat
 
 def compute_gamma_q(graph):
 
