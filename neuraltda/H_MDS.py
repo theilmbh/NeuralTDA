@@ -55,8 +55,8 @@ def E_x(X, Y, D, w):
 	d = get_distances(X, Y)
 	diffmat = np.subtract(d, D)
 	diffmat = np.square(diffmat)
-	w = np.triu(w, k=1)
-	E = np.einsum('ij,ij', w, diffmat)
+	
+	E = 0.5*np.einsum('ij,ij', w, diffmat)
 	return E
 
 def get_distances(X, Y):
@@ -79,17 +79,16 @@ def dE_dxa(D, w, X, Y, alpha, q):
 	elif q==2:
 		ddH = lambda x, y: ddH_dx1_2(x, y)
 	rng = range(len(X))
-	rng = rng[alpha+1:]
+	
 	for j in rng:
 		x_j = X[j] + 1j*Y[j]
 		dd = ddH(x_a, x_j)
 		dd_vec[j] = np.real(dd)
+		dd_vec[alpha]=0.0
 
-	
-	w = np.triu(w, k=1)
 	w_j = w[alpha, :]
 	diffmat = np.subtract(d[alpha, :],  D[alpha, :])
-	dEdxa = 2*np.einsum('j,j,j', w_j, diffmat, dd_vec)
+	dEdxa = np.einsum('j,j,j', w_j, diffmat, dd_vec)
 	return dEdxa
 
 def dE_dxa_q(x, D, w, X, Y, alpha, q):
@@ -115,8 +114,11 @@ def HMDS_update(D, w, X, Y, alpha, eta):
 	delta_r = dE_1 / np.abs(ddEdxa1)
 	delta_i = dE_2 / np.abs(ddEdxa2)
 
+	#delta_r = dE_1 / 1.0
+	#delta_i = dE_2 / 1.0
+
 	delta = -1.0*eta*(delta_r +1j*delta_i) 
-	new = mobius_xform(X[alpha]+1j*Y[alpha], delta, 1)
+	new = mobius_xform(delta, X[alpha]+1j*Y[alpha], 1)
 	return new
 
 
