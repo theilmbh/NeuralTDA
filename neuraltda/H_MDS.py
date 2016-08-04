@@ -1,5 +1,6 @@
 import numpy as np 
 import scipy as sp 
+from scipy.misc import derivative
 
 def d_H(x1, x2):
 
@@ -49,33 +50,39 @@ def mobius_xform(z, c, theta):
 	b = np.conj(c)*theta*z + 1
 	return a/b
 
-def E_x(D, w, d):
+def E_x(X, D, w):
 
+	d = get_distances(X)
 	diffmat = np.subtract(d, D)
 	diffmat = np.square(diffmat)
 	w = np.triu(w, k=1)
 	E = np.einsum('ij,ij', w, diffmat)
 	return E
 
-def get_distances(X):
+def get_distances(X, Y):
 
 	dmat = np.zeros((len(X), len(X)))
 	for i in range(len(X))
-		for j in range(i):
-			dmat[j, i] = d_H(X[i], X[j])
+		for k in range(i):
+			dmat[k, i] = d_H(X[i]+1j*Y[i], X[k]+1j*Y[k])
 	return dmat + np.transpose(dmat)
 
-def dE_dxa(D, w, X, alpha):
+def dE_dxa(D, w, X, Y, alpha, q):
 
-	d = get_distances(X)
-	x_a = X[alpha]
+	d = get_distances(X, Y)
+	x_a_1 = X[alpha]
+	x_a_2 = Y[alpha]
+	x_a = x_a_1 + 1j*x_a_2
 	dd_vec = np.zeros(len(X))
+	if q==1:
+		ddH = lambda x, y: ddH_dx1_1(x, y)
+	elif q==2:
+		ddH = lambda x, y: ddH_dx1_2(x, y)
+
 	for j in range(len(X)):
-		x_j = X[j]
-		dd_real = ddH_dx1_1(x_a, x_j)
-		dd_imag = ddH_dx1_2(x_a, x_j)
-		dd = dd_real +1i*dd_imag 
-		dd_vec[j] = dd 
+		x_j = X[j] + 1j*Y[j]
+		dd = ddH[x_a, x_j]
+		dd_vec[j] = np.real(dd)
 
 
 	w = np.triu(w, k=1)
@@ -84,11 +91,32 @@ def dE_dxa(D, w, X, alpha):
 	dEdxa = 2*np.einsum('j,j,j', w_j, diffmat, dd_vec)
 	return dEdxa
 
-def HMDS_update(D, w, X, alpha):
+def dE_dxa_q(x, D, w, X, Y, alpha, q):
 
-	dE = dE_dxa(D,w,X,alpha)
-	delta = eta*dE 
+	a = 0
+	if q==1:
+		X[alpha]=x
+		a = dE_dxa(D, w, X, Y, alpha, q)
+	elif q==2:
+		Y[alpha] = x
+		a = dE_dxa(D,w, X, Y, alpha, q)
+	return a
+
+def HMDS_update(D, w, X, Y, alpha, eta):
+
+	dE_1 = dE_dxa(D,w,X,Y,alpha, 1)
+	dE_2 = dE_dxa(D, w, X, Y, alpha, 2)
+	ddE_dxa_1 = lambda x: dE_dxa_q(x, D, w, X, Y, alpha, 1)
+	ddE_dxa_2 = lambda y: dE_dxa_q(y, D, w, X, Y, alpha, 2)
+	ddEdxa1 = derivative(ddE_dxa_1, X[alpha], dx=1e-4)
+	ddEdxa2 = derivative(ddE_dxa_1, Y[alpha], dx=1e-4)
+
+	delta_r = dE_1 / np.abs(ddEdxa1)
+	delta_i = dE_2 / np.abs(ddEdxa2)
+
+	delta = eta*(delta_r +1j*delta_i) 
 	X[alpha] = mobius_xform(X[alpha], delta, 1)
+
 
 
 
