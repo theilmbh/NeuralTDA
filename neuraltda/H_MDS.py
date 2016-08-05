@@ -1,6 +1,7 @@
 import numpy as np 
 import scipy as sp 
 from scipy.misc import derivative
+from numpy.linalg import lstsq
 
 def d_H(x1, x2):
 
@@ -102,26 +103,61 @@ def dE_dxa_q(x, D, w, X, Y, alpha, q):
 		a = dE_dxa(D,w, X, Y, alpha, q)
 	return a
 
+
 def HMDS_update(D, w, X, Y, alpha, eta):
 
 	dE_1 = dE_dxa(D,w,X,Y,alpha, 1)
 	dE_2 = dE_dxa(D, w, X, Y, alpha, 2)
 	ddE_dxa_1 = lambda x: dE_dxa_q(x, D, w, X, Y, alpha, 1)
 	ddE_dxa_2 = lambda y: dE_dxa_q(y, D, w, X, Y, alpha, 2)
-	ddEdxa1 = derivative(ddE_dxa_1, X[alpha], dx=1e-4)
-	ddEdxa2 = derivative(ddE_dxa_1, Y[alpha], dx=1e-4)
+	ddEdxa1 = derivative(ddE_dxa_1, X[alpha], dx=1e-3)
+	ddEdxa2 = derivative(ddE_dxa_2, Y[alpha], dx=1e-3)
 
+	print('de1 {}'.format(dE_1))
+	print('de12 {}'.format(dE_2))
+	print('dde1 {}'.format(ddEdxa1))
+	print('dde2 {}'.format(ddEdxa2))
 	delta_r = dE_1 / np.abs(ddEdxa1)
 	delta_i = dE_2 / np.abs(ddEdxa2)
 
 	#delta_r = dE_1 / 1.0
 	#delta_i = dE_2 / 1.0
 
-	delta = -1.0*eta*(delta_r +1j*delta_i) 
-	new = mobius_xform(delta, X[alpha]+1j*Y[alpha], 1)
+	delta = -1.0*(delta_r +1j*delta_i) 
+	if eta > 1.0/np.abs(delta):
+		print('eta: {}'.format(eta))
+		print('delta: {}'.format(delta))
+		eta = 0.8*1.0/np.abs(delta) 
+		print('new eta: {}'.format(eta))
+	print('delta mag: {}'.format(np.abs(delta)))
+	new = mobius_xform(eta*delta, X[alpha]+1j*Y[alpha], 1)
 	return new
 
+def HMDS_update2(D, w, X, Y, alpha, eta, lam):
 
+	dE_1 = dE_dxa(D,w,X,Y,alpha, 1)
+	dE_2 = dE_dxa(D, w, X, Y, alpha, 2)
+
+	dE = np.array([dE_1, dE_2])
+	bet = -0.5*dE 
+	alph_mat = np.outer(dE, dE)
+
+	lm_mat = np.ones((len(dE), len(dE))) + np.diag(len(dE)*[lam])
+	alph_mat_prime = np.multiply(alph_mat,lm_mat)
+
+	delt = lstsq(alph_mat_prime, bet)[0]
+
+	delta = (delt[0] +1j*delt[1]) 
+	if eta > 1.0/np.abs(delta):
+		print('eta: {}'.format(eta))
+		print('delta: {}'.format(delta))
+		eta = 0.8*1.0/np.abs(delta) 
+		print('new eta: {}'.format(eta))
+
+	print('delta mag: {}'.format(np.abs(delta)))
+	new = mobius_xform(X[alpha]+1j*Y[alpha], eta*delta, 1)
+
+	return new
 
 
 
