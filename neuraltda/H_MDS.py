@@ -186,14 +186,15 @@ def HMDS_update3(D, w, X, Y, eta, lam):
 
     return outvec
 
-def fit_HMDS(X, Y, D, w, eta, eps, verbose=False):
+def fit_HMDS(X, Y, D, w, eta, eps, verbose=False, maxiter=5000):
     n = len(X)
     epsvec = np.ones(n)
     diffp = 1
     X_s = np.copy(X)
     Y_s = np.copy(Y)
     lamm = 0.001*np.ones(n)
-    while diffp > eps:
+    iternum = 0
+    while (diffp > eps) or iternum < maxiter:
         alph = np.random.randint(n)
         lam = lamm[alph]
         E = E_x(X_s, Y_s, D, w)
@@ -202,9 +203,10 @@ def fit_HMDS(X, Y, D, w, eta, eps, verbose=False):
         X_s[alph] = np.real(new)
         Y_s[alph] = np.imag(new)
         #print('Test: Xs_a {} X_a {}'.format(X_s[alph], X[alph]))
+
         newE = E_x(X_s, Y_s, D, w)
-        if verbose:
-            print('newE: {}  E: {}'.format(newE, E))
+        if np.mod(iternum, 25)==0 and verbose:
+            print('Iteration: {} E: {}'.format(iternum, E))
         if newE > E:
             #print('Resetting X_s, Y_s')
             lam = lam*10.0
@@ -226,7 +228,7 @@ def fit_HMDS(X, Y, D, w, eta, eps, verbose=False):
         lamm[alph] = lam
         diffp = np.abs(newE-E)
         epsvec[alph] = diffp
-        #print(newE)
+        iternum = iternum+1
     return (X+1j*Y)
 
 def gromov_product(x, y, p, D):
