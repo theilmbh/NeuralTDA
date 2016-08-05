@@ -58,7 +58,16 @@ double complex mobius_xform(double complex z, double complex c, double theta)
 double HMDS_E(double complex *X, double complex **data, double **w, int n)
 {
 	double **distmat = get_distances(X, n);
-	
+	double E = 0.0;
+	for (int i=0; i<n; i++)
+	{
+		for(int j=i+1; j<n; j++)
+		{
+			E += w[i][j]*pow(distmat[i][j]-data[i][j], 2);
+		}
+	}
+	free(distmat);
+	return E;
 }
 
 double **get_distances(double complex *X, int n)
@@ -72,7 +81,6 @@ double **get_distances(double complex *X, int n)
 			dist = d_H(X[m], X[n]);
 			distmat[m][n] = dist;
 			distmat[n][m] = dist;
-
 		}
 	}
 	return distmat;
@@ -80,7 +88,23 @@ double **get_distances(double complex *X, int n)
 
 double complex dE_dxa(double complex *X, double complex **data, double **w, int alpha, int q)
 {
+	double **distmat = get_distances(X, n);
+	double ddH;
+	double complex x, y;
+	x = X[i];
+	
+	
+	if(q==1)
+	{
+		for(int j=alpha+1; j<n; j++)
+		{
+			y = X[j];
+			ddH = ddH_dx1_1(x, y);
 
+
+		}
+		
+	}
 }
 
 double complex HMDS_update(double complex *X, double complex **data, double **w, int alpha, int q)
