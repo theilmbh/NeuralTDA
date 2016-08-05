@@ -149,15 +149,82 @@ def HMDS_update2(D, w, X, Y, alpha, eta, lam):
 
 	delta = (delt[0] +1j*delt[1]) 
 	if eta > 1.0/np.abs(delta):
-		print('eta: {}'.format(eta))
-		print('delta: {}'.format(delta))
+		#print('eta: {}'.format(eta))
+		#print('delta: {}'.format(delta))
 		eta = 0.8*1.0/np.abs(delta) 
-		print('new eta: {}'.format(eta))
+		#print('new eta: {}'.format(eta))
 
-	print('delta mag: {}'.format(np.abs(delta)))
+	#print('delta mag: {}'.format(np.abs(delta)))
 	new = mobius_xform(X[alpha]+1j*Y[alpha], eta*delta, 1)
 
 	return new
 
+def HMDS_update3(D, w, X, Y, eta, lam):
 
+	outvec = np.zeros(len(X))
+	dE = np.zeros(2*len(X))
+	for alph in range(len(X)):
 
+		dE_1 = dE_dxa(D,w,X,Y,alph, 1)
+		dE_2 = dE_dxa(D, w, X, Y, alph, 2)
+		dE[2*alph] = dE_1
+		dE[2*alph+1] = dE_2 
+	bet = -0.5*dE 
+	alph_mat = np.outer(dE, dE)
+
+	lm_mat = np.ones((len(dE), len(dE))) + np.diag(len(dE)*[lam])
+	alph_mat_prime = np.multiply(alph_mat,lm_mat)
+
+	delt = lstsq(alph_mat_prime, bet)[0]
+
+	for alph in range(len(X)):
+		delta = delt[2*alph] + 1j*delt[2*alph+1]
+		eta_act = eta
+		if eta > 1.0/np.abs(delta):
+			eta_act = 0.8*1.0/np.abs(delta) 
+		outvec[alph] = mobius_xform(X[alph]+1j*Y[alph], eta_act*delta, 1)
+
+	return outvec
+
+def fit_HMDS(X, Y, D, w, eta, eps, verbose=False):
+
+	epsvec = np.ones(n)
+	diffp = 1
+	X_s = np.copy(X)
+	Y_s = np.copy(Y)
+	lamm = 0.001*np.ones(n)
+	while any(epsvec > eps):
+    	alph = np.random.randint(n)
+    	lam = lamm[alph]
+    	E = hmds.E_x(X_s, Y_s, D, w)
+    	new = hmds.HMDS_update2(D, w, X_s, Y_s, alph, eta, lam)
+    	#print('Xs_a {} X_a {}'.format(X_s[alph], X[alph]))
+    	X_s[alph] = np.real(new)
+    	Y_s[alph] = np.imag(new)
+    	#print('Test: Xs_a {} X_a {}'.format(X_s[alph], X[alph]))
+    	newE = hmds.E_x(X_s, Y_s, D, w)
+    	if verbose:
+    		print('newE: {}  E: {}'.format(newE, E))
+    	if newE > E:
+        	#print('Resetting X_s, Y_s')
+        	lam = lam*10.0
+        	#print('Xs_a {} X_a {}'.format(X_s[alph], X[alph]))
+        	X_s[alph] = X[alph]
+        	Y_s[alph] = Y[alph]
+        	#print('AR: Xs_a {} X_a {}'.format(X_s[alph], X[alph]))
+    	elif newE < E:
+        	#print('saving')
+        	lam = lam/10.0
+        	#print('Xs_a {} X_a {}'.format(X_s[alph], X[alph]))
+        	X[alph] = X_s[alph]
+        	Y[alph] = Y_s[alph]
+        	#print('AS: Xs_a {} X_a {}'.format(X_s[alph], X[alph]))
+    	if lam > 1e4:
+        	lam = 1e4
+    	elif lam < 1e-4:
+        	lam = 1e-4
+    	lamm[alph] = lam
+    	diffp = np.abs(newE-E)
+    	epsvec[alph] = diffp
+    	#print(newE)
+    return (X+1j*Y)
