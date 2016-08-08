@@ -86,29 +86,45 @@ double **get_distances(double complex *X, int n)
 	return distmat;
 }
 
-double complex dE_dxa(double complex *X, double complex **data, double **w, int alpha, int q)
+double complex dE_dxa(double complex *X, double complex **data, double **w, int alpha, int n, int q)
 {
 	double **distmat = get_distances(X, n);
 	double ddH;
 	double complex x, y;
+
+	double *dd_vec = calloc(n-alpha, sizeof(double));
+	double dEdxa = 0.0;
 	x = X[i];
-	
-	
 	if(q==1)
 	{
 		for(int j=alpha+1; j<n; j++)
 		{
 			y = X[j];
 			ddH = ddH_dx1_1(x, y);
-
-
+			dEdxa += 2*w[alpha][j]*(distmat[alpha][j] - data[alpha][j])*ddH;
 		}
-		
 	}
+	else
+	{
+		for(int j=alpha+1; j<n; j++)
+		{
+			y = X[j];
+			ddH = ddH_dx1_2(x, y);
+			dEdxa += 2*w[alpha][j]*(distmat[alpha][j] - data[alpha][j])*ddH;
+		}
+	}
+	return dEdxa;
 }
 
 double complex HMDS_update(double complex *X, double complex **data, double **w, int alpha, int q)
 {
+
+	double *dE[2];
+	dE[0] = -0.5*dE_dxa(X, data, w, alpha, n, 1);
+	dE[1] = -0.5*dE_dxa(X, data, w, alpha, n, 2);
+
+	double *alph_mat[2][2];
+	
 
 }
 
