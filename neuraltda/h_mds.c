@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <complex.h>
+#include <time.h>
+
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_multifit.h>
@@ -182,9 +185,12 @@ double complex *fit_HMDS(double complex X[], double complex data[][], double w[]
 	double complex newpt, oldpt;
 	double *lamm = malloc(n, sizeof(double));
 	int iternum = 0;
+	int a;
+	srand(time(NULL));
 
 	while(diffp > eps && iternum < maxiter)
 	{
+		a = rand() % n;
 		lam = lamm[a];
 		E = HMDS_E(X, data, w, n);
 		newpt = HMDS_update(X, data, w, n, a, lam)
