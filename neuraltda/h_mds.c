@@ -9,9 +9,21 @@
 #include <gsl/gsl_multifit.h>
 
 
+/* Function Declarations */
+double d_H(double complex x1, double complex x2);
+double ddH_dx1_1(double complex x1, double complex x2);
+double ddH_dx1_2(double complex x1, double complex x2);
+double complex mobius_xform(double complex z, double complex c, double theta);
+double HMDS_E(double complex *X, double complex **data, double **w, int n);
+double **get_distances(double complex *X, int n);
+double complex dE_dxa(double complex *X, double complex **data, double **w, int alpha, int n, int q);
+double complex HMDS_update(double complex *X, double complex **data, double **w, int n, int alpha, double eta, double lambda);
+double complex *fit_HMDS(double complex *X, double complex **data, double **w, int n, double eta, double eps, int maxiter, int verbose);
+
+
 double d_H(double complex x1, double complex x2)
 {
-	double a = cabs(x1 - x2)
+	double a = cabs(x1 - x2);
 	double b = cabs(1.0 - x1*conj(x2));
 	return 2.0*catanh(a/b);
 }
@@ -29,7 +41,7 @@ double ddH_dx1_1(double complex x1, double complex x2)
 
 	double v3 = x11*x21 + x12*x22 - 1.0;
 	double v4 = x11*x22 - x12*x21;
-	double tsq = (pow(v1, 2)+pow(v2, 2))/(pow(v3, 2) + pow(v4, 2)0;)
+	double tsq = (pow(v1, 2)+pow(v2, 2))/(pow(v3, 2) + pow(v4, 2));
 
 	double a = ((v1/(pow(v1, 2) + pow(v2,2))) - (x21*v3+x22*v4)/(pow(v3,2) + pow(v4,2)));
 	double b = (2*sqrt(tsq))/(1-tsq);
@@ -49,7 +61,7 @@ double ddH_dx1_2(double complex x1, double complex x2)
 
 	double v3 = x11*x21 + x12*x22 - 1.0;
 	double v4 = x11*x22 - x12*x21;
-	double tsq = (pow(v1, 2)+pow(v2, 2))/(pow(v3, 2) + pow(v4, 2)0;)
+	double tsq = (pow(v1, 2)+pow(v2, 2))/(pow(v3, 2) + pow(v4, 2));
 
 	double a = ((v2/(pow(v1, 2) + pow(v2,2))) - (x11*v4-x22*v3)/(pow(v3,2) + pow(v4,2)));
 	double b = (2*sqrt(tsq))/(1-tsq);
@@ -63,7 +75,7 @@ double complex mobius_xform(double complex z, double complex c, double theta)
 	return a/b;
 }
 
-double HMDS_E(double complex X[], double complex data[][], double w[][], int n)
+double HMDS_E(double complex *X, double complex **data, double **w, int n)
 {
 	double **distmat = get_distances(X, n);
 	double E = 0.0;
@@ -78,7 +90,7 @@ double HMDS_E(double complex X[], double complex data[][], double w[][], int n)
 	return E;
 }
 
-double **get_distances(double complex X[], int n)
+double **get_distances(double complex *X, int n)
 {
 	double **distmat = calloc(n*n, sizeof(double));
 	double dist;
@@ -94,7 +106,7 @@ double **get_distances(double complex X[], int n)
 	return distmat;
 }
 
-double complex dE_dxa(double complex X[], double complex data[][], double w[][], int alpha, int n, int q)
+double complex dE_dxa(double complex *X, double complex **data, double **w, int alpha, int n, int q)
 {
 	double **distmat = get_distances(X, n);
 	double ddH;
@@ -102,7 +114,8 @@ double complex dE_dxa(double complex X[], double complex data[][], double w[][],
 
 	double *dd_vec = calloc(n-alpha, sizeof(double));
 	double dEdxa = 0.0;
-	x = X[i];
+	x = X[alpha];
+
 	if(q==1)
 	{
 		for(int j=alpha+1; j<n; j++)
@@ -126,9 +139,9 @@ double complex dE_dxa(double complex X[], double complex data[][], double w[][],
 	return dEdxa;
 }
 
-double complex HMDS_update(double complex X, double complex data[][], double w[][], int n, int alpha, double lambda)
+double complex HMDS_update(double complex *X, double complex **data, double **w, int n, int alpha, double eta, double lambda)
 {
-
+	double lam;
 	double dE[2];
 	dE[0] = dE_dxa(X, data, w, alpha, n, 1);
 	dE[1] = dE_dxa(X, data, w, alpha, n, 2);
@@ -153,9 +166,9 @@ double complex HMDS_update(double complex X, double complex data[][], double w[]
 		gsl_vector_set(beta, a, -0.5*dE[a]);
 	}
 
-	gsl_vector *delta_vec;
-	gsl_matrix *cov;
-	double *chisq;
+	gsl_vector *delta_vec = gsl_vector_calloc(2);
+	gsl_matrix *cov = gsl_matrix_calloc(2,2);
+	double *chisq = malloc(sizeof(double));
 	gsl_multifit_linear_workspace *worksp = gsl_multifit_linear_alloc(2, 2);
 	gsl_multifit_linear(alpha_mat, beta, delta_vec, cov, chisq, worksp);
 
@@ -174,16 +187,18 @@ double complex HMDS_update(double complex X, double complex data[][], double w[]
 	gsl_vector_free(delta_vec);
 	gsl_vector_free(beta);
 	gsl_matrix_free(alpha_mat);
+	gsl_matrix_free(cov);
 	gsl_multifit_linear_free(worksp);
-	return newpt
+	free(chisq);
+	return newpt;
 }
 
-double complex *fit_HMDS(double complex X[], double complex data[][], double w[][], int n, double eta, double eps, int maxiter)
+double complex *fit_HMDS(double complex *X, double complex **data, double **w, int n, double eta, double eps, int maxiter, int verbose)
 {
 	double diffp = 1;
 	double lam, E, newE;
 	double complex newpt, oldpt;
-	double *lamm = malloc(n, sizeof(double));
+	double *lamm = malloc(n*sizeof(double));
 	int iternum = 0;
 	int a;
 	srand(time(NULL));
@@ -193,7 +208,7 @@ double complex *fit_HMDS(double complex X[], double complex data[][], double w[]
 		a = rand() % n;
 		lam = lamm[a];
 		E = HMDS_E(X, data, w, n);
-		newpt = HMDS_update(X, data, w, n, a, lam)
+		newpt = HMDS_update(X, data, w, n, a, eta, lam);
 		oldpt = X[a];
 		X[a] = newpt;
 		newE = HMDS_E(X, data, w, n);
@@ -219,9 +234,10 @@ double complex *fit_HMDS(double complex X[], double complex data[][], double w[]
 		{
 			lam = 1e-4;
 		}
-		diffp = abs(newE - E);
+		diffp = fabs(newE - E);
 		lamm[a] = lam;
 		iternum += 1;
 	}
 	free(lamm);
+	return X;
 }
