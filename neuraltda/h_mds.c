@@ -75,7 +75,7 @@ double HMDS_E(double complex X[], double complex data[][], double w[][], int n)
 	return E;
 }
 
-double **get_distances(double complex *X, int n)
+double **get_distances(double complex X[], int n)
 {
 	double **distmat = calloc(n*n, sizeof(double));
 	double dist;
@@ -118,10 +118,12 @@ double complex dE_dxa(double complex X[], double complex data[][], double w[][],
 			dEdxa += 2*w[alpha][j]*(distmat[alpha][j] - data[alpha][j])*ddH;
 		}
 	}
+	free(dd_vec);
+	free(distmat);
 	return dEdxa;
 }
 
-double complex HMDS_update(double complex *X, double complex **data, double **w, int n, int alpha, double lambda)
+double complex HMDS_update(double complex X, double complex data[][], double w[][], int n, int alpha, double lambda)
 {
 
 	double dE[2];
@@ -165,10 +167,15 @@ double complex HMDS_update(double complex *X, double complex **data, double **w,
 	}
 
 	double complex newpt = mobius_xform(X[alpha], eta*delta, 1);
+
+	gsl_vector_free(delta_vec);
+	gsl_vector_free(beta);
+	gsl_matrix_free(alpha_mat);
+	gsl_multifit_linear_free(worksp);
 	return newpt
 }
 
-double complex *fit_HMDS(double complex *X, double complex **data, double **w, int n, double eta, double eps, int maxiter)
+double complex *fit_HMDS(double complex X[], double complex data[][], double w[][], int n, double eta, double eps, int maxiter)
 {
 	double diffp = 1;
 	double lam, E, newE;
@@ -210,4 +217,5 @@ double complex *fit_HMDS(double complex *X, double complex **data, double **w, i
 		lamm[a] = lam;
 		iternum += 1;
 	}
+	free(lamm);
 }
