@@ -241,3 +241,44 @@ double complex *fit_HMDS(double complex *X, double complex **data, double **w, i
 	free(lamm);
 	return X;
 }
+
+void read_data_distance_matrix(char *datafile, double **data_mat, int n)
+{
+
+}
+
+void generate_initial_configuration(double complex *X, int n)
+{
+	double r, theta
+	for(int i=0; i<n; i++)
+	{
+		r = (double)rand()/(double)RAND_MAX;
+		theta=2*3.14159*(double)rand()/(double)RAND_MAX;
+		X[i] = r*cexp(theta*I);
+	}
+}
+
+void calculate_w(double **data, double **w int n)
+{
+	double Dsum = 0;
+
+	for(int k=0; k<n; k++)
+	{
+		for(int l=k+1; l<n; l++)
+		{
+			Dsum += data[k][l];
+		}
+	}
+
+	for(int i=0; i<n; i++)
+	{
+		for(int j=0; j<n; j++)
+		{
+			if(i != j)
+			{
+				w[i][j] = 1.0/(Dsum*data[i][j]);
+			}
+			
+		}
+	}
+}
