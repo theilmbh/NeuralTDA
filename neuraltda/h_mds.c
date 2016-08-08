@@ -242,14 +242,38 @@ double complex *fit_HMDS(double complex *X, double complex **data, double **w, i
 	return X;
 }
 
-void read_data_distance_matrix(char *datafile, double **data_mat, int n)
+void read_data_distance_matrix(char *data_filename, double **data_mat, int n)
 {
+	FILE *data_file;
+	data_file = fopen(data_filename, "r");
+	if(!data_file)
+	{
+		printf("Error Opening Datafile!\n");
+		exit(-1);
+	}
 
+	size_t nread = fread(data_mat, sizeof(double), n, data_file);
+	if(!nread)
+	{
+		printf("Error Reading From File!\n");
+	}
+	fclose(data_file);
+}
+
+void save_embedding(double *X, int n, char *embed_filename)
+{
+	FILE *embed_file;
+	embed_file = fopen(embed_filename, "r");
+	size_t nwrite = fwrite(X, sizeof(double), n, embed_file);
+	if(!nwrite)
+	{
+		printf("Error Writing to File\n");
+	}
 }
 
 void generate_initial_configuration(double complex *X, int n)
 {
-	double r, theta
+	double r, theta;
 	for(int i=0; i<n; i++)
 	{
 		r = (double)rand()/(double)RAND_MAX;
@@ -258,7 +282,7 @@ void generate_initial_configuration(double complex *X, int n)
 	}
 }
 
-void calculate_w(double **data, double **w int n)
+void calculate_w(double **data, double **w, int n)
 {
 	double Dsum = 0;
 
