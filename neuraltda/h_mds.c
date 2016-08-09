@@ -340,3 +340,17 @@ void run_HMDS(char *data_filename, char *embed_filename, int n)
     free(data);
 
 }
+
+void test_HMDS(int n)
+{
+
+    double **test_dist_mat = calloc(n*n, sizeof(double));
+    for(int i=0; i<n; i++)
+    {
+        for(int j=0; j<n; j++)
+        {
+            
+        }
+    }
+
+}
