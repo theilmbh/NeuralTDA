@@ -343,7 +343,7 @@ void print_distance_matrix(double *dist_mat, int n)
     {
         for(int j=0; j<n; j++)
         {
-            printf("%+.3e  ", dist_mat[i*n+j]);
+            printf("%+.3f  ", dist_mat[i*n+j]);
         }
         printf("\n");
     }
