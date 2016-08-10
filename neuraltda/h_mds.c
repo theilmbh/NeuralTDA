@@ -1,8 +1,10 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <complex.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
@@ -273,7 +275,7 @@ void read_data_distance_matrix(char *data_filename, double *data_mat, int n)
         exit(-1);
     }
 
-    size_t nread = fread(data_mat, sizeof(double), n, data_file);
+    size_t nread = fread(data_mat, sizeof(double), n*n, data_file);
     if(!nread)
     {
         printf("Error Reading From File!\n");
@@ -350,7 +352,7 @@ void print_distance_matrix(double *dist_mat, int n)
     printf("===============\n\n");
 }
 
-void run_HMDS(char *data_filename, char *embed_filename, int n)
+void run_HMDS(char *data_filename, char *embed_filename, int n, double eta, double eps, int maxiter, int verbose)
 {
 
     /* Allocate Arrays */
@@ -361,15 +363,9 @@ void run_HMDS(char *data_filename, char *embed_filename, int n)
     read_data_distance_matrix(data_filename, data, n);
     generate_initial_configuration(X, n);
     calculate_w(data, w, n);
-
-    int verbose=1;
-    double eps = 1e-4;
-    double eta=0.1;
-    int maxiter=2000;
-
     fit_HMDS(X, data, w, n, eta, eps, maxiter, verbose);
     save_embedding(X, n, embed_filename);
-    print_embedding(X, n);
+
     free(X);
     free(w);
     free(data);
@@ -424,11 +420,48 @@ void test_HMDS(int n)
 
 }
 
-int main()
+int main(int argc, char **argv)
 {
     srand(time(NULL));
-    int n = 10;
-    test_HMDS(n);
+
+    char *input_file = NULL;
+    char *output_file = NULL;
+    double eps, eta;
+    int verbose, maxiter, n;
+    int c;
+
+    while((c = getopt(argc, argv, "i:o:e:n:m:h:v")) != -1)
+        switch(c)
+        {
+            case 'i':
+                input_file = optarg;
+                break;
+            case 'o':
+                output_file = optarg;
+                break;
+            case 'e':
+                eps = atof(optarg);
+                break;
+            case 'n':
+                n = atoi(optarg);
+                break;
+            case 'm':
+                maxiter = atoi(optarg);
+                break;
+            case 'h':
+                eta = atof(optarg);
+                break;
+            case 'v':
+                verbose = 1;
+                break;
+            default:
+                printf("Invalid arguments\n");
+                abort();
+
+        }
+
+    run_HMDS(input_file, output_file, n, eta, eps, maxiter, verbose);
+
     return 0;
 
 }
