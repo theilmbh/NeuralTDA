@@ -335,6 +335,21 @@ void print_embedding(double complex *X, int n)
     }
 }
 
+void print_distance_matrix(double *dist_mat, int n)
+{
+    printf("\nDistance Matrix\n");
+    printf("===============\n");
+    for(int i=0; i<n; i++)
+    {
+        for(int j=0; j<n; j++)
+        {
+            printf("%+.3e  ", dist_mat[i*n+j]);
+        }
+        printf("\n");
+    }
+    printf("===============\n\n");
+}
+
 void run_HMDS(char *data_filename, char *embed_filename, int n)
 {
 
@@ -368,6 +383,7 @@ void test_HMDS(int n)
 
     char *embed_filename = "/Users/brad/test_hmds.dat";
     double *test_dist_mat = calloc(n*n, sizeof(double));
+    double *final_dist_mat;
     double rand_dist;
 
     printf("Creating Distance Matrix\n");
@@ -396,8 +412,12 @@ void test_HMDS(int n)
 
     print_embedding(X, n);
     fit_HMDS(X, test_dist_mat, w, n, eta, eps, maxiter, verbose);
+    final_dist_mat = get_distances(X, n);
     save_embedding(X, n, embed_filename);
     print_embedding(X, n);
+    print_distance_matrix(test_dist_mat, n);
+    print_distance_matrix(final_dist_mat, n);
+
     free(X);
     free(w);
     free(test_dist_mat);
