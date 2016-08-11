@@ -3,6 +3,7 @@ import itertools
 import topology
 import numpy as np 
 import h5py as h5 
+import subprocess
 
 def build_graph_recursive(graph, cell_group, parent_name):
 
@@ -128,3 +129,14 @@ def compute_ideal_generators(gamma_q):
 		generators.append(gen_str2)
 
 	# Relation 4: 
+
+def run_HMDS(input_file, output_file, n, eps, eta, maxiter, maxtrial, verbose):
+
+	HMDS_command = "/home/btheilma/hmds"
+	sbp_arg_list = [HMDS_command, '-i', input_file, '-o', output_file, '-n', str(n), '-e', str(eps), '-h', str(eta), '-m', str(maxiter)]
+	if verbose:
+		sbp_arg_list.append('-v')
+	if maxtrial:
+		sbp_arg_list.append('-t')
+		sbp_arg_list.append(str(maxtrial))
+	subprocess.call(sbp_arg_list)
