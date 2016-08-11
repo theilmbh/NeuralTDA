@@ -20,7 +20,7 @@ double HMDS_E(double complex *X, double *data, double *w, int n);
 double *get_distances(double complex *X, int n);
 double complex dE_dxa(double complex *X, double *data, double *w, int alpha, int n, int q);
 double complex HMDS_update(double complex *X, double *data, double *w, int n, int alpha, double eta, double lambda);
-double complex *fit_HMDS(double complex *X, double *data, double *w, int n, double eta, double eps, int maxiter, int verbose);
+double fit_HMDS(double complex *X, double *data, double *w, int n, double eta, double eps, int maxiter, int verbose);
 
 
 double d_H(double complex x1, double complex x2)
@@ -203,7 +203,7 @@ double complex HMDS_update(double complex *X, double *data, double *w, int n, in
     return newpt;
 }
 
-double complex *fit_HMDS(double complex *X, double *data, double *w, int n, double eta, double eps, int maxiter, int verbose)
+double fit_HMDS(double complex *X, double *data, double *w, int n, double eta, double eps, int maxiter, int verbose)
 {
     double diffp = 1;
     double lam, E, newE;
@@ -262,7 +262,7 @@ double complex *fit_HMDS(double complex *X, double *data, double *w, int n, doub
     }
     printf("Finished with %d iterations, E= %f\n", iternum, E);
     free(lamm);
-    return X;
+    return E;
 }
 
 void read_data_distance_matrix(char *data_filename, double *data_mat, int n)
@@ -372,11 +372,38 @@ void run_HMDS(char *data_filename, char *embed_filename, int n, double eta, doub
 
 }
 
+void run_multiple_HMDS(char *data_filename, char *embed_filename, int n, double eta, double eps, int maxiter, int ntrials, int verbose)
+{
+    /* Runs Multiple HMDS fits; keeps the one with smallest energy */
+
+    double complex *X = malloc(n*sizeof(double complex));
+    double complex *X_save = malloc(n*sizeof(double complex));
+    double *w = malloc(n*n*sizeof(double));
+    double *data = malloc(n*n*sizeof(double));
+
+    double oldE = 0.0;
+    double newE = 0.0;
+
+    read_data_distance_matrix(data_filename, data, n);
+    calculate_w(data, w, n);
+    for(int trial=0; trial<ntrials; trial++)
+    {
+        printf("MultiHMDS: Trial %d of %d\n", trial, ntrials);
+        generate_initial_configuration(X, n);
+        newE = fit_HMDS(X, data, w, n, eta, eps, maxiter, verbose);
+        if((newE < oldE) || (trial==0))
+        {
+            memcpy(X_save, X, n*sizeof(double complex));
+            oldE = newE;
+        }
+    }
+    save_embedding(X_save, n, embed_filename);
+}
+
 void test_HMDS(int n)
 {
-
+    
     printf("Testing HMDS\n");
-
     char *embed_filename = "/Users/brad/test_hmds.dat";
     double *test_dist_mat = calloc(n*n, sizeof(double));
     double *final_dist_mat;
