@@ -1499,7 +1499,7 @@ def ccg(fr_i, fr_j, T, tau):
     Returns cross correlogram of Giusti et al. 2015
     '''
 
-    ccg_ij = integrate.quad(lambda x: fr_i(x)*fr_j(x+tau), 0, T)/T
+    ccg_ij, err = integrate.quad(lambda x: fr_i(x)*fr_j(x+tau), 0, T)/T
     return ccg_ij
 
 def Rccg():
@@ -1515,8 +1515,8 @@ def compute_Cij(binned_dataset, windows, fs, i, j, tmax):
     ccg_ij = lambda tau: ccg(fr_i, fr_j, T, tau)
     ccg_ji = lambda tau: ccg(fr_j, fr_i, T, tau)
 
-    ccg_ij_val = integrate.quad(ccg_ij, 0, tmax)
-    ccg_ji_val = integrate.quad(ccg_ji, 0, tmax)
+    ccg_ij_val, err = integrate.quad(ccg_ij, 0, tmax)
+    ccg_ji_val, err = integrate.quad(ccg_ji, 0, tmax)
     Cij_unnorm = max(ccg_ij_val, ccg_ji_val)
 
     Cij = Cij_unnorm/(tmax*r_i*r_j)
