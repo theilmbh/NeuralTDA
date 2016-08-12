@@ -1281,7 +1281,7 @@ def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_
                 stimdata = popvec_f[stim]
                 permute_recursive(stimdata, perm_stimgrp, n_cells_in_perm, nperms)
 
-def Cij_recursive(data_group, tmax, nclus, tmax):
+def Cij_recursive(data_group, tmax, nclus, fs):
     
     if 'pop_vec' in data_group.keys():
         Cij_mat = compute_Cij_matrix(data_group['pop_vec'], data_group['windows'], fs, nclus, tmax)
