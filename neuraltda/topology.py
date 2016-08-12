@@ -1506,7 +1506,7 @@ def Rccg():
     Rccg_ji = lambda tau, t: fr_j(t)*fr_i(t+tau)/T
     return (Rccg_ij, Rccg_ji)
 
-def Cij(binned_dataset, windows, fs, i, j, tmax):
+def compute_Cij(binned_dataset, windows, fs, i, j, tmax):
 
     (fr_i, fr_j, T, r_i, r_j) = calc_fr_funcs(binned_dataset, windows, fs, i, j)
 
@@ -1527,7 +1527,7 @@ def compute_Cij_matrix(binned_dataset, windows, fs, nclus, tmax):
 
     for i in range(nclus):
         for j in range(i, nclus):
-            Cij_val = Cij(binned_dataset, windows, fs, i, j, tmax)
+            Cij_val = compute_Cij(binned_dataset, windows, fs, i, j, tmax)
             Cij[i, j] = Cij_val
             Cij[j, i] = Cij_val 
     return Cij 
