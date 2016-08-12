@@ -1528,7 +1528,7 @@ def compute_Cij_matrix(binned_dataset, windows, fs, nclus, tmax):
     Cij = np.zeros((nclus, nclus))
 
     for i in range(nclus):
-        for j in range(i, nclus):
+        for j in range(i+1, nclus):
             Cij_val = compute_Cij(binned_dataset, windows, fs, i, j, tmax)
             Cij[i, j] = Cij_val
             Cij[j, i] = Cij_val 
