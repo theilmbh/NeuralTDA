@@ -1287,6 +1287,7 @@ def Cij_recursive(data_group, tmax, fs):
         nclus = len(data_group['clusters'])
         Cij_mat = compute_Cij_matrix(data_group['pop_vec'], data_group['windows'], fs, nclus, tmax)
         data_group.create_dataset('Cij', data=Cij_mat)
+        print('Correlation Matrix Computed')
     else:
         for inst_num, inst in enumerate(data_group.keys()):
             Cij_recursive(data_group[inst], tmax, fs)
