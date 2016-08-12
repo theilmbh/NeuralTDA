@@ -1474,9 +1474,11 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
 def calc_fr_funcs(binned_dataset, windows, fs, i, j):
 
     #make the time vector
-    t = windows[:, 0]/fs 
-    t = t - t[0] # realign
-    T = t[-1]
+    tstart = windows[0, 0]/fs 
+    tend = windows[-1, -1]/fs
+    t = (windows[:, 1] - windows[:, 0])/(2*fs) 
+    t = t - tstart # realign
+    T = tsart-tend
 
     # Get the firing rate vectors for cells i and j
     fr_i_vec = binned_dataset[i, :]
@@ -1487,8 +1489,8 @@ def calc_fr_funcs(binned_dataset, windows, fs, i, j):
     r_j = np.mean(fr_j_vec)
 
     # interpolate 
-    fr_i = interp1d(t, fr_i_vec, kind='zero', fill_value=0)
-    fr_j = interp1d(t, fr_j_vec, kind='zero', fill_value=0)
+    fr_i = interp1d(t, fr_i_vec, kind='nearest', bounds_error=False, fill_value="extrapolate")
+    fr_j = interp1d(t, fr_j_vec, kind='nearest', bounds_error=False, fill_value="extrapolate")
 
     return (fr_i, fr_j, T, r_i, r_j)
 
