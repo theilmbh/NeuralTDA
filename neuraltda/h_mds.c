@@ -5,6 +5,7 @@
 #include <complex.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
@@ -402,7 +403,7 @@ void run_multiple_HMDS(char *data_filename, char *embed_filename, int n, double 
 
 void test_HMDS(int n)
 {
-    
+
     printf("Testing HMDS\n");
     char *embed_filename = "/Users/brad/test_hmds.dat";
     double *test_dist_mat = calloc(n*n, sizeof(double));

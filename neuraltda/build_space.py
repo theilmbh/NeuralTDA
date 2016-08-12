@@ -130,7 +130,7 @@ def compute_ideal_generators(gamma_q):
 
 	# Relation 4: 
 
-def run_HMDS(input_file, output_file, n, eps, eta, maxiter, maxtrial, verbose):
+def do_HMDS(input_file, output_file, n, eps, eta, maxiter, maxtrial, verbose):
 
 	HMDS_command = "/home/btheilma/hmds"
 	sbp_arg_list = [HMDS_command, '-i', input_file, '-o', output_file, '-n', str(n), '-e', str(eps), '-h', str(eta), '-m', str(maxiter)]
@@ -140,3 +140,7 @@ def run_HMDS(input_file, output_file, n, eps, eta, maxiter, maxtrial, verbose):
 		sbp_arg_list.append('-t')
 		sbp_arg_list.append(str(maxtrial))
 	subprocess.call(sbp_arg_list)
+
+def run_HMDS(distmat, n, eps, eta, maxiter, maxtrial, verbose):
+
+	print("Nope")
