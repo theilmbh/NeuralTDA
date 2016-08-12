@@ -1478,7 +1478,7 @@ def calc_fr_funcs(binned_dataset, windows, fs, i, j):
     tend = windows[-1, -1]/fs
     t = (windows[:, 1] - windows[:, 0])/(2*fs) 
     t = t - tstart # realign
-    T = tsart-tend
+    T = tstart-tend
 
     # Get the firing rate vectors for cells i and j
     fr_i_vec = binned_dataset[i, :]
