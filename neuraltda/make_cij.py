@@ -16,7 +16,7 @@ def get_args():
 def main():
 
 	args = get_args()
-	block_path = os.path.abspath(args.block_path)
+	binned_path = os.path.abspath(args.binned_path)
 	tmax = args.tmax
 	topology.make_cij(binned_path, tmax)
 
