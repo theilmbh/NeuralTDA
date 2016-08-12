@@ -1281,25 +1281,25 @@ def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_
                 stimdata = popvec_f[stim]
                 permute_recursive(stimdata, perm_stimgrp, n_cells_in_perm, nperms)
 
-def Cij_recursive(data_group, tmax, nclus, fs):
+def Cij_recursive(data_group, tmax, fs):
     
     if 'pop_vec' in data_group.keys():
+        nclus = len(data_group['clusters'])
         Cij_mat = compute_Cij_matrix(data_group['pop_vec'], data_group['windows'], fs, nclus, tmax)
         data_group.create_dataset('Cij', data=Cij_mat)
     else:
         for inst_num, inst in enumerate(data_group.keys()):
-            Cij_recursive(data_group[inst], tmax, nclus, fs)
+            Cij_recursive(data_group[inst], tmax, fs)
 
 
 def compute_Cij_recursive(binned_data_file, tmax):
 
     with h5py.File(binned_data_file, "r") as popvec_f:
         fs = popvec_f.attrs['fs']
-        nclus = popvec_f.attrs['nclus']
         stims = popvec_f.keys()
         for stim in stims:
             stimdata = popvec_f[stim]
-            Cij_recursive(stimdata, tmax, nclus, fs)
+            Cij_recursive(stimdata, tmax, fs)
 
 def make_Cij(path_to_binned, tmax):
 
