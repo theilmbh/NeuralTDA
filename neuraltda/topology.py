@@ -1294,7 +1294,7 @@ def Cij_recursive(data_group, tmax, fs):
 
 def compute_Cij_recursive(binned_data_file, tmax):
 
-    with h5py.File(binned_data_file, "r") as popvec_f:
+    with h5py.File(binned_data_file, "r+") as popvec_f:
         fs = popvec_f.attrs['fs']
         stims = popvec_f.keys()
         for stim in stims:
