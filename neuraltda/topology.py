@@ -6,6 +6,8 @@ import pickle
 import h5py
 import time
 import glob
+from scipy.interpolate import interp1d
+from scipy import integrate
 
 from ephys import events, core
 
@@ -1279,6 +1281,41 @@ def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_
                 stimdata = popvec_f[stim]
                 permute_recursive(stimdata, perm_stimgrp, n_cells_in_perm, nperms)
 
+def Cij_recursive(data_group, tmax, nclus, tmax):
+    
+    if 'pop_vec' in data_group.keys():
+        Cij_mat = compute_Cij_matrix(data_group['pop_vec'], data_group['windows'], fs, nclus, tmax)
+        data_group.create_dataset('Cij', data=Cij_mat)
+    else:
+        for inst_num, inst in enumerate(data_group.keys()):
+            Cij_recursive(data_group[inst], tmax, nclus, fs)
+
+
+def compute_Cij_recursive(binned_data_file, tmax):
+
+    with h5py.File(binned_data_file, "r") as popvec_f:
+        fs = popvec_f.attrs['fs']
+        nclus = popvec_f.attrs['nclus']
+        stims = popvec_f.keys()
+        for stim in stims:
+            stimdata = popvec_f[stim]
+            Cij_recursive(stimdata, tmax, nclus, fs)
+
+def make_Cij(path_to_binned, tmax):
+
+    # get list of binned data files
+    path_to_binned = os.path.abspath(path_to_binned)
+    binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
+    if not binned_data_files:
+        print('Error: No binned data files!')
+        sys.exit(-1)
+
+    for binned_data_file in binned_data_files:
+        print("Computing Cij matrix for: {}".format(binned_data_file))
+        compute_Cij_recursive(binned_data_file, tmax)
+        print("Complete")
+
+
 def make_shuffled_controls_recursive(path_to_binned, nshuffs):
     '''
     Takes a folder containing .binned files and makes shuffled controls from them
@@ -1433,3 +1470,64 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
                 pickle.dump(betti_persistence_dict, bpfile)
         topology_log(alogf, 'Completed All Stimuli')
 
+
+def calc_fr_funcs(binned_dataset, windows, fs, i, j):
+
+    #make the time vector
+    t = windows[:, 0]/fs 
+    t = t - t[0] # realign
+    T = t[-1]
+
+    # Get the firing rate vectors for cells i and j
+    fr_i_vec = binned_dataset[i, :]
+    fr_j_vec = binned_dataset[j, :]
+
+    # get Mean Firing Rate
+    r_i = np.mean(fr_i_vec)
+    r_j = np.mean(fr_j_vec)
+
+    # interpolate 
+    fr_i = interp1d(t, fr_i_vec, kind='zero', fill_value=0)
+    fr_j = interp1d(t, fr_j_vec, kind='zero', fill_value=0)
+
+    return (fr_i, fr_j, T, r_i, r_j)
+
+def ccg(fr_i, fr_j, T, tau):
+    '''
+    Returns cross correlogram of Giusti et al. 2015
+    '''
+
+    ccg_ij = integrate.quad(lambda x: fr_i(x)*fr_j(x+tau), 0, T)/T
+    return ccg_ij
+
+def Rccg():
+
+    Rccg_ij = lambda tau, t: fr_i(t)*fr_j(t+tau)/T 
+    Rccg_ji = lambda tau, t: fr_j(t)*fr_i(t+tau)/T
+    return (Rccg_ij, Rccg_ji)
+
+def Cij(binned_dataset, windows, fs, i, j, tmax):
+
+    (fr_i, fr_j, T, r_i, r_j) = calc_fr_funcs(binned_dataset, windows, fs, i, j)
+
+    ccg_ij = lambda tau: ccg(fr_i, fr_j, T, tau)
+    ccg_ji = lambda tau: ccg(fr_j, fr_i, T, tau)
+
+    ccg_ij_val = integrate.quad(ccg_ij, 0, tmax)
+    ccg_ji_val = integrate.quad(ccg_ji, 0, tmax)
+    Cij_unnorm = max(ccg_ij_val, ccg_ji_val)
+
+    Cij = Cij_unnorm/(tmax*r_i*r_j)
+    return Cij
+
+
+def compute_Cij_matrix(binned_dataset, windows, fs, nclus, tmax):
+
+    Cij = np.zeros((nclus, nclus))
+
+    for i in range(nclus):
+        for j in [i+1:nclus:1]:
+            Cij_val = Cij(binned_dataset, windows, fs, i, j, tmax)
+            Cij[i, j] = Cij_val
+            Cij[j, i] = Cij_val 
+    return Cij 
