@@ -18,7 +18,7 @@ for BLOCK_PATH in */ ; do
 	bin_data $BLOCK_PATH $SGB_DEF_FILE $BIN_ID $NSHUFFS
 
 	echo "Permuting Data..."
-	permute_data $BLOCK_PATH/binned_data/$BIN_ID $NCELLS $NPERMS
+	permute_data_recursive $BLOCK_PATH/binned_data/$BIN_ID $NCELLS $NPERMS
 
 	echo "Shuffling Permuted Data..."
 	shuffle_data_recursive $BLOCK_PATH/binned_data/$BIN_ID/permuted_binned $NSHUFFS
