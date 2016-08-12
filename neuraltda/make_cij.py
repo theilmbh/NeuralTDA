@@ -18,7 +18,7 @@ def main():
 	args = get_args()
 	binned_path = os.path.abspath(args.binned_path)
 	tmax = args.tmax
-	topology.make_cij(binned_path, tmax)
+	topology.make_Cij(binned_path, tmax)
 
 if __name__ == '__main__':
 	main()
