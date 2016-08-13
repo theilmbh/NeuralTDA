@@ -389,7 +389,7 @@ void run_multiple_HMDS(char *data_filename, char *embed_filename, int n, double 
     calculate_w(data, w, n);
     for(int trial=0; trial<ntrials; trial++)
     {
-        printf("MultiHMDS: Trial %d of %d\n", trial, ntrials);
+        printf("MultiHMDS: Trial %d of %d\n", trial+1, ntrials);
         generate_initial_configuration(X, n);
         newE = fit_HMDS(X, data, w, n, eta, eps, maxiter, verbose);
         if((newE < oldE) || (trial==0))
@@ -455,10 +455,10 @@ int main(int argc, char **argv)
     char *input_file = NULL;
     char *output_file = NULL;
     double eps, eta;
-    int verbose, maxiter, n;
+    int verbose, maxiter, maxtrial, n;
     int c;
 
-    while((c = getopt(argc, argv, "i:o:e:n:m:h:v")) != -1)
+    while((c = getopt(argc, argv, "i:o:e:n:m:h:t:v")) != -1)
         switch(c)
         {
             case 'i':
@@ -479,6 +479,9 @@ int main(int argc, char **argv)
             case 'h':
                 eta = atof(optarg);
                 break;
+            case 't':
+                maxtrial = atoi(optarg)
+                break;
             case 'v':
                 verbose = 1;
                 break;
@@ -488,8 +491,7 @@ int main(int argc, char **argv)
 
         }
 
-    run_HMDS(input_file, output_file, n, eta, eps, maxiter, verbose);
-
+    run_multiple_HMDS(input_file, output_file, n, eta, eps, maxiter, maxtrial, verbose);
     return 0;
 
 }
