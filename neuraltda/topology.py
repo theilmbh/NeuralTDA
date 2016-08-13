@@ -1530,7 +1530,7 @@ def calc_corr_interp(binned_dataset, windows, fs, i, j, tmax):
 
 def calc_corr_raw(binned_dataset, windows, fs, i, j, tmax):
 
-    dt = window[0, 1] - windows[0, 0] / fs 
+    dt = windows[0, 1] - windows[0, 0] / fs 
     fr_i_vec = binned_dataset[i, :]
     fr_j_vec = binned_dataset[j, :]
 
