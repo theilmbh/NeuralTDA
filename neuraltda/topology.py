@@ -1496,6 +1496,55 @@ def calc_fr_funcs(binned_dataset, windows, fs, i, j):
 
     return (fr_i, fr_j, T, r_i, r_j)
 
+def calc_corr_interp(binned_dataset, windows, fs, i, j, tmax):
+
+    #make the time vector
+    tstart = windows[0, 0]/fs 
+    tend = windows[-1, -1]/fs
+    t = (windows[:, 1] - windows[:, 0])/(2*fs) 
+    t = t - tstart # realign
+    T = tstart-tend
+
+    # Get the firing rate vectors for cells i and j
+    fr_i_vec = binned_dataset[i, :]
+    fr_j_vec = binned_dataset[j, :]
+
+    # get Mean Firing Rate
+    r_i = np.mean(fr_i_vec)
+    r_j = np.mean(fr_j_vec)
+
+    # interpolate 
+    fr_i = interp1d(t, fr_i_vec, kind='nearest', bounds_error=False, fill_value="extrapolate")
+    fr_j = interp1d(t, fr_j_vec, kind='nearest', bounds_error=False, fill_value="extrapolate")
+
+    nt = np.linspace(0, T, 1000)
+    dt = nt[1]-nt[0]
+    fr_i_sig = fr_i(nt)
+    fr_j_sig = fr_j(nt)
+    corr_ij = np.correlate(fr_i_sig, fr_j_sig)
+    corr_ji = np.correlat(fr_j_sig, fr_i_sig)
+    int_lim = np.round(tmax/dt)
+    cij = np.sum(corr_ij[0:int_lim]*dt)
+    cji = np.sum(corr_ji[0:int_lim]*dt)
+    return max(cij, cji)/(tmax*r_i*r_j)
+
+def calc_corr_raw(binned_dataset, windows, fs, i, j, tmax):
+
+    dt = window[0, 1] - windows[0, 0] / fs 
+    fr_i_vec = binned_dataset[i, :]
+    fr_j_vec = binned_dataset[j, :]
+
+    # get Mean Firing Rate
+    r_i = np.mean(fr_i_vec)
+    r_j = np.mean(fr_j_vec)
+
+    corr_ij = np.correlate(fr_i_vec, fr_j_vec)
+    corr_ji = np.correlate(fr_j_vec, fr_i_vec)
+    int_lim = np.round(tmax/dt)
+    cij = np.sum(corr_ij[0:int_lim]*dt)
+    cji = np.sum(corr_ji[0:int_lim]*dt)
+    return max(cij, cji)/(tmax*r_i*r_j)
+
 def ccg(fr_i, fr_j, T, tau):
     '''
     Returns cross correlogram of Giusti et al. 2015
@@ -1533,7 +1582,7 @@ def compute_Cij_matrix(binned_dataset, windows, fs, nclus, tmax):
         for j in range(i+1, nclus):
             print("Computing Cij: i={} j={}".format(i, j))
             #print("nclus: {}, i: {}, j: {}".format(nclus, i, j))
-            Cij_val = compute_Cij(binned_dataset, windows, fs, i, j, tmax)
+            Cij_val = calc_corr_raw(binned_dataset, windows, fs, i, j, tmax)
             Cij[i, j] = Cij_val
             Cij[j, i] = Cij_val 
     return Cij 
