@@ -1299,6 +1299,7 @@ def compute_Cij_recursive(binned_data_file, tmax):
         fs = popvec_f.attrs['fs']
         stims = popvec_f.keys()
         for stim in stims:
+            print("Computing Cij matrix for stim: {}".format(stim))
             stimdata = popvec_f[stim]
             Cij_recursive(stimdata, tmax, fs)
 
@@ -1530,6 +1531,7 @@ def compute_Cij_matrix(binned_dataset, windows, fs, nclus, tmax):
 
     for i in range(nclus):
         for j in range(i+1, nclus):
+            print("Computing Cij: i={} j={}".format(i, j))
             #print("nclus: {}, i: {}, j: {}".format(nclus, i, j))
             Cij_val = compute_Cij(binned_dataset, windows, fs, i, j, tmax)
             Cij[i, j] = Cij_val
