@@ -132,7 +132,7 @@ def compute_ideal_generators(gamma_q):
 
 def do_HMDS(input_file, output_file, n, eps, eta, maxiter, maxtrial, verbose):
 
-    HMDS_command = "/home/btheilma/hmds"
+    HMDS_command = "/home/btheilma/bin/hmds"
     sbp_arg_list = [HMDS_command, '-i', input_file, '-o', output_file, '-n', str(n), '-e', str(eps), '-h', str(eta), '-m', str(maxiter)]
     if verbose:
         sbp_arg_list.append('-v')
