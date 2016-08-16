@@ -12,6 +12,8 @@ MAXT=7
 FIGX=22
 FIGY=22
 
+echo "Topological Analysis with Threshold:" $1
+
 for BLOCK_PATH in */ ; do
 
 	echo "Binning Data..."
