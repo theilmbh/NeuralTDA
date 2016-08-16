@@ -29,11 +29,11 @@ for BLOCK_PATH in */ ; do
 
 	echo "Computing Topology on Permuted Binned Data..."
 	ANALYSIS_ID_REAL=$ANALYSIS_ID_real
-	calc_CI_topology_hierarchical $ANALYSIS_ID_REAL $THRESH $BLOCK_PATH $PERMUTED_BIN_PATH
+	calc_CI_topology_recursive $ANALYSIS_ID_REAL $THRESH $BLOCK_PATH $PERMUTED_BIN_PATH
 
 	echo "Computing Topology on Shuffled Permuted Binned Data"
 	ANALYSIS_ID_SHUFFLED=$ANALYSIS_ID_shuffled
-	calc_CI_topology_hierarchical $ANALYSIS_ID_SHUFFLED $THRESH $BLOCK_PATH $SHUFFLED_PERMUTED_BIN_PATH
+	calc_CI_topology_recursive $ANALYSIS_ID_SHUFFLED $THRESH $BLOCK_PATH $SHUFFLED_PERMUTED_BIN_PATH
 	
 	echo "Making Plots..."
 	make_plots $BLOCK_PATH $ANALYSIS_ID $MAXBETTI $MAXT $FIGX $FIGY
