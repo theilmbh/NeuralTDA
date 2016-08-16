@@ -1543,7 +1543,8 @@ def calc_corr_raw(binned_dataset, windows, fs, i, j, tmax):
     int_lim = np.round(tmax/dt)
     cij = np.sum(corr_ij[0:int_lim]*dt)
     cji = np.sum(corr_ji[0:int_lim]*dt)
-    return max(cij, cji)/(tmax*r_i*r_j)
+    C = max(cij, cji)/(tmax*r_i*r_j)
+    return C 
 
 def ccg(fr_i, fr_j, T, tau):
     '''
