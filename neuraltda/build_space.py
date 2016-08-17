@@ -208,6 +208,7 @@ def plot_pf_graph_recursive(binned_dataset, thresh, title, savepath):
 
         f = plt.figure(figsize=(22,22))
         nx.draw_networkx(graph, pos=pos, edge_color=edgecolors, node_color=nodecolors, node_size=50, with_labels=False)
+        savepath = savepath +'.png'
         plt.savefig(savepath)
         plt.close(f)
     else:
@@ -223,6 +224,7 @@ def make_pf_graph_plots(binned_datafile, thresh, savepath):
         stims = bdf.keys()
         for stim in stims:
             title = stim 
+            savepath = savepath + title
             plot_pf_graph_recursive(bdf[stim], thresh, title, savepath)
 
 def compute_pf_distance_matrix(graph):
