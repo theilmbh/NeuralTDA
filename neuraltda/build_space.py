@@ -226,8 +226,8 @@ def plot_pf_graph_recursive(binned_dataset, thresh, title, savepath):
     else:
         for num, ite in enumerate(binned_dataset.keys()):
             new_title = title+'-{}-'.format(ite)
-            savepath = savepath+'-{}-'.format(ite)
-            plot_pf_graph_recursive(binned_dataset[ite], thresh, new_title, savepath)
+            new_savepath = savepath+'-{}-'.format(ite)
+            plot_pf_graph_recursive(binned_dataset[ite], thresh, new_title, new_savepath)
 
 def make_pf_graph_plots(binned_datafile, thresh, savepath):
 
@@ -272,8 +272,8 @@ def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath, dfunc_pa
     else:
         for num, ite in enumerate(binned_dataset.keys()):
             new_title = title+'-{}-'.format(ite)
-            savepath = savepath+'-{}-'.format(ite)
-            hyperbolic_embed_recursive(binned_dataset[ite], thresh, new_title, savepath, dfunc_params, hmds_params)
+            new_savepath = savepath+'-{}-'.format(ite)
+            hyperbolic_embed_recursive(binned_dataset[ite], thresh, new_title, new_savepath, dfunc_params, hmds_params)
 
 def make_hyperbolic_embeds(binned_datafile, thresh, savepath, hmds_params):
 
