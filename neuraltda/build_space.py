@@ -97,8 +97,10 @@ def build_arb_metric_graph_from_cell_groups(cell_groups, distance_func):
 
     return graph
 
-def build_power_metric_graph_from_cell_groups(cell_groups, c, tau):
+def build_power_metric_graph_from_cell_groups(cell_groups, dfunc_params):
 
+    tau = dfunc_params['tau']
+    c = dfunc_params['c']
     dfun = lambda ncell1, ncell2: power_dist(ncell1, ncell2, tau, c)
 
     graph = build_arb_metric_graph_from_cell_groups(cell_groups, dfun)
@@ -180,10 +182,17 @@ def do_HMDS(input_file, output_file, n, eps, eta, maxiter, maxtrial, verbose):
         sbp_arg_list.append(str(maxtrial))
     subprocess.call(sbp_arg_list)
 
-def run_HMDS(distmat, n, eps, eta, maxiter, maxtrial, verbose):
+def run_HMDS(distmat, hmds_params):
 
     infile = os.path.abspath('~/hmds_in.dat')
     outfile = os.path.abspath('~/hmds_out.dat')
+
+    n = hmds_params['n']
+    eps = hmds_params['eps']
+    eta = hmds_params['eta']
+    maxiter = hmds_params['maxiter']
+    maxtrial = hmds_params['maxtrial']
+    verbose = hmds_params['verbose']
 
     with open(infile, 'wb') as f:
         distmat.tofile(f)
@@ -248,25 +257,20 @@ def plot_hyperbolic_embed(X, title, savefile):
     plt.savefig(savefile)
     plt.close(f)
 
-def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath, hmds_params):
+def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath, dfunc_params, hmds_params):
 
     if 'pop_vec' in binned_dataset.keys():
-        n = hmds_params['n']
-        eps = hmds_params['eps']
-        eta = hmds_params['eta']
-        maxiter = hmds_params['maxiter']
-        maxtrial = hmds_params['maxtrial']
-        verbose = hmds_params['verbose']
+
         cgs = topology.calc_cell_groups_from_binned_data(binned_dataset, thresh)
         grph = build_power_metric_graph_from_cell_groups(cgs, c, tau)
         dmat = compute_pf_distance_matrix(grph)
-        X = run_HMDS(dmat, n, eps, eta, maxiter, maxtrial, verbose)
-        plot_hyperbolic_embed(X, title, savepath)
+        X = run_HMDS(dmat, hmds_params)
+        plot_hyperbolic_embed(X, title, savepath+'.png')
     else:
         for num, ite in enumerate(binned_dataset.keys()):
             new_title = title+'-{}-'.format(ite)
             savepath = savepath+'-{}-'.format(ite)
-            hyperbolic_embed_recursive(binned_dataset, thresh, new_title, savepath, hmds_params)
+            hyperbolic_embed_recursive(binned_dataset, thresh, new_title, savepath, dfunc_params, hmds_params)
 
 def make_hyperbolic_embeds(binned_datafile, thresh, savepath, hmds_params):
 
@@ -275,6 +279,6 @@ def make_hyperbolic_embeds(binned_datafile, thresh, savepath, hmds_params):
         for stim in stims:
             title = stim 
             savepath = savepath + title
-            hyperbolic_embed_recursive(bdf[stim], thresh, title, savepath, hmds_params)
+            hyperbolic_embed_recursive(bdf[stim], thresh, title, savepath, dfunc_params, hmds_params)
 
 
