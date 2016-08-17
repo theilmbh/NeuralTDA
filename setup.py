@@ -21,7 +21,8 @@ setup(
             'calc_CI_topology_permuted_binned = neuraltda.calculate_CI_topology_from_permuted_binned:main',
             'calc_CI_topology_recursive = neuraltda.calculate_CI_topology_recursive:main', 
             'make_plots = neuraltda.make_plots:main',
-            'make_cij = neuraltda.make_cij:main'
+            'make_cij = neuraltda.make_cij:main',
+            'make_pf_graph_plots = neuraltda.make_pf_graph_plots:main'
         ],
     },
 )
