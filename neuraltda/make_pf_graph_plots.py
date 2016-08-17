@@ -9,7 +9,7 @@ import glob
 def get_args():
 
 	parser = argparse.ArgumentParser(description='Permute Binned Spiking Data')
-	parser.add_argument('path_to_binned', type=str, help='Path to folder'
+	parser.add_argument('binned_path', type=str, help='Path to folder'
 													 'containing the source binned data files')
 
 	parser.add_argument('threshold', type=float, default=4.0, help='Threhsold')
