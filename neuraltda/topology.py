@@ -1013,11 +1013,11 @@ def make_permuted_binned_data(path_to_binned, n_cells_in_perm, n_perms):
 
 def calc_cell_groups_from_binned_data(binned_dataset, thresh):
 
-    global alogf
+    
     bds = np.array(binned_dataset['pop_vec'])
     clusters = np.array(binned_dataset['clusters'])
     [clus, nwin] = bds.shape
-    topology_log(alogf, 'Number of Clusters: {}'.format(clus))
+    
 
     mean_frs = np.mean(bds, 1)
     cell_groups = []
