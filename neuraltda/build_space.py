@@ -39,6 +39,25 @@ def build_metric_graph_recursive(graph, cell_group, parent_name, Ncells, tau):
 
     return graph
 
+def power_dist(ncells1, ncells2, tau, c):
+
+    return c*np.power(np.abs(ncells1 - ncells2)/ncells2, tau)
+
+def build_arb_metric_graph_recursive(graph, cell_group, parent_name, distance_func):
+
+    cell_group_name = ''.join(cell_group)
+    graph.add_node(cell_group_name)
+    n_cells_in_group = len(cell_group)
+    muk = distance_func(n_cells_in_group, n_cells_in_group+1)
+    graph.add_edge(cell_group_name, parent_name, weight=muk)
+    graph.edge[cell_group_name][parent_name]['name'] = cell_group_name+parent_name
+    graph.edge[cell_group_name][parent_name]['weight'] = muk
+    if n_cells_in_group > 1:
+        for subgrp in itertools.combinations(cell_group, n_cells_in_group-1):
+            build_arb_metric_graph_recursive(graph, subgrp, cell_group_name, distance_func)
+
+    return graph
+
 def build_graph_from_cell_groups(cell_groups):
 
     graph = nx.Graph()
@@ -63,6 +82,26 @@ def build_metric_graph_from_cell_groups(cell_groups, Ncells, tau):
         graph.add_edge(prev, cell_group_name, weight=1.0)
         prev=cell_group_name
 
+    return graph
+
+def build_arb_metric_graph_from_cell_groups(cell_groups, distance_func):
+
+    graph = nx.Graph()
+    prev=''
+    for win, group in cell_groups:
+        group_s = [str(s)+'-' for s in sorted(group)]
+        cell_group_name = ''.join(group_s)
+        graph = build_arb_metric_graph_recursive(graph, group_s, '', distance_func)
+        graph.add_edge(prev, cell_group_name, weight=1.0)
+        prev=cell_group_name
+
+    return graph
+
+def build_power_metric_graph_from_cell_groups(cell_groups, c, tau):
+
+    dfun = lambda ncell1, ncell2: power_dist(ncell1, ncell2, tau, c)
+
+    graph = build_arb_metric_graph_from_cell_groups(cell_groups, dfun)
     return graph
 
 def build_graph_from_binned_dataset(binned_dataset, thresh):
@@ -153,7 +192,6 @@ def run_HMDS(distmat, n, eps, eta, maxiter, maxtrial, verbose):
     with open(outfile, 'r') as f:
         hmds_out = np.fromfile(f)
     return hmds_out
-
 
 def plot_pf_graph_recursive(binned_dataset, thresh, title, savepath):
 
