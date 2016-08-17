@@ -248,9 +248,15 @@ def plot_hyperbolic_embed(X, title, savefile):
     plt.savefig(savefile)
     plt.close(f)
 
-def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath):
+def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath, hmds_params):
 
     if 'pop_vec' in binned_dataset.keys():
+        n = hmds_params['n']
+        eps = hmds_params['eps']
+        eta = hmds_params['eta']
+        maxiter = hmds_params['maxiter']
+        maxtrial = hmds_params['maxtrial']
+        verbose = hmds_params['verbose']
         cgs = topology.calc_cell_groups_from_binned_data(binned_dataset, thresh)
         grph = build_power_metric_graph_from_cell_groups(cgs, c, tau)
         dmat = compute_pf_distance_matrix(grph)
@@ -260,16 +266,15 @@ def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath):
         for num, ite in enumerate(binned_dataset.keys()):
             new_title = title+'-{}-'.format(ite)
             savepath = savepath+'-{}-'.format(ite)
-            hyperbolic_embed_recursive(binned_dataset, thresh, new_title, savepath)
+            hyperbolic_embed_recursive(binned_dataset, thresh, new_title, savepath, hmds_params)
 
-def make_hyperbolic_embeds(binned_datafile, thresh, savepath):
+def make_hyperbolic_embeds(binned_datafile, thresh, savepath, hmds_params):
 
     with h5.File(binned_datafile, 'r') as bdf:
-
         stims = bdf.keys()
         for stim in stims:
             title = stim 
             savepath = savepath + title
-            hyperbolic_embed_recursive(bdf[stim], thresh, title, savepath)
+            hyperbolic_embed_recursive(bdf[stim], thresh, title, savepath, hmds_params)
 
 
