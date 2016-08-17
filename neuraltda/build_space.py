@@ -237,3 +237,39 @@ def compute_pf_distance_matrix(graph):
         for n2, key2 in enumerate(graph.nodes()):
             dmat[n1, n2] = dat[key2]
     return dmat 
+
+def plot_hyperbolic_embed(X, title, savefile):
+
+    embed = X[0::2] + 1j*X[1::2]
+    f = plt.figure(figsize=(22,22))
+    plt.scatter(np.real(embed), np.imag(embed))
+    plt.title(title)
+
+    plt.savefig(savefile)
+    plt.close(f)
+
+def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath):
+
+    if 'pop_vec' in binned_dataset.keys():
+        cgs = topology.calc_cell_groups_from_binned_data(binned_dataset, thresh)
+        grph = build_power_metric_graph_from_cell_groups(cgs, c, tau)
+        dmat = compute_pf_distance_matrix(grph)
+        X = run_HMDS(dmat, n, eps, eta, maxiter, maxtrial, verbose)
+        plot_hyperbolic_embed(X, title, savepath)
+    else:
+        for num, ite in enumerate(binned_dataset.keys()):
+            new_title = title+'-{}-'.format(ite)
+            savepath = savepath+'-{}-'.format(ite)
+            hyperbolic_embed_recursive(binned_dataset, thresh, new_title, savepath)
+
+def make_hyperbolic_embeds(binned_datafile, thresh, savepath):
+
+    with h5.File(binned_datafile, 'r') as bdf:
+
+        stims = bdf.keys()
+        for stim in stims:
+            title = stim 
+            savepath = savepath + title
+            hyperbolic_embed_recursive(bdf[stim], thresh, title, savepath)
+
+
