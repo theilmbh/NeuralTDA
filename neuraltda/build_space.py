@@ -4,7 +4,9 @@ import topology
 import numpy as np 
 import h5py as h5 
 import subprocess
-import matplotlib.pyplot as plt 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 def build_graph_recursive(graph, cell_group, parent_name):
 
