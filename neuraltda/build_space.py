@@ -236,8 +236,8 @@ def make_pf_graph_plots(binned_datafile, thresh, savepath):
         stims = bdf.keys()
         for stim in stims:
             title = stim 
-            savepath = savepath + title
-            plot_pf_graph_recursive(bdf[stim], thresh, title, savepath)
+            new_savepath = savepath + title
+            plot_pf_graph_recursive(bdf[stim], thresh, title, new_savepath)
 
 def compute_pf_distance_matrix(graph):
 
@@ -281,7 +281,7 @@ def make_hyperbolic_embeds(binned_datafile, thresh, savepath, hmds_params):
         stims = bdf.keys()
         for stim in stims:
             title = stim 
-            savepath = savepath + title
-            hyperbolic_embed_recursive(bdf[stim], thresh, title, savepath, dfunc_params, hmds_params)
+            new_savepath = savepath + title
+            hyperbolic_embed_recursive(bdf[stim], thresh, title, new_savepath, dfunc_params, hmds_params)
 
 
