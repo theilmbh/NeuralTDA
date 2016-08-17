@@ -213,11 +213,17 @@ def plot_pf_graph_recursive(binned_dataset, thresh, title, savepath):
     else:
         for num, ite in enumerate(binned_dataset.keys()):
             new_title = title+'-{}-'.format(ite)
+            savepath = savepath+'-{}-'.format(ite)
             plot_pf_graph_recursive(binned_dataset, thresh, new_title, savepath)
 
+def make_pf_graph_plots(binned_datafile, thresh, savepath):
 
-def make_pf_graph_plots(binned_datafile, thresh):
+    with h5.File(binned_datafile, 'r') as bdf:
 
+        stims = bdf.keys()
+        for stim in stims:
+            title = stim 
+            plot_pf_graph_recursive(bdf[stim], thresh, title, savepath)
 
 def compute_pf_distance_matrix(graph):
 
