@@ -223,11 +223,13 @@ def plot_pf_graph_recursive(binned_dataset, thresh, title, savepath):
         savepath = savepath +'.png'
         plt.savefig(savepath)
         plt.close(f)
+        return
     else:
         for num, ite in enumerate(binned_dataset.keys()):
             new_title = title+'-{}-'.format(ite)
             new_savepath = savepath+'-{}-'.format(ite)
             plot_pf_graph_recursive(binned_dataset[ite], thresh, new_title, new_savepath)
+        return 
 
 def make_pf_graph_plots(binned_datafile, thresh, savepath):
 
@@ -238,6 +240,7 @@ def make_pf_graph_plots(binned_datafile, thresh, savepath):
             title = stim 
             new_savepath = savepath + title
             plot_pf_graph_recursive(bdf[stim], thresh, title, new_savepath)
+    return
 
 def compute_pf_distance_matrix(graph):
 
@@ -269,11 +272,13 @@ def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath, dfunc_pa
         dmat = compute_pf_distance_matrix(grph)
         X = run_HMDS(dmat, hmds_params)
         plot_hyperbolic_embed(X, title, savepath+'.png')
+        return 
     else:
         for num, ite in enumerate(binned_dataset.keys()):
             new_title = title+'-{}-'.format(ite)
             new_savepath = savepath+'-{}-'.format(ite)
             hyperbolic_embed_recursive(binned_dataset[ite], thresh, new_title, new_savepath, dfunc_params, hmds_params)
+        return
 
 def make_hyperbolic_embeds(binned_datafile, thresh, savepath, hmds_params):
 
@@ -283,5 +288,6 @@ def make_hyperbolic_embeds(binned_datafile, thresh, savepath, hmds_params):
             title = stim 
             new_savepath = savepath + title
             hyperbolic_embed_recursive(bdf[stim], thresh, title, new_savepath, dfunc_params, hmds_params)
+    return 
 
 
