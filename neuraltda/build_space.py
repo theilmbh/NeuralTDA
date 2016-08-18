@@ -272,6 +272,8 @@ def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath, dfunc_pa
 
         cgs = topology.calc_cell_groups_from_binned_data(binned_dataset, thresh)
         grph = build_power_metric_graph_from_cell_groups(cgs, dfunc_params)
+        n = len(grph.nodes())
+        hmds_params['n'] = n
         dmat = compute_pf_distance_matrix(grph)
         X = run_HMDS(dmat, hmds_params)
         plot_hyperbolic_embed(X, title, savepath+'.png')
