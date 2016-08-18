@@ -2,7 +2,8 @@ import networkx as nx
 import itertools
 import topology
 import numpy as np 
-import h5py as h5 
+import h5py as h5
+import os 
 import subprocess
 import matplotlib
 matplotlib.use('Agg')
@@ -176,7 +177,7 @@ def compute_ideal_generators(gamma_q):
 
 def do_HMDS(input_file, output_file, n, eps, eta, maxiter, maxtrial, verbose):
 
-    HMDS_command = "/home/btheilma/bin/hmds"
+    HMDS_command = "/Users/brad/hmds"
     sbp_arg_list = [HMDS_command, '-i', input_file, '-o', output_file, '-n', str(n), '-e', str(eps), '-h', str(eta), '-m', str(maxiter)]
     if verbose:
         sbp_arg_list.append('-v')
@@ -187,8 +188,8 @@ def do_HMDS(input_file, output_file, n, eps, eta, maxiter, maxtrial, verbose):
 
 def run_HMDS(distmat, hmds_params):
 
-    infile = os.path.abspath('~/hmds_in.dat')
-    outfile = os.path.abspath('~/hmds_out.dat')
+    infile = os.path.join(os.getcwd(), 'hmds_in.dat')
+    outfile = os.path.join(os.getcwd(), 'hmds_out.dat')
 
     n = hmds_params['n']
     eps = hmds_params['eps']
@@ -234,7 +235,7 @@ def plot_pf_graph_recursive(binned_dataset, thresh, title, savepath):
 def make_pf_graph_plots(binned_datafile, thresh, savepath):
 
     with h5.File(binned_datafile, 'r') as bdf:
-        bdf_head, bdf_tail = os.path.split(bdf)
+        bdf_head, bdf_tail = os.path.split(binned_datafile)
         bdf_name, bdf_ext = os.path.splitext(bdf_tail)
         stims = bdf.keys()
         for stim in stims:
@@ -285,7 +286,7 @@ def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath, dfunc_pa
 def make_hyperbolic_embeds(binned_datafile, thresh, savepath, dfunc_params, hmds_params):
 
     with h5.File(binned_datafile, 'r') as bdf:
-        bdf_head, bdf_tail = os.path.split(bdf)
+        bdf_head, bdf_tail = os.path.split(binned_datafile)
         bdf_name, bdf_ext = os.path.splitext(bdf_tail)
         stims = bdf.keys()
         for stim in stims:

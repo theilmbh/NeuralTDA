@@ -389,7 +389,7 @@ void run_multiple_HMDS(char *data_filename, char *embed_filename, int n, double 
     calculate_w(data, w, n);
     for(int trial=0; trial<ntrials; trial++)
     {
-        printf("MultiHMDS: Trial %d of %d\n", trial+1, ntrials);
+        printf("Trial %d of %d\n", trial+1, ntrials);
         generate_initial_configuration(X, n);
         newE = fit_HMDS(X, data, w, n, eta, eps, maxiter, verbose);
         if((newE < oldE) || (trial==0))
@@ -397,6 +397,7 @@ void run_multiple_HMDS(char *data_filename, char *embed_filename, int n, double 
             memcpy(X_save, X, n*sizeof(double complex));
             oldE = newE;
         }
+        printf("Current minimum: %f\n", oldE);
     }
     save_embedding(X_save, n, embed_filename);
 }
@@ -480,7 +481,7 @@ int main(int argc, char **argv)
                 eta = atof(optarg);
                 break;
             case 't':
-                maxtrial = atoi(optarg)
+                maxtrial = atoi(optarg);
                 break;
             case 'v':
                 verbose = 1;
