@@ -234,11 +234,12 @@ def plot_pf_graph_recursive(binned_dataset, thresh, title, savepath):
 def make_pf_graph_plots(binned_datafile, thresh, savepath):
 
     with h5.File(binned_datafile, 'r') as bdf:
-
+        bdf_head, bdf_tail = os.path.split(bdf)
+        bdf_name, bdf_ext = os.path.splitext(bdf_tail)
         stims = bdf.keys()
         for stim in stims:
             title = stim 
-            new_savepath = savepath + title
+            new_savepath = savepath + bdf_name + '-' + title
             plot_pf_graph_recursive(bdf[stim], thresh, title, new_savepath)
     return
 
@@ -262,13 +263,14 @@ def plot_hyperbolic_embed(X, title, savefile):
 
     plt.savefig(savefile)
     plt.close(f)
+    return 
 
 def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath, dfunc_params, hmds_params):
 
     if 'pop_vec' in binned_dataset.keys():
 
         cgs = topology.calc_cell_groups_from_binned_data(binned_dataset, thresh)
-        grph = build_power_metric_graph_from_cell_groups(cgs, c, tau)
+        grph = build_power_metric_graph_from_cell_groups(cgs, dfunc_params)
         dmat = compute_pf_distance_matrix(grph)
         X = run_HMDS(dmat, hmds_params)
         plot_hyperbolic_embed(X, title, savepath+'.png')
@@ -280,13 +282,15 @@ def hyperbolic_embed_recursive(binned_dataset, thresh, title, savepath, dfunc_pa
             hyperbolic_embed_recursive(binned_dataset[ite], thresh, new_title, new_savepath, dfunc_params, hmds_params)
         return
 
-def make_hyperbolic_embeds(binned_datafile, thresh, savepath, hmds_params):
+def make_hyperbolic_embeds(binned_datafile, thresh, savepath, dfunc_params, hmds_params):
 
     with h5.File(binned_datafile, 'r') as bdf:
+        bdf_head, bdf_tail = os.path.split(bdf)
+        bdf_name, bdf_ext = os.path.splitext(bdf_tail)
         stims = bdf.keys()
         for stim in stims:
             title = stim 
-            new_savepath = savepath + title
+            new_savepath = savepath + bdf_name + '-' + title
             hyperbolic_embed_recursive(bdf[stim], thresh, title, new_savepath, dfunc_params, hmds_params)
     return 
 
