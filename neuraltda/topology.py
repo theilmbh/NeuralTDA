@@ -155,12 +155,12 @@ def calc_population_vectors(spikes, clusters, windows, thresh):
         Each element is a list containing the window and the population vector.
         The population vector is an array containing cluster ID and firing rate. 
     '''
-    print('Building population vectors...')
+    logging.info('Building population vectors...')
     total_win = len(windows)
     popvec_list = []
     for win_num, win in enumerate(windows):
         if np.mod(win_num, 500)==0:
-            print("Window {} of {}".format(str(win_num), str(total_win)))
+            logging.info("Window {} of {}".format(str(win_num), str(total_win)))
             sys.stdout.flush()
         popvec = np.zeros([len(clusters.index), 3])
         for ind, cluster in enumerate(clusters['cluster'].values):
@@ -329,15 +329,14 @@ def run_perseus(pfile):
         file containing resultant betti numbers
 
     '''
-    global alogf
     print('Running Perseus...')
     of_string, ext = os.path.splitext(pfile)
     perseus_command = "/home/btheilma/bin/perseus" 
     perseus_args = "nmfsimtop {} {}".format(pfile, of_string)
-
+    
     perseus_return_code = subprocess.call([perseus_command, 'nmfsimtop', pfile, 
                                            of_string])
-    topology_log(alogf, 'perseus return code: {}'.format(perseus_return_code))
+    logging.info('perseus return code: {}'.format(perseus_return_code))
     betti_file = of_string+'_betti.txt'
     betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
     return betti_file
