@@ -175,9 +175,8 @@ def compute_ideal_generators(gamma_q):
 
     # Relation 4: 
 
-def do_HMDS(input_file, output_file, n, eps, eta, maxiter, maxtrial, verbose):
+def do_HMDS(input_file, output_file, n, eps, eta, maxiter, maxtrial, verbose, HMDS_command):
 
-    HMDS_command = "/Users/brad/hmds"
     sbp_arg_list = [HMDS_command, '-i', input_file, '-o', output_file, '-n', str(n), '-e', str(eps), '-h', str(eta), '-m', str(maxiter)]
     if verbose:
         sbp_arg_list.append('-v')
@@ -198,9 +197,14 @@ def run_HMDS(distmat, hmds_params):
     maxtrial = hmds_params['maxtrial']
     verbose = hmds_params['verbose']
 
+    if 'hmds_path' in hmds_params.keys():
+        hmds_path = hmds_params['hmds_path']
+    else:
+        hmds_path = "/Users/brad/hmds"
+
     with open(infile, 'wb') as f:
         distmat.tofile(f)
-    do_HMDS(infile, outfile, n, eps, eta, maxiter, maxtrial, verbose)
+    do_HMDS(infile, outfile, n, eps, eta, maxiter, maxtrial, verbose, hmds_path)
 
     with open(outfile, 'r') as f:
         hmds_out = np.fromfile(f)
