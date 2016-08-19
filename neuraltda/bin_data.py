@@ -3,6 +3,8 @@ import sys
 import os
 import argparse
 import topology
+import logging
+import datetime
 
 
 def get_args():
@@ -23,6 +25,17 @@ def main():
 	bin_def_file = os.path.abspath(args.bin_def_file)
 	bin_id = args.bin_id
 	nshuffs = args.nshuffs
+
+	# Logging facilities
+	# Make logging dir if doesn't exist
+	logging_dir = os.path.join(os.getcwd(), 'logs/')
+	if not os.path.exists(logging_dir):
+		os.mkdirs(logging_dir)
+	logging_filename = 'bin_data-' + datetime.now().strftime('%d%m%y%H%M%S') + '.log'
+	logging_file = os.path.join(logging_dir, logging_filename)
+	logging.basicConfig(filename=logging_file, level=logging.DEBUG, format='%(asctime)s %(message)s')
+	logging.info('Starting bin_data')
+
 	topology.prep_and_bin_data(block_path, bin_def_file, bin_id, nshuffs)
 
 

@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import pandas as pd
 import os, sys
@@ -1017,8 +1018,6 @@ def calc_cell_groups_from_binned_data(binned_dataset, thresh):
     bds = np.array(binned_dataset['pop_vec'])
     clusters = np.array(binned_dataset['clusters'])
     [clus, nwin] = bds.shape
-    
-
     mean_frs = np.mean(bds, 1)
     cell_groups = []
     for win in range(nwin):
@@ -1029,10 +1028,9 @@ def calc_cell_groups_from_binned_data(binned_dataset, thresh):
     return cell_groups
 
 def calc_bettis_from_binned_data(binned_dataset, pfile, thresh):
+    
     cell_groups = calc_cell_groups_from_binned_data(binned_dataset, thresh)
-
     build_perseus_persistent_input(cell_groups, pfile)
-
     betti_file = run_perseus(pfile)
     bettis = []
     with open(betti_file, 'r') as bf:
@@ -1064,7 +1062,6 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
     win_size : float
         window size in ms
     '''
-    global alogf 
     with h5py.File(popvec_fname, "w") as popvec_f:
 
         popvec_f.attrs['win_size'] = win_size
@@ -1094,7 +1091,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
                 trial_start = stim_trials.iloc[rep]['time_samples']
                 trial_end   = stim_trials.iloc[rep]['stimulus_end']
                 seg_start, seg_end = get_segment([trial_start, trial_end], fs, segment_info)
-                topology_log(alogf, "segments: {} {}".format(seg_start, seg_end))
+                logging.info("segments: {} {}".format(seg_start, seg_end))
                 win_size_samples = np.round(win_size/1000. * fs)
 
                 windows = create_subwindows([seg_start, seg_end], win_size_samples, 1)
@@ -1105,12 +1102,10 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
                 popvec_win_dset = trialgrp.create_dataset('windows', data=np.array(windows))
                 popvec_dset.attrs['fs'] = fs
                 popvec_dset.attrs['win_size'] = win_size
-
                 for win_ind, win in enumerate(windows):
                 # compute population activity vectors
                     spikes_in_win = get_spikes_in_window(spikes, win)
-                    clus_that_spiked = spikes_in_win['cluster'].unique()
-                    
+                    clus_that_spiked = spikes_in_win['cluster'].unique() 
                     # find spikes from each cluster
                     if len(clus_that_spiked) > 0:
                         for clu in clus_that_spiked:
@@ -1118,18 +1113,15 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
 
 def prep_and_bin_data(block_path, bin_def_file, bin_id, nshuffs):
 
-    global alogf
     spikes   = core.load_spikes(block_path)
     clusters = core.load_clusters(block_path)
     trials   = events.load_trials(block_path)
     fs       = core.load_fs(block_path)
-
     kwikfile      = core.find_kwik(block_path)
-
     binning_folder = do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
     if nshuffs:
-        print('Making Shuffled Controls')
-        make_shuffled_controls(binning_folder, nshuffs)
+        logging.info('Making shuffled controls.')
+        make_shuffled_controls_recursive(binning_folder, nshuffs)
 
 
 def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id):
@@ -1159,7 +1151,7 @@ def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file
     '''
 
     # Try to make a folder to store the binnings
-    global alogf
+
     binning_folder = os.path.join(block_path, 'binned_data/{}'.format(bin_id))
     if not os.path.exists(binning_folder):
         os.makedirs(binning_folder)
@@ -1173,18 +1165,18 @@ def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file
             win_size = float(binning_params[1])
             cluster_groups = binning_params[2]
             segment = int(binning_params[3])
-            topology_log(alogf, 'seg specifier: {}'.format(segment))
+            logging.info('segment specifier: {}'.format(segment))
             seg_start = float(binning_params[4])
             seg_end = float(binning_params[5])
             segment_info = {'period': segment, 'segstart':seg_start, 'segend': seg_end}
             cluster_group = cluster_groups.split(',')
             binning_path = os.path.join(binning_folder, '{}-{}.binned'.format(kwikname, binning_id))
             if os.path.exists(binning_path):
-                print('Binning file {} already exists, skipping..'.format(binning_path))
+                logging.warn('Binning file {} already exists, skipping..'.format(binning_path))
                 continue
-            print('Binning data into {}'.format('{}.binned'.format(binning_id)))
+            logging.info('Binning data into {}'.format('{}.binned'.format(binning_id)))
             build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, binning_path)
-            print('Done')
+            logging.info('Done')
     return binning_folder
 
 def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
@@ -1241,8 +1233,6 @@ def shuffle_recursive(data_group, perm_group, nshuffs):
 
 def shuffle_binned_data_recursive(binned_data_file, permuted_data_file, nshuffs):
 
-    global alogf
-    
     with h5py.File(binned_data_file, "r") as popvec_f:
         win_size = popvec_f.attrs['win_size'] 
         fs = popvec_f.attrs['fs'] 
@@ -1254,7 +1244,6 @@ def shuffle_binned_data_recursive(binned_data_file, permuted_data_file, nshuffs)
             perm_f.attrs['shuffled'] = '1'
             perm_f.attrs['fs']  = fs 
             perm_f.attrs['nclus'] = nclus
-
             for stim in stims:
                 perm_stimgrp = perm_f.create_group(stim)
                 stimdata = popvec_f[stim]
@@ -1262,8 +1251,6 @@ def shuffle_binned_data_recursive(binned_data_file, permuted_data_file, nshuffs)
 
 def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_in_perm, nperms):
 
-    global alogf
-    
     with h5py.File(binned_data_file, "r") as popvec_f:
         win_size = popvec_f.attrs['win_size'] 
         fs = popvec_f.attrs['fs'] 
@@ -1275,7 +1262,6 @@ def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_
             perm_f.attrs['shuffled'] = '0'
             perm_f.attrs['fs']  = fs
             perm_f.attrs['nclus'] = nclus 
-
             for stim in stims:
                 perm_stimgrp = perm_f.create_group(stim)
                 stimdata = popvec_f[stim]
@@ -1287,7 +1273,7 @@ def Cij_recursive(data_group, tmax, fs):
         nclus = len(data_group['clusters'])
         Cij_mat = compute_Cij_matrix(data_group['pop_vec'], data_group['windows'], fs, nclus, tmax)
         data_group.create_dataset('Cij', data=Cij_mat)
-        print('Correlation Matrix Computed')
+        logging.info('Cij matrix computed.')
     else:
         for inst_num, inst in enumerate(data_group.keys()):
             Cij_recursive(data_group[inst], tmax, fs)
@@ -1299,7 +1285,7 @@ def compute_Cij_recursive(binned_data_file, tmax):
         fs = popvec_f.attrs['fs']
         stims = popvec_f.keys()
         for stim in stims:
-            print("Computing Cij matrix for stim: {}".format(stim))
+            logging.info("Computing Cij matrix for stim: {}".format(stim))
             stimdata = popvec_f[stim]
             Cij_recursive(stimdata, tmax, fs)
 
@@ -1309,13 +1295,14 @@ def make_Cij(path_to_binned, tmax):
     path_to_binned = os.path.abspath(path_to_binned)
     binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
     if not binned_data_files:
+        logging.error('NO BINNED DATA FILES')
         print('Error: No binned data files!')
         sys.exit(-1)
 
     for binned_data_file in binned_data_files:
-        print("Computing Cij matrix for: {}".format(binned_data_file))
+        logging.info('Computing Cij matrix for: {}'.format(binned_data_file))
         compute_Cij_recursive(binned_data_file, tmax)
-        print("Complete")
+        logging.info('Cij computation complete.')
 
 
 def make_shuffled_controls_recursive(path_to_binned, nshuffs):
@@ -1334,6 +1321,7 @@ def make_shuffled_controls_recursive(path_to_binned, nshuffs):
     path_to_binned = os.path.abspath(path_to_binned)
     binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
     if not binned_data_files:
+        logging.error('NO BINNED DATA FILES')
         print('Error: No binned data files!')
         sys.exit(-1)
 
@@ -1343,12 +1331,10 @@ def make_shuffled_controls_recursive(path_to_binned, nshuffs):
         os.makedirs(shuffled_controls_folder)
 
     for binned_data_file in binned_data_files:
-
         bdf_fold, bdf_full_name = os.path.split(binned_data_file)
         bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
         scf_name = bdf_name + '-shuffled_control.binned'
         shuffled_control_file = os.path.join(shuffled_controls_folder, scf_name)
-
         shuffle_binned_data_recursive(binned_data_file, shuffled_control_file, nshuffs)
 
 def make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, n_perms):
@@ -1366,6 +1352,7 @@ def make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, n_perms
     path_to_binned = os.path.abspath(path_to_binned)
     binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
     if not binned_data_files:
+        logging.error('NO BINNED DATA FILES')
         print('Error: No binned data files!')
         sys.exit(-1) 
     
@@ -1374,7 +1361,6 @@ def make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, n_perms
         os.makedirs(permuted_binned_folder)
 
     for binned_data_file in binned_data_files:
-
         bdf_fold, bdf_full_name = os.path.split(binned_data_file)
         bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
         pbd_name = bdf_name + '-permuted.binned'
@@ -1419,8 +1405,8 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
     thresh : float 
         Threshold to use when identifying cell groups 
     '''
-    global alogf 
-    print('calc_CI_bettis_hierarchical_binned_data')
+    logging.info('Starting calc_CI_bettis_hierarchical_binned_data')
+    logging.info('analysis_id: {}'.format(analysis_id))
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path, 'topology/{}/{}'.format(analysis_id, bdf_name))
     if not os.path.exists(analysis_path):
@@ -1428,33 +1414,33 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
 
     analysis_files_prefix = '{}-{}'.format(bdf_name, analysis_id)
     analysis_logfile_name = '{}-{}.log'.format(bdf_name, analysis_id)
-    alogf = os.path.join(analysis_path, analysis_logfile_name)
+    logging.info('bdf_name: {}'.format(bdf_name))
+    logging.info('analysis_path: {}'.format(analysis_path))
 
     maxbetti      = 50
     kwikfile      = core.find_kwik(block_path)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
 
-    topology_log(alogf, '****** Beginning Curto+Itskov Topological Analysis of: {} ******'.format(kwikfile))
-    topology_log(alogf, '****** Using Previously Binned Dataset: {} ******'.format(bdf_name))
-    topology_log(alogf, 'Theshold: {}'.format(thresh))
+    logging.info('****** Beginning Curto+Itskov Topological Analysis of: {} ******'.format(kwikfile))
+    logging.info('Theshold: {}'.format(thresh))
     with h5py.File(binned_data_file, 'r') as bdf:
 
         stims = bdf.keys()
         nstims = len(stims)
 
         for stim in stims:
-            topology_log(alogf, 'Calculating bettis for stim: {}'.format(stim))
+            logging.info('Calculating bettis for stim: {}'.format(stim))
             stim_trials = bdf[stim]
             nreps       = len(stim_trials)
-            topology_log(alogf, 'Number of repetitions for stim {} : {}'.format(stim, str(nreps)))
+            logging.info('Number of repetitions for stim {}: {}'.format(stim, str(nreps)))
             stim_bettis = np.zeros([nreps, maxbetti])
 
             betti_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-betti.csv'
             betti_savefile = os.path.join(analysis_path, betti_savefile)
-            topology_log(alogf, 'Betti savefile: {}'.format(betti_savefile))
+            logging.info('Betti savefile: {}'.format(betti_savefile))
             betti_persistence_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-bettiPersistence.pkl'
             betti_persistence_savefile = os.path.join(analysis_path, betti_persistence_savefile)
-            topology_log(alogf, 'Betti persistence savefile: {}'.format(betti_persistence_savefile))
+            logging.info('Betti persistence savefile: {}'.format(betti_persistence_savefile))
             betti_persistence_dict = dict()
 
             #for rep, repkey in enumerate(stim_trials.keys()):
@@ -1470,7 +1456,7 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
 
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
-        topology_log(alogf, 'Completed All Stimuli')
+        logging.info('Completed All Stimuli')
 
 
 def calc_fr_funcs(binned_dataset, windows, fs, i, j):
