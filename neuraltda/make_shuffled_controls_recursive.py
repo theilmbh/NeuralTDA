@@ -29,7 +29,7 @@ def main():
 		os.makedirs(logging_dir)
 	logging_filename = 'make_shuffled_controls_recursive-' + datetime.datetime.now().strftime('%d%m%y%H%M%S') + '.log'
 	logging_file = os.path.join(logging_dir, logging_filename)
-	logging.basicConfig(filename=logging_file, level=logging.DEBUG, format='%(asctime)s %(message)s')
+	logging.basicConfig(filename=logging_file, level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 	logging.info('Starting make_shuffled_controls_recursive')
 
 	topology.make_shuffled_controls_recursive(path_to_binned, nshuffs)
