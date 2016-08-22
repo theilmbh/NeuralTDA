@@ -1376,6 +1376,7 @@ def make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, n_perms
 
 def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analysis_path, thresh):
     if 'pop_vec' in data_group.keys():
+        logging.info('compute_recursive: calculating CI bettis')
         pfile = pfile_stem + '-simplex.txt'
         pfile = os.path.join(analysis_path, pfile)
         bettis = calc_bettis_from_binned_data(data_group, pfile, thresh)
