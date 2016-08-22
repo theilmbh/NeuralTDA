@@ -367,7 +367,6 @@ def calc_bettis(spikes, segment, clusters, pfile, cg_params=DEFAULT_CG_PARAMS, p
         filtration time and the second being betti numbers
     '''
     print('In calc_bettis')
-    topology_log(alogf, 'In calc_bettis...')
     cell_groups = calc_cell_groups(spikes, segment, clusters, cg_params)
 
     if persistence:
@@ -1642,7 +1641,7 @@ def run_perseus_corrmat(pfile):
         file containing resultant betti numbers
 
     '''
-    logging.info('Running perseus corrmat.')
+    logging.info('Running perseus-corrmat.')
     of_string, ext = os.path.splitext(pfile)
     perseus_command = "/home/btheilma/bin/perseus" 
     perseus_return_code = subprocess.call([perseus_command, 'corrmat', pfile, 
@@ -1675,6 +1674,9 @@ def compute_cliquetop_recursive(data_group, pfile_stem, betti_persistence_perm_d
         pfile = os.path.join(analysis_path, pfile)
         bettis = calc_clique_topology_bettis(data_group['Cij'], nsteps, pfile)
         return bettis
+    elif ('Cij' not in data_group.keys()) and ('pop_vec' in data_group.keys()):
+        logging.error('Cij matrix not present.')
+        return dict()
     else:
         for perm, permkey in enumerate(data_group.keys()):
             new_data_group = data_group[permkey]
@@ -1684,7 +1686,7 @@ def compute_cliquetop_recursive(data_group, pfile_stem, betti_persistence_perm_d
             betti_persistence_perm_dict['{}'.format(permkey)] = bettis
         return betti_persistence_perm_dict
 
-def calc_CliqueTop_bettis_recursive(analysis_id, binned_data_file, block_path, nsteps):
+def calc_cliquetop_bettis_recursive(analysis_id, binned_data_file, block_path, nsteps):
     '''
     Given a binned data file, compute the betti numbers of the Curto-Itskov style complex 
     Takes in a binned data file with arbitrary depth of permutations.
@@ -1696,6 +1698,7 @@ def calc_CliqueTop_bettis_recursive(analysis_id, binned_data_file, block_path, n
         A string to identify this particular analysis run 
     binned_data_file : str 
         Path to the binned data file on which to compute topology 
+        MUST CONTAIN CIJ matrix
     block_path : str 
         Path to the folder containing the data for the block 
     thresh : float 
@@ -1704,7 +1707,7 @@ def calc_CliqueTop_bettis_recursive(analysis_id, binned_data_file, block_path, n
     logging.info('Starting calc_CliqueTop_bettis_recursive')
     logging.info('analysis_id: {}'.format(analysis_id))
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
-    analysis_path = os.path.join(block_path, 'topology/{}/{}'.format(analysis_id, bdf_name))
+    analysis_path = os.path.join(block_path, 'topology/clique_top/{}/{}'.format(analysis_id, bdf_name))
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
 
