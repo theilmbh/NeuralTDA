@@ -26,7 +26,7 @@ def setup_logging(func_name):
 	logging_dir = os.path.join(os.getcwd(), 'logs/')
 	if not os.path.exists(logging_dir):
 		os.makedirs(logging_dir)
-	logging_filename = '{}-'.format(func_name) + datetime.datetime.now().strftime('%d%m%y%H%M%S') + '.log'
+	logging_filename = '{}-'.format(func_name) + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.log'
 	logging_file = os.path.join(logging_dir, logging_filename)
 	logging.basicConfig(filename=logging_file, level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
 	logging.info('Starting {}.'.format(func_name))

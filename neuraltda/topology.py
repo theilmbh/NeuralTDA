@@ -1652,7 +1652,7 @@ def run_perseus_corrmat(pfile):
     betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
     return betti_file
 
-def calc_clique_toplogy_bettis(cij, nsteps, pfile):
+def calc_clique_topology_bettis(cij, nsteps, pfile):
 
     build_perseus_input_corrmat(cij, nsteps, pfile)
 
@@ -1668,3 +1668,79 @@ def calc_clique_toplogy_bettis(cij, nsteps, pfile):
             betti_numbers   = map(int, betti_data[1:])
             bettis.append([filtration_time, betti_numbers])
     return bettis
+
+def compute_cliquetop_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analysis_path, nsteps):
+    if 'Cij' in data_group.keys():
+        pfile = pfile_stem + '-simplex.txt'
+        pfile = os.path.join(analysis_path, pfile)
+        bettis = calc_clique_topology_bettis(data_group['Cij'], nsteps, pfile)
+        return bettis
+    else:
+        for perm, permkey in enumerate(data_group.keys()):
+            new_data_group = data_group[permkey]
+            new_pfile_stem = pfile_stem + '-{}'.format(permkey)
+            new_bpp_dict = dict()
+            bettis = compute_recursive(new_data_group, new_pfile_stem, new_bpp_dict, analysis_path, nsteps)
+            betti_persistence_perm_dict['{}'.format(permkey)] = bettis
+        return betti_persistence_perm_dict
+
+def calc_CliqueTop_bettis_recursive(analysis_id, binned_data_file, block_path, nsteps):
+    '''
+    Given a binned data file, compute the betti numbers of the Curto-Itskov style complex 
+    Takes in a binned data file with arbitrary depth of permutations.
+    Finds the bottom level permutation
+
+    Parameters
+    ------
+    analysis_id : str 
+        A string to identify this particular analysis run 
+    binned_data_file : str 
+        Path to the binned data file on which to compute topology 
+    block_path : str 
+        Path to the folder containing the data for the block 
+    thresh : float 
+        Threshold to use when identifying cell groups 
+    '''
+    logging.info('Starting calc_CliqueTop_bettis_recursive')
+    logging.info('analysis_id: {}'.format(analysis_id))
+    bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
+    analysis_path = os.path.join(block_path, 'topology/{}/{}'.format(analysis_id, bdf_name))
+    if not os.path.exists(analysis_path):
+        os.makedirs(analysis_path)
+
+    analysis_files_prefix = '{}-{}-CliqueTop-'.format(bdf_name, analysis_id)
+    analysis_logfile_name = '{}-{}.log'.format(bdf_name, analysis_id)
+    logging.info('bdf_name: {}'.format(bdf_name))
+    logging.info('analysis_path: {}'.format(analysis_path))
+
+    maxbetti      = 50
+    kwikfile      = core.find_kwik(block_path)
+    kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
+
+    logging.info('****** Beginning Clique Topology Analysis of: {} ******'.format(kwikfile))
+    with h5py.File(binned_data_file, 'r') as bdf:
+
+        stims = bdf.keys()
+        nstims = len(stims)
+
+        for stim in stims:
+            logging.info('Calculating CliqueTop Bettis for stim: {}'.format(stim))
+            stim_trials = bdf[stim]
+            nreps       = len(stim_trials)
+            logging.info('Number of repetitions for stim {}: {}'.format(stim, str(nreps)))
+            stim_bettis = np.zeros([nreps, maxbetti])
+
+            betti_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-betti.csv'
+            betti_savefile = os.path.join(analysis_path, betti_savefile)
+            logging.info('Betti savefile: {}'.format(betti_savefile))
+            betti_persistence_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-bettiPersistence.pkl'
+            betti_persistence_savefile = os.path.join(analysis_path, betti_persistence_savefile)
+            logging.info('Betti persistence savefile: {}'.format(betti_persistence_savefile))
+            betti_persistence_dict = dict()
+
+            pfile_stem = analysis_files_prefix + '-stim-{}'.format(stim) + '-rep-'
+            betti_persistence_dict = compute_cliquetop_recursive(stim_trials, pfile_stem, betti_persistence_dict, analysis_path, nsteps)
+
+            with open(betti_persistence_savefile, 'w') as bpfile:
+                pickle.dump(betti_persistence_dict, bpfile)
+        logging.info('Completed All Stimuli')
