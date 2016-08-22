@@ -330,6 +330,7 @@ def run_perseus(pfile):
 
     '''
     print('Running Perseus...')
+    logging.info('In run_perseus')
     of_string, ext = os.path.splitext(pfile)
     perseus_command = "/home/btheilma/bin/perseus" 
     perseus_args = "nmfsimtop {} {}".format(pfile, of_string)
