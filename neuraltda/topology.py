@@ -1653,6 +1653,7 @@ def run_perseus_corrmat(pfile):
 
 def calc_clique_topology_bettis(cij, nsteps, pfile):
 
+    logging.info('Calculating clique topology bettis')
     build_perseus_input_corrmat(cij, nsteps, pfile)
 
     betti_file = run_perseus_corrmat(pfile)
