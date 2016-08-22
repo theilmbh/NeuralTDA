@@ -22,7 +22,8 @@ setup(
             'calc_CI_topology_recursive = neuraltda.calculate_CI_topology_recursive:main', 
             'make_plots = neuraltda.make_plots:main',
             'make_cij = neuraltda.make_cij:main',
-            'make_pf_graph_plots = neuraltda.make_pf_graph_plots:main'
+            'make_pf_graph_plots = neuraltda.make_pf_graph_plots:main',
+            'calc_cliquetop_recursive = neuraltda.calculate_cliquetop_recursive:main'
         ],
     },
 )
