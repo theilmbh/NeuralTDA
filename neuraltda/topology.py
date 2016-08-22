@@ -1604,8 +1604,8 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
 
     logging.info('Removing NaNs.')
     cij = cij[~np.isnan(cij)]
-    N, M = cij.shape
-    logging.info('Shape before NaN removal: {}, {}   After: {}, {}'.format(No, Mo, N, M))
+    N = cij.shape
+    logging.info('Shape before NaN removal: {}, {}   After: {}'.format(No, Mo, N))
     if any(1-np.diag(cij)):
         logging.warn('Diagonal entries of Cij not equal to 1. Correcting')
         cij = cij + np.diag(1-np.diag(cij))
