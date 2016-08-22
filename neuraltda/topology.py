@@ -1243,6 +1243,7 @@ def shuffle_binned_data_recursive(binned_data_file, permuted_data_file, nshuffs)
             perm_f.attrs['shuffled'] = '1'
             perm_f.attrs['fs']  = fs 
             perm_f.attrs['nclus'] = nclus
+            perm_f.attrs['nshuffs'] = nshuffs
             for stim in stims:
                 perm_stimgrp = perm_f.create_group(stim)
                 stimdata = popvec_f[stim]
@@ -1261,6 +1262,7 @@ def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_
             perm_f.attrs['shuffled'] = '0'
             perm_f.attrs['fs']  = fs
             perm_f.attrs['nclus'] = nclus 
+            perm_f.attrs['n_cells_in_perm'] = n_cells_in_perm
             for stim in stims:
                 perm_stimgrp = perm_f.create_group(stim)
                 stimdata = popvec_f[stim]
@@ -1572,3 +1574,97 @@ def compute_Cij_matrix(binned_dataset, windows, fs, nclus, tmax):
             Cij[i, j] = Cij_val
             Cij[j, i] = Cij_val 
     return Cij 
+
+def build_perseus_input_corrmat(cij, nsteps, savefile):
+    '''
+    Formats Correlation Matrix information as input 
+    for perseus persistent homology software
+
+    Parameters
+    ------
+    cij : ndarray
+        correlation matrix
+    savefile : str 
+        File in which to put the formatted cellgroup information
+
+    Yields
+    ------
+    savefile : text File
+        file suitable for running perseus on
+    '''
+
+    ### NEED TO REMOVE NANs ### 
+    logging.info('Building perseus corrmat input.')
+
+    No, Mo = cij.shape
+    if(abs(No-Mo)):
+        logging.error('Not a square matrix! Aborting.')
+        return
+
+    logging.info('Removing NaNs.')
+    cij = cij[~np.isnan(cij)]
+    N, M = cij.shape
+    logging.info('Shape before NaN removal: {}, {}   After: {}, {}'.format(No, Mo, N, M))
+    if any(1-np.diag(cij)):
+        logging.warn('Diagonal entries of Cij not equal to 1. Correcting.')
+        cij = cij + np.diag(1-np.diag(cij))
+    step_size = max(cij)/float(nsteps)
+    logging.info('Using persistence step_size: {}'.format(step_size))
+
+    with open(savefile, 'w+') as pfile:
+        #write num coords per vertex
+        pfile.write('{}\n'.format(N))
+        pfile.write('{} {} {}\n'.format(0, step_size, nsteps))
+        for rowid in range(N):
+            cij_row = cij[N, :]
+            vert_str = str(cij_row)
+            row_str = vert_str.replace('[', '')
+            row_str = vert_str.replace(']', '')
+            row_str = vert_str.replace(' ', '')
+            row_str = vert_str.replace(',', ' ')
+            out_str = row_str+'\n'
+            pfile.write(out_str)
+
+    return savefile
+
+def run_perseus_corrmat(pfile):
+    ''' 
+    Runs perseus persistent homology software on the data in pfile
+
+    Parameters
+    ------
+    pfile : str 
+        file on which to compute homology
+
+    Returns
+    ------
+    betti_file : str
+        file containing resultant betti numbers
+
+    '''
+    logging.info('Running perseus corrmat.')
+    of_string, ext = os.path.splitext(pfile)
+    perseus_command = "/home/btheilma/bin/perseus" 
+    perseus_return_code = subprocess.call([perseus_command, 'corrmat', pfile, 
+                                           of_string])
+    logging.info('perseus return code: {}'.format(perseus_return_code))
+    betti_file = of_string+'_betti.txt'
+    betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
+    return betti_file
+
+def calc_clique_toplogy_bettis(cij, nsteps, pfile):
+
+    build_perseus_input_corrmat(cij, nsteps, pfile)
+
+    betti_file = run_perseus_corrmat(pfile)
+    bettis = []
+    with open(betti_file, 'r') as bf:
+        for bf_line in bf:
+            if len(bf_line)<2:
+                continue
+            betti_data      = bf_line.split()
+            nbetti          = len(betti_data)-1
+            filtration_time = int(betti_data[0])
+            betti_numbers   = map(int, betti_data[1:])
+            bettis.append([filtration_time, betti_numbers])
+    return bettis
