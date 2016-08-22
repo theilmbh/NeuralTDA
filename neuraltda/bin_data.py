@@ -6,6 +6,7 @@ import topology
 import logging
 import datetime
 
+cs_name = bin_data 
 
 def get_args():
 
@@ -18,6 +19,18 @@ def get_args():
 
 	return parser.parse_args()
 
+def setup_logging(func_name):
+
+	# Logging facilities
+	# Make logging dir if doesn't exist
+	logging_dir = os.path.join(os.getcwd(), 'logs/')
+	if not os.path.exists(logging_dir):
+		os.makedirs(logging_dir)
+	logging_filename = '{}-'.format(func_name) + datetime.datetime.now().strftime('%d%m%y%H%M%S') + '.log'
+	logging_file = os.path.join(logging_dir, logging_filename)
+	logging.basicConfig(filename=logging_file, level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
+	logging.info('Starting {}.'.format(func_name))
+
 def main():
 
 	args = get_args()
@@ -26,16 +39,7 @@ def main():
 	bin_id = args.bin_id
 	nshuffs = args.nshuffs
 
-	# Logging facilities
-	# Make logging dir if doesn't exist
-	logging_dir = os.path.join(os.getcwd(), 'logs/')
-	if not os.path.exists(logging_dir):
-		os.makedirs(logging_dir)
-	logging_filename = 'bin_data-' + datetime.datetime.now().strftime('%d%m%y%H%M%S') + '.log'
-	logging_file = os.path.join(logging_dir, logging_filename)
-	logging.basicConfig(filename=logging_file, level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
-	logging.info('Starting bin_data')
-
+	setup_logging(cs_name)
 	topology.prep_and_bin_data(block_path, bin_def_file, bin_id, nshuffs)
 
 
