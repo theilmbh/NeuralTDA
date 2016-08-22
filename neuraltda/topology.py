@@ -1675,7 +1675,7 @@ def compute_cliquetop_recursive(data_group, pfile_stem, betti_persistence_perm_d
     if 'Cij' in data_group.keys():
         pfile = pfile_stem + '-simplex.txt'
         pfile = os.path.join(analysis_path, pfile)
-        bettis = calc_clique_topology_bettis(data_group['Cij'], nsteps, pfile)
+        bettis = calc_clique_topology_bettis(np.array(data_group['Cij']), nsteps, pfile)
         return bettis
     elif ('Cij' not in data_group.keys()) and ('pop_vec' in data_group.keys()):
         logging.error('Cij matrix not present.')
