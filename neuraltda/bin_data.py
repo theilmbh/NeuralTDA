@@ -6,7 +6,7 @@ import topology
 import logging
 import datetime
 
-cs_name = bin_data 
+cs_name = 'bin_data' 
 
 def get_args():
 
