@@ -1593,11 +1593,11 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
     '''
 
     ### NEED TO REMOVE NANs ### 
-    logging.info('Building perseus corrmat input.')
+    logging.info('Building perseus corrmat input')
 
     No, Mo = cij.shape
     if(abs(No-Mo)):
-        logging.error('Not a square matrix! Aborting.')
+        logging.error('Not a square matrix! Aborting')
         return
 
     logging.info('Removing NaNs.')
@@ -1605,7 +1605,7 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
     N, M = cij.shape
     logging.info('Shape before NaN removal: {}, {}   After: {}, {}'.format(No, Mo, N, M))
     if any(1-np.diag(cij)):
-        logging.warn('Diagonal entries of Cij not equal to 1. Correcting.')
+        logging.warn('Diagonal entries of Cij not equal to 1. Correcting')
         cij = cij + np.diag(1-np.diag(cij))
     step_size = max(cij)/float(nsteps)
     logging.info('Using persistence step_size: {}'.format(step_size))
@@ -1641,12 +1641,12 @@ def run_perseus_corrmat(pfile):
         file containing resultant betti numbers
 
     '''
-    logging.info('Running perseus-corrmat.')
+    logging.info('Running perseus-corrmat')
     of_string, ext = os.path.splitext(pfile)
     perseus_command = "/home/btheilma/bin/perseus" 
     perseus_return_code = subprocess.call([perseus_command, 'corrmat', pfile, 
                                            of_string])
-    logging.info('perseus return code: {}'.format(perseus_return_code))
+    logging.info('pfile: {}'.format(pfile))
     betti_file = of_string+'_betti.txt'
     betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
     return betti_file
