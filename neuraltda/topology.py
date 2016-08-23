@@ -1652,6 +1652,7 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
         pfile.write('{}\n'.format(N))
         pfile.write('{} {} {}\n'.format(0, step_size, nsteps))
         for rowid in range(N):
+            module_logger.debug('rowid: {}    N: {}'.format(rowid, N))
             cij_row = cij[N, :]
             vert_str = str(cij_row)
             row_str = vert_str.replace('[', '')
