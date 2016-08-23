@@ -31,9 +31,9 @@ def setup_logging(func_name):
     # create logger
     logger = logging.getLogger(func_name)
     logger.setLevel(logging.DEBUG)
-    sh = logger.StreamHandler()
+    sh = logging.StreamHandler()
     # create file handler and set level to debug
-    ch = logging.FileHandler(logging_filename)
+    ch = logging.FileHandler(logging_file)
     ch.setLevel(logging.DEBUG)
     # create formatter
     formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
