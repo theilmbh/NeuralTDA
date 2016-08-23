@@ -1644,7 +1644,7 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
     #if (1-np.diag(cij)).any():
      #   module_logger.warn('Diagonal entries of Cij not equal to 1. Correcting')
       #  cij = cij + np.diag(1-np.diag(cij))
-    step_size = max(cij)/float(nsteps)
+    step_size = np.amax(cij)/float(nsteps)
     module_logger.info('Using persistence step_size: {}'.format(step_size))
 
     with open(savefile, 'w+') as pfile:
