@@ -31,7 +31,8 @@ def setup_logging(func_name):
     # create logger
     logger = logging.getLogger(func_name)
     logger.setLevel(logging.DEBUG)
-    # create console handler and set level to debug
+    sh = logger.StreamHandler()
+    # create file handler and set level to debug
     ch = logging.FileHandler(logging_filename)
     ch.setLevel(logging.DEBUG)
     # create formatter
@@ -39,8 +40,10 @@ def setup_logging(func_name):
     formatter.converter = time.gmtime
     # add formatter to ch
     ch.setFormatter(formatter)
+    sh.setFormatter(formatter)
     # add ch to logger
     logger.addHandler(ch)
+    logger.addHandler(sh)
     logging.info('Starting {}.'.format(func_name))
 
 def topology_log(logfile, log_str):
