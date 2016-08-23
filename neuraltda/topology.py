@@ -1638,9 +1638,9 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
     cij = cij[~np.isnan(cij)]
     N = cij.shape
     module_logger.info('Shape before NaN removal: {}, {}   After: {}'.format(No, Mo, N))
-    if any(1-np.diag(cij)):
-        module_logger.warn('Diagonal entries of Cij not equal to 1. Correcting')
-        cij = cij + np.diag(1-np.diag(cij))
+    #if (1-np.diag(cij)).any():
+     #   module_logger.warn('Diagonal entries of Cij not equal to 1. Correcting')
+      #  cij = cij + np.diag(1-np.diag(cij))
     step_size = max(cij)/float(nsteps)
     module_logger.info('Using persistence step_size: {}'.format(step_size))
 
