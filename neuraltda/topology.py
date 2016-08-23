@@ -1650,7 +1650,7 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
     with open(savefile, 'w+') as pfile:
         #write num coords per vertex
         pfile.write('{}\n'.format(N))
-        pfile.write('{} {} {} {}\n'.format(0, step_size, nsteps, N))
+        pfile.write('{} {} {} 5\n'.format(0, step_size, nsteps))
         for rowid in range(N):
             cij_row = cij[rowid, :]
             row_str = str(cij_row)
