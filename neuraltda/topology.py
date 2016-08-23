@@ -18,7 +18,7 @@ from ephys import events, core
 module_logger = logging.getLogger('NeuralTDA')
 
 DEFAULT_CG_PARAMS = {'cluster_group': None, 'subwin_len': 100, 
-                     'threshold': 6.0,'n_subwin': 5}
+                     'threshold': 6.0, 'n_subwin': 5}
 
 DEFAULT_SEGMENT_INFO = {'period': 1}
 
