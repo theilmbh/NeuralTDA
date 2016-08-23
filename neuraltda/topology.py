@@ -13,7 +13,7 @@ from scipy import integrate
 
 from ephys import events, core
 
-global alogf
+module_logger = logging.getLogger('NeuralTDA')
 
 #################################
 ###### Auxiliary Functions ######
@@ -29,7 +29,7 @@ def setup_logging(func_name):
     logging_filename = '{}_'.format(func_name) + datetime.datetime.utcnow().strftime('%Y-%m-%dT%H%M%S') + '.log'
     logging_file = os.path.join(logging_dir, logging_filename)
     # create logger
-    logger = logging.getLogger(func_name)
+    logger = logging.getLogger('NeuralTDA')
     logger.setLevel(logging.DEBUG)
     sh = logging.StreamHandler()
     # create file handler and set level to debug
@@ -44,7 +44,7 @@ def setup_logging(func_name):
     # add ch to logger
     logger.addHandler(ch)
     logger.addHandler(sh)
-    logging.info('Starting {}.'.format(func_name))
+    logger.info('Starting {}.'.format(func_name))
 
 def topology_log(logfile, log_str):
     with open(logfile, 'a+') as lf:
@@ -183,12 +183,12 @@ def calc_population_vectors(spikes, clusters, windows, thresh):
         Each element is a list containing the window and the population vector.
         The population vector is an array containing cluster ID and firing rate. 
     '''
-    logging.info('Building population vectors...')
+    module_logger.info('Building population vectors...')
     total_win = len(windows)
     popvec_list = []
     for win_num, win in enumerate(windows):
         if np.mod(win_num, 500)==0:
-            logging.info("Window {} of {}".format(str(win_num), str(total_win)))
+            module_logger.info("Window {} of {}".format(str(win_num), str(total_win)))
             sys.stdout.flush()
         popvec = np.zeros([len(clusters.index), 3])
         for ind, cluster in enumerate(clusters['cluster'].values):
@@ -358,14 +358,14 @@ def run_perseus(pfile):
 
     '''
     print('Running Perseus...')
-    logging.info('In run_perseus')
+    module_logger.info('In run_perseus')
     of_string, ext = os.path.splitext(pfile)
     perseus_command = "/home/btheilma/bin/perseus" 
     perseus_args = "nmfsimtop {} {}".format(pfile, of_string)
     
     perseus_return_code = subprocess.call([perseus_command, 'nmfsimtop', pfile, 
                                            of_string])
-    logging.info('perseus return code: {}'.format(perseus_return_code))
+    module_logger.info('perseus return code: {}'.format(perseus_return_code))
     betti_file = of_string+'_betti.txt'
     betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
     return betti_file
@@ -1118,7 +1118,7 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_g
                 trial_start = stim_trials.iloc[rep]['time_samples']
                 trial_end   = stim_trials.iloc[rep]['stimulus_end']
                 seg_start, seg_end = get_segment([trial_start, trial_end], fs, segment_info)
-                logging.info("segments: {} {}".format(seg_start, seg_end))
+                module_logger.info("segments: {} {}".format(seg_start, seg_end))
                 win_size_samples = np.round(win_size/1000. * fs)
 
                 windows = create_subwindows([seg_start, seg_end], win_size_samples, 1)
@@ -1147,7 +1147,7 @@ def prep_and_bin_data(block_path, bin_def_file, bin_id, nshuffs):
     kwikfile      = core.find_kwik(block_path)
     binning_folder = do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
     if nshuffs:
-        logging.info('Making shuffled controls.')
+        module_logger.info('Making shuffled controls.')
         make_shuffled_controls_recursive(binning_folder, nshuffs)
 
 
@@ -1192,18 +1192,18 @@ def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file
             win_size = float(binning_params[1])
             cluster_groups = binning_params[2]
             segment = int(binning_params[3])
-            logging.info('segment specifier: {}'.format(segment))
+            module_logger.info('segment specifier: {}'.format(segment))
             seg_start = float(binning_params[4])
             seg_end = float(binning_params[5])
             segment_info = {'period': segment, 'segstart':seg_start, 'segend': seg_end}
             cluster_group = cluster_groups.split(',')
             binning_path = os.path.join(binning_folder, '{}-{}.binned'.format(kwikname, binning_id))
             if os.path.exists(binning_path):
-                logging.warn('Binning file {} already exists, skipping..'.format(binning_path))
+                module_logger.warn('Binning file {} already exists, skipping..'.format(binning_path))
                 continue
-            logging.info('Binning data into {}'.format('{}.binned'.format(binning_id)))
+            module_logger.info('Binning data into {}'.format('{}.binned'.format(binning_id)))
             build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, binning_path)
-            logging.info('Done')
+            module_logger.info('Done')
     return binning_folder
 
 def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
@@ -1302,7 +1302,7 @@ def Cij_recursive(data_group, tmax, fs):
         nclus = len(data_group['clusters'])
         Cij_mat = compute_Cij_matrix(data_group['pop_vec'], data_group['windows'], fs, nclus, tmax)
         data_group.create_dataset('Cij', data=Cij_mat)
-        logging.info('Cij matrix computed.')
+        module_logger.info('Cij matrix computed.')
     else:
         for inst_num, inst in enumerate(data_group.keys()):
             Cij_recursive(data_group[inst], tmax, fs)
@@ -1314,7 +1314,7 @@ def compute_Cij_recursive(binned_data_file, tmax):
         fs = popvec_f.attrs['fs']
         stims = popvec_f.keys()
         for stim in stims:
-            logging.info("Computing Cij matrix for stim: {}".format(stim))
+            module_logger.info("Computing Cij matrix for stim: {}".format(stim))
             stimdata = popvec_f[stim]
             Cij_recursive(stimdata, tmax, fs)
 
@@ -1324,14 +1324,14 @@ def make_Cij(path_to_binned, tmax):
     path_to_binned = os.path.abspath(path_to_binned)
     binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
     if not binned_data_files:
-        logging.error('NO BINNED DATA FILES')
+        module_logger.error('NO BINNED DATA FILES')
         print('Error: No binned data files!')
         sys.exit(-1)
 
     for binned_data_file in binned_data_files:
-        logging.info('Computing Cij matrix for: {}'.format(binned_data_file))
+        module_logger.info('Computing Cij matrix for: {}'.format(binned_data_file))
         compute_Cij_recursive(binned_data_file, tmax)
-        logging.info('Cij computation complete.')
+        module_logger.info('Cij computation complete.')
 
 
 def make_shuffled_controls_recursive(path_to_binned, nshuffs):
@@ -1350,7 +1350,7 @@ def make_shuffled_controls_recursive(path_to_binned, nshuffs):
     path_to_binned = os.path.abspath(path_to_binned)
     binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
     if not binned_data_files:
-        logging.error('NO BINNED DATA FILES')
+        module_logger.error('NO BINNED DATA FILES')
         print('Error: No binned data files!')
         sys.exit(-1)
 
@@ -1381,7 +1381,7 @@ def make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, n_perms
     path_to_binned = os.path.abspath(path_to_binned)
     binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
     if not binned_data_files:
-        logging.error('NO BINNED DATA FILES')
+        module_logger.error('NO BINNED DATA FILES')
         print('Error: No binned data files!')
         sys.exit(-1) 
     
@@ -1404,7 +1404,7 @@ def make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, n_perms
 
 def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analysis_path, thresh):
     if 'pop_vec' in data_group.keys():
-        logging.info('compute_recursive: calculating CI bettis')
+        module_logger.info('compute_recursive: calculating CI bettis')
         pfile = pfile_stem + '-simplex.txt'
         pfile = os.path.join(analysis_path, pfile)
         bettis = calc_bettis_from_binned_data(data_group, pfile, thresh)
@@ -1435,8 +1435,8 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
     thresh : float 
         Threshold to use when identifying cell groups 
     '''
-    logging.info('Starting calc_CI_bettis_hierarchical_binned_data')
-    logging.info('analysis_id: {}'.format(analysis_id))
+    module_logger.info('Starting calc_CI_bettis_hierarchical_binned_data')
+    module_logger.info('analysis_id: {}'.format(analysis_id))
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path, 'topology/{}/{}'.format(analysis_id, bdf_name))
     if not os.path.exists(analysis_path):
@@ -1444,33 +1444,33 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
 
     analysis_files_prefix = '{}-{}'.format(bdf_name, analysis_id)
     analysis_logfile_name = '{}-{}.log'.format(bdf_name, analysis_id)
-    logging.info('bdf_name: {}'.format(bdf_name))
-    logging.info('analysis_path: {}'.format(analysis_path))
+    module_logger.info('bdf_name: {}'.format(bdf_name))
+    module_logger.info('analysis_path: {}'.format(analysis_path))
 
     maxbetti      = 50
     kwikfile      = core.find_kwik(block_path)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
 
-    logging.info('****** Beginning Curto+Itskov Topological Analysis of: {} ******'.format(kwikfile))
-    logging.info('Theshold: {}'.format(thresh))
+    module_logger.info('****** Beginning Curto+Itskov Topological Analysis of: {} ******'.format(kwikfile))
+    module_logger.info('Theshold: {}'.format(thresh))
     with h5py.File(binned_data_file, 'r') as bdf:
 
         stims = bdf.keys()
         nstims = len(stims)
 
         for stim in stims:
-            logging.info('Calculating bettis for stim: {}'.format(stim))
+            module_logger.info('Calculating bettis for stim: {}'.format(stim))
             stim_trials = bdf[stim]
             nreps       = len(stim_trials)
-            logging.info('Number of repetitions for stim {}: {}'.format(stim, str(nreps)))
+            module_logger.info('Number of repetitions for stim {}: {}'.format(stim, str(nreps)))
             stim_bettis = np.zeros([nreps, maxbetti])
 
             betti_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-betti.csv'
             betti_savefile = os.path.join(analysis_path, betti_savefile)
-            logging.info('Betti savefile: {}'.format(betti_savefile))
+            module_logger.info('Betti savefile: {}'.format(betti_savefile))
             betti_persistence_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-bettiPersistence.pkl'
             betti_persistence_savefile = os.path.join(analysis_path, betti_persistence_savefile)
-            logging.info('Betti persistence savefile: {}'.format(betti_persistence_savefile))
+            module_logger.info('Betti persistence savefile: {}'.format(betti_persistence_savefile))
             betti_persistence_dict = dict()
 
             #for rep, repkey in enumerate(stim_trials.keys()):
@@ -1486,7 +1486,7 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
 
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
-        logging.info('Completed All Stimuli')
+        module_logger.info('Completed All Stimuli')
 
 
 def calc_fr_funcs(binned_dataset, windows, fs, i, j):
@@ -1627,22 +1627,22 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
     '''
 
     ### NEED TO REMOVE NANs ### 
-    logging.info('Building perseus corrmat input')
+    module_logger.info('Building perseus corrmat input')
 
     No, Mo = cij.shape
     if(abs(No-Mo)):
-        logging.error('Not a square matrix! Aborting')
+        module_logger.error('Not a square matrix! Aborting')
         return
 
-    logging.info('Removing NaNs.')
+    module_logger.info('Removing NaNs.')
     cij = cij[~np.isnan(cij)]
     N = cij.shape
-    logging.info('Shape before NaN removal: {}, {}   After: {}'.format(No, Mo, N))
+    module_logger.info('Shape before NaN removal: {}, {}   After: {}'.format(No, Mo, N))
     if any(1-np.diag(cij)):
-        logging.warn('Diagonal entries of Cij not equal to 1. Correcting')
+        module_logger.warn('Diagonal entries of Cij not equal to 1. Correcting')
         cij = cij + np.diag(1-np.diag(cij))
     step_size = max(cij)/float(nsteps)
-    logging.info('Using persistence step_size: {}'.format(step_size))
+    module_logger.info('Using persistence step_size: {}'.format(step_size))
 
     with open(savefile, 'w+') as pfile:
         #write num coords per vertex
@@ -1675,19 +1675,19 @@ def run_perseus_corrmat(pfile):
         file containing resultant betti numbers
 
     '''
-    logging.info('Running perseus-corrmat')
+    module_logger.info('Running perseus-corrmat')
     of_string, ext = os.path.splitext(pfile)
     perseus_command = "/home/btheilma/bin/perseus" 
     perseus_return_code = subprocess.call([perseus_command, 'corrmat', pfile, 
                                            of_string])
-    logging.info('pfile: {}'.format(pfile))
+    module_logger.info('pfile: {}'.format(pfile))
     betti_file = of_string+'_betti.txt'
     betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
     return betti_file
 
 def calc_clique_topology_bettis(cij, nsteps, pfile):
 
-    logging.info('Calculating clique topology bettis')
+    module_logger.info('Calculating clique topology bettis')
     build_perseus_input_corrmat(cij, nsteps, pfile)
 
     betti_file = run_perseus_corrmat(pfile)
@@ -1710,7 +1710,7 @@ def compute_cliquetop_recursive(data_group, pfile_stem, betti_persistence_perm_d
         bettis = calc_clique_topology_bettis(np.array(data_group['Cij']), nsteps, pfile)
         return bettis
     elif ('Cij' not in data_group.keys()) and ('pop_vec' in data_group.keys()):
-        logging.error('Cij matrix not present.')
+        module_logger.error('Cij matrix not present.')
         return dict()
     else:
         for perm, permkey in enumerate(data_group.keys()):
@@ -1739,8 +1739,8 @@ def calc_cliquetop_bettis_recursive(analysis_id, binned_data_file, block_path, n
     thresh : float 
         Threshold to use when identifying cell groups 
     '''
-    logging.info('Starting calc_CliqueTop_bettis_recursive')
-    logging.info('analysis_id: {}'.format(analysis_id))
+    module_logger.info('Starting calc_CliqueTop_bettis_recursive')
+    module_logger.info('analysis_id: {}'.format(analysis_id))
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path, 'topology/clique_top/{}/{}'.format(analysis_id, bdf_name))
     if not os.path.exists(analysis_path):
@@ -1748,32 +1748,32 @@ def calc_cliquetop_bettis_recursive(analysis_id, binned_data_file, block_path, n
 
     analysis_files_prefix = '{}-{}-CliqueTop-'.format(bdf_name, analysis_id)
     analysis_logfile_name = '{}-{}.log'.format(bdf_name, analysis_id)
-    logging.info('bdf_name: {}'.format(bdf_name))
-    logging.info('analysis_path: {}'.format(analysis_path))
+    module_logger.info('bdf_name: {}'.format(bdf_name))
+    module_logger.info('analysis_path: {}'.format(analysis_path))
 
     maxbetti      = 50
     kwikfile      = core.find_kwik(block_path)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
 
-    logging.info('****** Beginning Clique Topology Analysis of: {} ******'.format(kwikfile))
+    module_logger.info('****** Beginning Clique Topology Analysis of: {} ******'.format(kwikfile))
     with h5py.File(binned_data_file, 'r') as bdf:
 
         stims = bdf.keys()
         nstims = len(stims)
 
         for stim in stims:
-            logging.info('Calculating CliqueTop Bettis for stim: {}'.format(stim))
+            module_logger.info('Calculating CliqueTop Bettis for stim: {}'.format(stim))
             stim_trials = bdf[stim]
             nreps       = len(stim_trials)
-            logging.info('Number of repetitions for stim {}: {}'.format(stim, str(nreps)))
+            module_logger.info('Number of repetitions for stim {}: {}'.format(stim, str(nreps)))
             stim_bettis = np.zeros([nreps, maxbetti])
 
             betti_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-betti.csv'
             betti_savefile = os.path.join(analysis_path, betti_savefile)
-            logging.info('Betti savefile: {}'.format(betti_savefile))
+            module_logger.info('Betti savefile: {}'.format(betti_savefile))
             betti_persistence_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-bettiPersistence.pkl'
             betti_persistence_savefile = os.path.join(analysis_path, betti_persistence_savefile)
-            logging.info('Betti persistence savefile: {}'.format(betti_persistence_savefile))
+            module_logger.info('Betti persistence savefile: {}'.format(betti_persistence_savefile))
             betti_persistence_dict = dict()
 
             pfile_stem = analysis_files_prefix + '-stim-{}'.format(stim) + '-rep-'
@@ -1781,4 +1781,4 @@ def calc_cliquetop_bettis_recursive(analysis_id, binned_data_file, block_path, n
 
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
-        logging.info('Completed All Stimuli')
+        module_logger.info('Completed All Stimuli')
