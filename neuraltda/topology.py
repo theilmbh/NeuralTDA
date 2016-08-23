@@ -1,4 +1,5 @@
 import logging
+import datetime
 import numpy as np
 import pandas as pd
 import os, sys
@@ -17,6 +18,30 @@ global alogf
 #################################
 ###### Auxiliary Functions ######
 #################################
+
+def setup_logging(func_name):
+
+    # Logging facilities
+    # Make logging dir if doesn't exist
+    logging_dir = os.path.join(os.getcwd(), 'logs/')
+    if not os.path.exists(logging_dir):
+        os.makedirs(logging_dir)
+    logging_filename = '{}_'.format(func_name) + datetime.datetime.utcnow().strftime('%Y-%m-%dT%H%M%S') + '.log'
+    logging_file = os.path.join(logging_dir, logging_filename)
+    # create logger
+    logger = logging.getLogger(func_name)
+    logger.setLevel(logging.DEBUG)
+    # create console handler and set level to debug
+    ch = logging.FileHandler(logging_filename)
+    ch.setLevel(logging.DEBUG)
+    # create formatter
+    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+    formatter.converter = time.gmtime
+    # add formatter to ch
+    ch.setFormatter(formatter)
+    # add ch to logger
+    logger.addHandler(ch)
+    logging.info('Starting {}.'.format(func_name))
 
 def topology_log(logfile, log_str):
     with open(logfile, 'a+') as lf:

@@ -5,6 +5,7 @@ import sys
 import os
 import argparse
 import topology_plots
+import topology as top
 
 cs_name = 'make_plots'
 
@@ -21,17 +22,6 @@ def get_args():
 	parser.add_argument('figy', type=int, default=22, help='size in inches plot x')
 	return parser.parse_args()
 
-def setup_logging(func_name):
-
-	# Logging facilities
-	# Make logging dir if doesn't exist
-	logging_dir = os.path.join(os.getcwd(), 'logs/')
-	if not os.path.exists(logging_dir):
-		os.makedirs(logging_dir)
-	logging_filename = '{}-'.format(func_name) + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.log'
-	logging_file = os.path.join(logging_dir, logging_filename)
-	logging.basicConfig(filename=logging_file, level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
-	logging.info('Starting {}.'.format(func_name))
 
 def main():
 
@@ -44,7 +34,7 @@ def main():
 	figy = args.figy
 	figsize = (figx, figy)
 
-	setup_logging(cs_name)
+	top.setup_logging(cs_name)
 	topology_plots.make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize)
 
 if __name__ == '__main__':

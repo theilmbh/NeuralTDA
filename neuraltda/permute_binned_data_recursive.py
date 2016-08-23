@@ -19,18 +19,6 @@ def get_args():
 
 	return parser.parse_args()
 
-def setup_logging(func_name):
-
-	# Logging facilities
-	# Make logging dir if doesn't exist
-	logging_dir = os.path.join(os.getcwd(), 'logs/')
-	if not os.path.exists(logging_dir):
-		os.makedirs(logging_dir)
-	logging_filename = '{}-'.format(func_name) + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.log'
-	logging_file = os.path.join(logging_dir, logging_filename)
-	logging.basicConfig(filename=logging_file, level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
-	logging.info('Starting {}.'.format(func_name))
-
 def main():
 
 	args = get_args()
@@ -38,7 +26,7 @@ def main():
 	n_cells_in_perm = args.n_cells_in_perm
 	nperms = args.nperms
 
-	setup_logging(console_script_name)
+	topology.setup_logging(console_script_name)
 	topology.make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, nperms)
 
 
