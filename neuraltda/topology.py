@@ -1635,7 +1635,8 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
         return
 
     module_logger.info('Removing NaNs.')
-    cij = cij[~np.isnan(cij)]
+    cij = cij[~np.isnan(cij).all(axis=1), ~np.isnan(cij).all(axis=0)]
+
     N = cij.shape
     module_logger.info('Shape before NaN removal: {}, {}   After: {}'.format(No, Mo, N))
     #if (1-np.diag(cij)).any():
