@@ -1518,20 +1518,26 @@ def calc_corr_interp(binned_dataset, windows, fs, i, j, tmax):
 
 def calc_corr_raw(binned_dataset, windows, fs, i, j, tmax):
 
-    dt = windows[0, 1] - windows[0, 0] / fs 
+    dt = (windows[0, 1] - windows[0, 0]) / fs 
+    
     fr_i_vec = binned_dataset[i, :]
     fr_j_vec = binned_dataset[j, :]
 
     # get Mean Firing Rate
     r_i = np.mean(fr_i_vec)
     r_j = np.mean(fr_j_vec)
+    
 
-    corr_ij = np.correlate(fr_i_vec, fr_j_vec)
-    corr_ji = np.correlate(fr_j_vec, fr_i_vec)
+    N = len(fr_i_vec)
+    corr_ij = np.correlate(fr_i_vec, fr_j_vec, mode='full')/float(N)
+    corr_ji = np.correlate(fr_j_vec, fr_i_vec, mode='full')/float(N)
+    
     int_lim = np.round(tmax/dt)
-    cij = np.sum(corr_ij[0:int_lim]*dt)
-    cji = np.sum(corr_ji[0:int_lim]*dt)
-    C = max(cij, cji)/(tmax*r_i*r_j)
+    if int_lim >= len(corr_ij):
+        int_lim = len(corr_ij)
+    cij = np.sum(corr_ij[0:int_lim])
+    cji = np.sum(corr_ji[0:int_lim])
+    C = max(cij, cji)/(int_lim*r_i*r_j)
     return C 
 
 def ccg(fr_i, fr_j, T, tau):
@@ -1569,9 +1575,7 @@ def compute_Cij_matrix(binned_dataset, windows, fs, nclus, tmax):
 
     for i in range(nclus):
         for j in range(i+1, nclus):
-            print("Computing Cij: i={} j={}".format(i, j))
-            #print("nclus: {}, i: {}, j: {}".format(nclus, i, j))
-            Cij_val = calc_corr_raw(binned_dataset, windows, fs, i, j, tmax)
+            Cij_val = calc_corr_raw(np.array(binned_dataset), windows, fs, i, j, tmax)
             Cij[i, j] = Cij_val
             Cij[j, i] = Cij_val 
     return Cij 
