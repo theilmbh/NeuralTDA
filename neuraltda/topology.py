@@ -647,13 +647,15 @@ def prep_and_bin_data(block_path, bin_def_file, bin_id, nshuffs):
     trials   = events.load_trials(block_path)
     fs       = core.load_fs(block_path)
     kwikfile      = core.find_kwik(block_path)
-    binning_folder = do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id)
+    binning_folder = do_bin_data(block_path, spikes, clusters, trials, fs,
+                                 kwikfile, bin_def_file, bin_id)
     if nshuffs:
         module_logger.info('Making shuffled controls.')
         make_shuffled_controls_recursive(binning_folder, nshuffs)
 
 
-def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file, bin_id):
+def do_bin_data(block_path, spikes, clusters, trials, 
+                fs, kwikfile, bin_def_file, bin_id):
     '''
     Bins the data using build_population_embedding 
     Parameters are given in bin_def_file
@@ -697,14 +699,21 @@ def do_bin_data(block_path, spikes, clusters, trials, fs, kwikfile, bin_def_file
             module_logger.info('segment specifier: {}'.format(segment))
             seg_start = float(binning_params[4])
             seg_end = float(binning_params[5])
-            segment_info = {'period': segment, 'segstart':seg_start, 'segend': seg_end}
+            segment_info = {'period': segment,
+                            'segstart':seg_start,
+                            'segend': seg_end}
             cluster_group = cluster_groups.split(',')
-            binning_path = os.path.join(binning_folder, '{}-{}.binned'.format(kwikname, binning_id))
+            binning_fname = '{}-{}.binned'.format(kwikname, binning_id)
+            binning_path = os.path.join(binning_folder, binning_fname)
             if os.path.exists(binning_path):
-                module_logger.warn('Binning file {} already exists, skipping..'.format(binning_path))
+                module_logger.warn('Binning file {} \
+                                    already exists.'.format(binning_path))
                 continue
-            module_logger.info('Binning data into {}'.format('{}.binned'.format(binning_id)))
-            build_population_embedding(spikes, trials, clusters, win_size, fs, cluster_group, segment_info, binning_path)
+            module_logger.info('Binning data into {}'.format(binning_fname)
+            build_population_embedding(spikes, trials,
+                                       clusters, win_size,
+                                       fs, cluster_group,
+                                       segment_info, binning_path)
             module_logger.info('Done')
     return binning_folder
 
@@ -735,7 +744,8 @@ def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
     else:
         for inst_num, inst in enumerate(data_group.keys()):
             new_perm_group = perm_group.create_group(inst)
-            permute_recursive(data_group[inst], new_perm_group, n_cells_in_perm, nperms)        
+            permute_recursive(data_group[inst], new_perm_group,
+                              n_cells_in_perm, nperms)        
 
 def shuffle_recursive(data_group, perm_group, nshuffs):
 
@@ -760,7 +770,9 @@ def shuffle_recursive(data_group, perm_group, nshuffs):
             new_perm_group = perm_group.create_group(inst)
             shuffle_recursive(data_group[inst], new_perm_group, nshuffs)
 
-def shuffle_binned_data_recursive(binned_data_file, permuted_data_file, nshuffs):
+def shuffle_binned_data_recursive(binned_data_file,
+                                  permuted_data_file,
+                                  nshuffs):
 
     with h5py.File(binned_data_file, "r") as popvec_f:
         win_size = popvec_f.attrs['win_size'] 
@@ -779,7 +791,8 @@ def shuffle_binned_data_recursive(binned_data_file, permuted_data_file, nshuffs)
                 stimdata = popvec_f[stim]
                 shuffle_recursive(stimdata, perm_stimgrp, nshuffs)
 
-def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_in_perm, nperms):
+def permute_binned_data_recursive(binned_data_file, permuted_data_file,
+                                  n_cells_in_perm, nperms):
 
     with h5py.File(binned_data_file, "r") as popvec_f:
         win_size = popvec_f.attrs['win_size'] 
@@ -796,13 +809,16 @@ def permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_
             for stim in stims:
                 perm_stimgrp = perm_f.create_group(stim)
                 stimdata = popvec_f[stim]
-                permute_recursive(stimdata, perm_stimgrp, n_cells_in_perm, nperms)
+                permute_recursive(stimdata, perm_stimgrp, 
+                                  n_cells_in_perm, nperms)
 
 def Cij_recursive(data_group, tmax, fs):
     
     if 'pop_vec' in data_group.keys():
         nclus = len(data_group['clusters'])
-        Cij_mat = compute_Cij_matrix(data_group['pop_vec'], data_group['windows'], fs, nclus, tmax)
+        Cij_mat = compute_Cij_matrix(data_group['pop_vec'],
+                                     data_group['windows'],
+                                     fs, nclus, tmax)
         data_group.create_dataset('Cij', data=Cij_mat)
         module_logger.info('Cij matrix computed.')
     else:
@@ -831,19 +847,20 @@ def make_Cij(path_to_binned, tmax):
         sys.exit(-1)
 
     for binned_data_file in binned_data_files:
-        module_logger.info('Computing Cij matrix for: {}'.format(binned_data_file))
+        module_logger.info('Computing Cij for: {}'.format(binned_data_file))
         compute_Cij_recursive(binned_data_file, tmax)
         module_logger.info('Cij computation complete.')
 
 
 def make_shuffled_controls_recursive(path_to_binned, nshuffs):
     '''
-    Takes a folder containing .binned files and makes shuffled controls from them
+    Takes a folder containing .binned files and makes shuffled controls.
 
     Parameters
     ------
     path_to_binned : str 
-        Path to a folder containing all the .binned hdf5 files you'd like to make controls for 
+        Path to a folder containing all the .binned hdf5 files 
+        for which controls are desired.
     nshuffs : int
         Number of shuffles per control 
     '''
@@ -866,16 +883,21 @@ def make_shuffled_controls_recursive(path_to_binned, nshuffs):
         bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
         scf_name = bdf_name + '-shuffled_control.binned'
         shuffled_control_file = os.path.join(shuffled_controls_folder, scf_name)
-        shuffle_binned_data_recursive(binned_data_file, shuffled_control_file, nshuffs)
+        shuffle_binned_data_recursive(binned_data_file, 
+                                      shuffled_control_file, 
+                                      nshuffs)
 
-def make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, n_perms):
+def make_permuted_binned_data_recursive(path_to_binned,
+                                        n_cells_in_perm,
+                                        n_perms):
     '''
     Takes a folder containing .binned files and makes permuted subsets of them. 
 
     Parameters
     ------
     path_to_binned : str 
-        Path to a folder containing all the .binned hdf5 files you'd like to make controls for 
+        Path to a folder containing all the .binned hdf5 files 
+        for which permutations are desired.
     nperms : int
         Number of permutations
     '''
@@ -897,14 +919,16 @@ def make_permuted_binned_data_recursive(path_to_binned, n_cells_in_perm, n_perms
         pbd_name = bdf_name + '-permuted.binned'
         permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
 
-        permute_binned_data_recursive(binned_data_file, permuted_data_file, n_cells_in_perm, n_perms)
+        permute_binned_data_recursive(binned_data_file, permuted_data_file,
+                                      n_cells_in_perm, n_perms)
 
 
 #######################################################
 ###### Current Topological Computation Functions ######
 #######################################################
 
-def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analysis_path, thresh):
+def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, 
+                      analysis_path, thresh):
     if 'pop_vec' in data_group.keys():
         module_logger.info('compute_recursive: calculating CI bettis')
         pfile = pfile_stem + '-simplex.txt'
@@ -916,13 +940,15 @@ def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analy
             new_data_group = data_group[permkey]
             new_pfile_stem = pfile_stem + '-{}'.format(permkey)
             new_bpp_dict = dict()
-            bettis = compute_recursive(new_data_group, new_pfile_stem, new_bpp_dict, analysis_path, thresh)
+            bettis = compute_recursive(new_data_group, new_pfile_stem, 
+                                       new_bpp_dict, analysis_path, thresh)
             betti_persistence_perm_dict['{}'.format(permkey)] = bettis
         return betti_persistence_perm_dict
 
-def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block_path, thresh):
+def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, 
+                                            block_path, thresh):
     '''
-    Given a binned data file, compute the betti numbers of the Curto-Itskov style complex 
+    Given a binned data file, compute the betti numbers of the Curto-Itskov
     Takes in a binned data file with arbitrary depth of permutations.
     Finds the bottom level permutation
 
@@ -940,7 +966,8 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
     module_logger.info('Starting calc_CI_bettis_hierarchical_binned_data')
     module_logger.info('analysis_id: {}'.format(analysis_id))
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
-    analysis_path = os.path.join(block_path, 'topology/{}/{}'.format(analysis_id, bdf_name))
+    analysis_path = os.path.join(block_path,
+                                 'topology/{}/{}'.format(analysis_id, bdf_name))
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
 
@@ -953,7 +980,8 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
     kwikfile      = core.find_kwik(block_path)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
 
-    module_logger.info('****** Beginning Curto+Itskov Topological Analysis of: {} ******'.format(kwikfile))
+    module_logger.info('Beginning Curto+Itskov \
+                        Topological Analysis of: {}'.format(kwikfile))
     module_logger.info('Theshold: {}'.format(thresh))
     with h5py.File(binned_data_file, 'r') as bdf:
 
@@ -964,18 +992,28 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file, block
             module_logger.info('Calculating bettis for stim: {}'.format(stim))
             stim_trials = bdf[stim]
             nreps       = len(stim_trials)
-            module_logger.info('Number of repetitions for stim {}: {}'.format(stim, str(nreps)))
+            module_logger.info('Number of repetitions \
+                                for stim {}: {}'.format(stim, str(nreps)))
             stim_bettis = np.zeros([nreps, maxbetti])
 
-            betti_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-betti.csv'
+            betti_savefile = analysis_files_prefix + \
+                             '-stim-{}'.format(stim) + \
+                             '-betti.csv'
             betti_savefile = os.path.join(analysis_path, betti_savefile)
             module_logger.info('Betti savefile: {}'.format(betti_savefile))
-            betti_persistence_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-bettiPersistence.pkl'
-            betti_persistence_savefile = os.path.join(analysis_path, betti_persistence_savefile)
-            module_logger.info('Betti persistence savefile: {}'.format(betti_persistence_savefile))
+            bps = analysis_files_prefix + \
+                  '-stim-{}'.format(stim) + \
+                  '-bettiPersistence.pkl'
+            betti_persistence_savefile = os.path.join(analysis_path, bps)
+            module_logger.info('Betti persistence \
+                               savefile: {}'.format(betti_persistence_savefile))
             betti_persistence_dict = dict()
-            pfile_stem = analysis_files_prefix + '-stim-{}'.format(stim) + '-rep-'
-            betti_persistence_dict = compute_recursive(stim_trials, pfile_stem, betti_persistence_dict, analysis_path, thresh)
+            pfile_stem = analysis_files_prefix + \
+                         '-stim-{}'.format(stim) + \
+                         '-rep-'
+            betti_persistence_dict = compute_recursive(stim_trials, pfile_stem, 
+                                                       betti_persistence_dict, 
+                                                       analysis_path, thresh)
 
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
@@ -1000,8 +1038,14 @@ def calc_fr_funcs(binned_dataset, windows, fs, i, j):
     r_j = np.mean(fr_j_vec)
 
     # interpolate 
-    fr_i = interp1d(t, fr_i_vec, kind='nearest', bounds_error=False, fill_value="extrapolate")
-    fr_j = interp1d(t, fr_j_vec, kind='nearest', bounds_error=False, fill_value="extrapolate")
+    fr_i = interp1d(t, fr_i_vec, 
+                    kind='nearest', 
+                    bounds_error=False, 
+                    fill_value="extrapolate")
+    fr_j = interp1d(t, fr_j_vec, 
+                    kind='nearest', 
+                    bounds_error=False, 
+                    fill_value="extrapolate")
 
     return (fr_i, fr_j, T, r_i, r_j)
 
@@ -1023,8 +1067,14 @@ def calc_corr_interp(binned_dataset, windows, fs, i, j, tmax):
     r_j = np.mean(fr_j_vec)
 
     # interpolate 
-    fr_i = interp1d(t, fr_i_vec, kind='nearest', bounds_error=False, fill_value="extrapolate")
-    fr_j = interp1d(t, fr_j_vec, kind='nearest', bounds_error=False, fill_value="extrapolate")
+    fr_i = interp1d(t, fr_i_vec, 
+                    kind='nearest', 
+                    bounds_error=False, 
+                    fill_value="extrapolate")
+    fr_j = interp1d(t, fr_j_vec, 
+                    kind='nearest', 
+                    bounds_error=False, 
+                    fill_value="extrapolate")
 
     nt = np.linspace(0, T, 1000)
     dt = nt[1]-nt[0]
@@ -1048,7 +1098,6 @@ def calc_corr_raw(binned_dataset, windows, fs, i, j, tmax):
     r_i = np.mean(fr_i_vec)
     r_j = np.mean(fr_j_vec)
     
-
     N = len(fr_i_vec)
     corr_ij = np.correlate(fr_i_vec, fr_j_vec, mode='full')/float(N)
     corr_ji = np.correlate(fr_j_vec, fr_i_vec, mode='full')/float(N)
@@ -1093,10 +1142,11 @@ def compute_Cij(binned_dataset, windows, fs, i, j, tmax):
 def compute_Cij_matrix(binned_dataset, windows, fs, nclus, tmax):
 
     Cij = np.zeros((nclus, nclus))
+    bds = np.array(binned_dataset)
 
     for i in range(nclus):
         for j in range(i+1, nclus):
-            Cij_val = calc_corr_raw(np.array(binned_dataset), windows, fs, i, j, tmax)
+            Cij_val = calc_corr_raw(bds, windows, fs, i, j, tmax)
             Cij[i, j] = Cij_val
             Cij[j, i] = Cij_val 
     return Cij 
@@ -1133,10 +1183,11 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
     cij = cij[:, ~ctr]
 
     N, M = cij.shape
-    module_logger.info('Shape before NaN removal: {}, {}   After: {}'.format(No, Mo, N))
+    module_logger.info('Shape before NaN removal: {}, {}   \
+                        After: {}'.format(No, Mo, N))
     #if (1-np.diag(cij)).any():
-     #   module_logger.warn('Diagonal entries of Cij not equal to 1. Correcting')
-      #  cij = cij + np.diag(1-np.diag(cij))
+    #   module_logger.warn('Diagonal entries of Cij not equal to 1. Correcting')
+    #  cij = cij + np.diag(1-np.diag(cij))
     step_size = np.amax(cij)/float(nsteps)
     module_logger.info('Using persistence step_size: {}'.format(step_size))
 
@@ -1199,11 +1250,14 @@ def calc_clique_topology_bettis(cij, nsteps, pfile):
             bettis.append([filtration_time, betti_numbers])
     return bettis
 
-def compute_cliquetop_recursive(data_group, pfile_stem, betti_persistence_perm_dict, analysis_path, nsteps):
+def compute_cliquetop_recursive(data_group, pfile_stem, 
+                                betti_persistence_perm_dict, 
+                                analysis_path, nsteps):
     if 'Cij' in data_group.keys():
         pfile = pfile_stem + '-simplex.txt'
         pfile = os.path.join(analysis_path, pfile)
-        bettis = calc_clique_topology_bettis(np.array(data_group['Cij']), nsteps, pfile)
+        bettis = calc_clique_topology_bettis(np.array(data_group['Cij']), 
+                                             nsteps, pfile)
         return bettis
     elif ('Cij' not in data_group.keys()) and ('pop_vec' in data_group.keys()):
         module_logger.error('Cij matrix not present.')
@@ -1213,13 +1267,18 @@ def compute_cliquetop_recursive(data_group, pfile_stem, betti_persistence_perm_d
             new_data_group = data_group[permkey]
             new_pfile_stem = pfile_stem + '-{}'.format(permkey)
             new_bpp_dict = dict()
-            bettis = compute_cliquetop_recursive(new_data_group, new_pfile_stem, new_bpp_dict, analysis_path, nsteps)
+            bettis = compute_cliquetop_recursive(new_data_group, 
+                                                 new_pfile_stem,
+                                                 new_bpp_dict, 
+                                                 analysis_path, 
+                                                 nsteps)
             betti_persistence_perm_dict['{}'.format(permkey)] = bettis
         return betti_persistence_perm_dict
 
-def calc_cliquetop_bettis_recursive(analysis_id, binned_data_file, block_path, nsteps):
+def calc_cliquetop_bettis_recursive(analysis_id, binned_data_file, 
+                                    block_path, nsteps):
     '''
-    Given a binned data file, compute the betti numbers of the Curto-Itskov style complex 
+    Given a binned data file, compute the betti numbers of the Clique complex.
     Takes in a binned data file with arbitrary depth of permutations.
     Finds the bottom level permutation
 
@@ -1238,7 +1297,9 @@ def calc_cliquetop_bettis_recursive(analysis_id, binned_data_file, block_path, n
     module_logger.info('Starting calc_CliqueTop_bettis_recursive')
     module_logger.info('analysis_id: {}'.format(analysis_id))
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
-    analysis_path = os.path.join(block_path, 'topology/clique_top/{}/{}'.format(analysis_id, bdf_name))
+    analysis_path_ex = 'topology/clique_top/{}/{}'.format(analysis_id, bdf_name)
+    analysis_path = os.path.join(block_path, analysis_path_ex)
+
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
 
@@ -1247,34 +1308,47 @@ def calc_cliquetop_bettis_recursive(analysis_id, binned_data_file, block_path, n
     module_logger.info('bdf_name: {}'.format(bdf_name))
     module_logger.info('analysis_path: {}'.format(analysis_path))
 
-    maxbetti      = 50
-    kwikfile      = core.find_kwik(block_path)
+    maxbetti = 50
+    kwikfile = core.find_kwik(block_path)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
 
-    module_logger.info('****** Beginning Clique Topology Analysis of: {} ******'.format(kwikfile))
+    module_logger.info('Beginning Clique Topology \
+                        Analysis of: {}'.format(kwikfile))
     with h5py.File(binned_data_file, 'r') as bdf:
 
         stims = bdf.keys()
         nstims = len(stims)
 
         for stim in stims:
-            module_logger.info('Calculating CliqueTop Bettis for stim: {}'.format(stim))
+            module_logger.info('Calculating CliqueTop Bettis \
+                                for stim: {}'.format(stim))
             stim_trials = bdf[stim]
             nreps       = len(stim_trials)
-            module_logger.info('Number of repetitions for stim {}: {}'.format(stim, str(nreps)))
+            module_logger.info('Number of repetitions \
+                               for stim {}: {}'.format(stim, str(nreps)))
             stim_bettis = np.zeros([nreps, maxbetti])
 
-            betti_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-betti.csv'
+            betti_savefile = analysis_files_prefix + \
+                             '-stim-{}'.format(stim) + \
+                             '-betti.csv'
             betti_savefile = os.path.join(analysis_path, betti_savefile)
             module_logger.info('Betti savefile: {}'.format(betti_savefile))
-            betti_persistence_savefile = analysis_files_prefix + '-stim-{}'.format(stim) + '-bettiPersistence.pkl'
-            betti_persistence_savefile = os.path.join(analysis_path, betti_persistence_savefile)
-            module_logger.info('Betti persistence savefile: {}'.format(betti_persistence_savefile))
+            bps = analysis_files_prefix + \
+                  '-stim-{}'.format(stim) + \
+                  '-bettiPersistence.pkl'
+            betti_persistence_savefile = os.path.join(analysis_path, bps)
+            module_logger.info('Betti persistence savefile: \
+                               {}'.format(betti_persistence_savefile))
             betti_persistence_dict = dict()
 
-            pfile_stem = analysis_files_prefix + '-stim-{}'.format(stim) + '-rep-'
-            betti_persistence_dict = compute_cliquetop_recursive(stim_trials, pfile_stem, betti_persistence_dict, analysis_path, nsteps)
+            pfile_stem = analysis_files_prefix + \
+                         '-stim-{}'.format(stim) + \
+                         '-rep-'
+            bpd = compute_cliquetop_recursive(stim_trials,
+                                              pfile_stem,
+                                              betti_persistence_dict,
+                                              analysis_path, nsteps)
 
             with open(betti_persistence_savefile, 'w') as bpfile:
-                pickle.dump(betti_persistence_dict, bpfile)
+                pickle.dump(bpd, bpfile)
         module_logger.info('Completed All Stimuli')
