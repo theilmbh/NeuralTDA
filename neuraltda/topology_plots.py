@@ -223,8 +223,9 @@ def plot_all_bettis_together(persistence_files, maxbetti,
     
     nplots = len(persistence_files)
     print(nplots)
-    nsubplotrows = np.round(nplots/4)
+    nsubplotrows = np.int_(np.round(nplots/4.))
     print(nsubplotrows)
+    nsubplotrows = max(nsubplotrows, 1)
     subplot_shape = (nsubplotrows, 4)
     fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
 
