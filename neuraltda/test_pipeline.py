@@ -60,7 +60,7 @@ def generate_test_dataset(n_cells, maxt, fs, dthetadt, kappa, maxfr, ntrials):
 											 'recording'])
 	trial_starts = N_silence*np.arange(ntrials)
 	for trial, trial_start in enumerate(trial_starts):
-		TEST_PIPELINE_LOGGER.info('Generating test trial %d of %d' % (trial, ntrials))
+		TEST_PIPELINE_LOGGER.info('Generating test trial {} of {}'.format(trial, ntrials))
 		samps = np.round(t*fs) + trial_start
 		trial_data = generate_test_trial(n_cells, dthetas, kappa,
 										 maxfr, fs, samps)
