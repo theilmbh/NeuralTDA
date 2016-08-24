@@ -29,7 +29,7 @@ def main():
 	bin_id = 'test_neuraltda-bin-' + time_str
 	top.setup_logging(cs_name)
 	test_pipeline.test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells=60, maxt=6,
-				  fs=24000.0, dthetadt=2*np.pi, kappa=2, maxfr=12, n_trials=10,
+				  fs=24000.0, dthetadt=2*3.14159, kappa=2, maxfr=12, n_trials=10,
 				  n_cells_in_perm=40, nperms=1, thresh=4.0)
 
 if __name__ == '__main__':
