@@ -700,6 +700,7 @@ def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
         clusters = data_group['clusters']
         popvec = data_group['pop_vec']
         windows = data_group['windows']
+        nclus = len(clusters)
         for perm_num in range(nperms):
             permt = np.random.permutation(nclus)
             if len(clusters) >= n_cells_in_perm:
