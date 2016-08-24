@@ -1,11 +1,14 @@
 import os
 import glob
+import logging
 
 import numpy as np 
 import pandas as pd 
 
 import topology as top 
 import topology_plots as topplt
+
+TEST_PIPELINE_LOGGER = logging.get_logger('NeuralTDA')
 
 def generate_test_rfs(n_cells, maxt, fs, dthetadt, t):
 
@@ -57,6 +60,7 @@ def generate_test_dataset(n_cells, maxt, fs, dthetadt, kappa, maxfr, ntrials):
 											 'recording'])
 	trial_starts = N_silence*np.arange(ntrials)
 	for trial, trial_start in enumerate(trial_starts):
+		TEST_PIPELINE_LOGGER.info('Generating test trial %d of %d' % trial, ntrials)
 		samps = np.round(t*fs) + trial_start
 		trial_data = generate_test_trial(n_cells, dthetas, kappa,
 										 maxfr, fs, samps)
@@ -113,11 +117,12 @@ def generate_singletrial_test_dataset(n_cells, maxt, fs, dthetadt, kappa, maxfr)
 
 def generate_and_bin_test_data(block_path, kwikfile, bin_id, bin_def_file,
 							   n_cells, maxt, fs, dthetadt, kappa, maxfr, ntrials):
-
+	
+	TEST_PIPELINE_LOGGER.info('Generating test dataset')
 	spikes, clusters, trials = generate_test_dataset(n_cells, maxt, fs,
 													 dthetadt, kappa,
 													 maxfr, ntrials)
-
+	TEST_PIPELINE_LOGGER.info('Binning test dataset')
 	top.do_bin_data(block_path, spikes, clusters, trials,
 					fs, kwikfile, bin_def_file, bin_id)
 
@@ -125,11 +130,13 @@ def test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells=60, max
 				  fs=24000.0, dthetadt=2*np.pi, kappa=2, maxfr=12, n_trials=10,
 				  n_cells_in_perm=40, nperms=1, thresh=4.0):
 
+	TEST_PIPELINE_LOGGER.info('*** Testing NeuralTDA Pipeline ***')
 	kwikfile = 'B999_P00_S00.kwik'
 	generate_and_bin_test_data(block_path, kwikfile, bin_id, bin_def_file,
 							   n_cells, maxt, fs, dthetadt, kappa, maxfr, ntrials)
 
 	binned_folder = os.path.join(block_path, 'binned_data/{}'.format(bin_id))
+	TEST_PIPELINE_LOGGER.info('Permuting binned test dataset')
 	top.make_permuted_binned_data_recursive(binned_folder,
 											n_cells_in_perm,
 											nperms)
@@ -137,6 +144,7 @@ def test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells=60, max
 	permuted_folder = os.path.join(binned_folder, 'permuted_binned/')
 	shuffled_permuted_folder = os.path.join(permuted_folder,
 											'shuffled_controls/')
+	TEST_PIPELINE_LOGGER.info('Shuffling permuted binned test dataset')
 	top.make_shuffled_controls_recursive(permuted_folder, 1)
 
 	# compute topology for permuted data:
@@ -146,20 +154,25 @@ def test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells=60, max
 	shuffled_permuted_data_files = glob.glob(spdfs)
 	
 	for bdf in binned_data_files:
+		TEST_PIPELINE_LOGGER.info('Computing topology for: %s' % bdf)
 		top.calc_CI_bettis_hierarchical_binned_data(analysis_id, bdf,
 													block_path, thresh)
 
 	for pdf in permuted_data_files:
+		TEST_PIPELINE_LOGGER.info('Computing topology for: %s' % bdf)
 		top.calc_CI_bettis_hierarchical_binned_data(analysis_id+'_real', pdf,
 													block_path, thresh)
 
 	for spdf in shuffled_permuted_data_files:
+		TEST_PIPELINE_LOGGER.info('Computing topology for: %s' % bdf)
 		top.calc_CI_bettis_hierarchical_binned_data(analysis_id+'_shuffled',
 													spdf, block_path, thresh)
 
 	maxbetti = 5
 	figsize=(22,22)
+	TEST_PIPELINE_LOGGER.info('Making topology plots')
 	topplt.make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize)
+	TEST_PIPELINE_LOGGER.info('Test NeuralTDA Complete')
 
 
 
