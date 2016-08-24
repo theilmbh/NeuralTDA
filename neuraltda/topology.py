@@ -45,7 +45,7 @@ def setup_logging(func_name):
     if not os.path.exists(logging_dir):
         os.makedirs(logging_dir)
     logging_fname = '{}_'.format(func_name) + \
-                    datetime.datetime.utcnow().strftime('%Y-%m-%dT%H%M%S') + \
+                    datetime.datetime.utcnow().strftime('%Y-%m-%dT%H%M%SZ') + \
                     '.log'
     logging_file = os.path.join(logging_dir, logging_fname)
 
