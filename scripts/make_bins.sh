@@ -1,5 +1,5 @@
 SGB_DEF_FILE='/home/btheilma/code/NeuralTDA/standard_good_binnings.txt'
-BIN_ID=$(date +"%m%d%y%H%M")
+BIN_ID=$(date -u +"%Y%m%dT%H%MZ")
 NSHUFFS=1
 NCELLS=40
 NPERMS=30

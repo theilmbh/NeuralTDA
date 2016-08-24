@@ -1,4 +1,4 @@
-ANALYSIS_ID=$(date +"%m%d%y%H%M")
+ANALYSIS_ID=$(date -u +"%Y%m%dT%H%MZ")
 BIN_ID=$1
 THRESH=$2
 
