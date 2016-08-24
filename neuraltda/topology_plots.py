@@ -115,7 +115,7 @@ def plot_average_betti(persistence_files, betti, maxt, figsize, plot_savepath):
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    print('Nplots = {}'.nplots)
+    
     if nplots == 1:
         fig, axs = plt.subplots(figsize=figsize)
         axs = [axs]
@@ -171,7 +171,7 @@ def plot_average_betti_with_shuffled(persistence_files,
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    print('Nplots = {}'.nplots)
+    
     if nplots == 1:
         fig, axs = plt.subplots(figsize=figsize)
         axs = [axs]
@@ -234,7 +234,7 @@ def plot_all_bettis_together(persistence_files, maxbetti,
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    print('Nplots = {}'.nplots)
+    
     if nplots == 1:
         fig, axs = plt.subplots(figsize=figsize)
         axs = [axs]
