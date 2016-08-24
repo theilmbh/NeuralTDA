@@ -23,13 +23,7 @@ def main():
 
 	args = get_args()
 	block_path = os.path.abspath(args.block_path)
-	analysis_id = args.analysis_id
-	maxbetti = args.maxbetti
-	maxt = args.maxt
-	figx = args.figx
-	figy = args.figy
-	figsize = (figx, figy)
-
+	bin_def_file = args.bin_def_file
 	time_str = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
 	analysis_id = 'test_neuraltda-analysis-' + time_str
 	bin_id = 'test_neuraltda-bin-' + time_str
