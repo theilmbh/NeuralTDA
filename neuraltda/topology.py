@@ -15,6 +15,10 @@ from scipy import integrate
 
 from ephys import events, core
 
+################################
+###### Module Definitions ######
+################################
+
 TOPOLOGY_LOG = logging.getLogger('NeuralTDA')
 
 DEFAULT_CG_PARAMS = {'cluster_group': None, 'subwin_len': 100,
