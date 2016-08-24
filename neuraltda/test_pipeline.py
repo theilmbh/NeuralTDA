@@ -8,7 +8,7 @@ import pandas as pd
 import topology as top 
 import topology_plots as topplt
 
-TEST_PIPELINE_LOGGER = logging.get_logger('NeuralTDA')
+TEST_PIPELINE_LOGGER = logging.getLogger('NeuralTDA')
 
 def generate_test_rfs(n_cells, maxt, fs, dthetadt, t):
 
