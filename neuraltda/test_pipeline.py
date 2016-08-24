@@ -133,7 +133,7 @@ def test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells=60, max
 	TEST_PIPELINE_LOGGER.info('*** Testing NeuralTDA Pipeline ***')
 	kwikfile = 'B999_P00_S00.kwik'
 	generate_and_bin_test_data(block_path, kwikfile, bin_id, bin_def_file,
-							   n_cells, maxt, fs, dthetadt, kappa, maxfr, ntrials)
+							   n_cells, maxt, fs, dthetadt, kappa, maxfr, n_trials)
 
 	binned_folder = os.path.join(block_path, 'binned_data/{}'.format(bin_id))
 	TEST_PIPELINE_LOGGER.info('Permuting binned test dataset')
