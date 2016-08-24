@@ -127,7 +127,7 @@ def generate_and_bin_test_data(block_path, kwikfile, bin_id, bin_def_file,
 					fs, kwikfile, bin_def_file, bin_id)
 
 def test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells=60, maxt=6,
-				  fs=24000.0, dthetadt=2*np.pi, kappa=2, maxfr=12, n_trials=10,
+				  fs=24000.0, dthetadt=2*np.pi, kappa=2, maxfr=12, n_trials=20,
 				  n_cells_in_perm=40, nperms=1, thresh=4.0):
 
 	TEST_PIPELINE_LOGGER.info('*** Testing NeuralTDA Pipeline ***')
