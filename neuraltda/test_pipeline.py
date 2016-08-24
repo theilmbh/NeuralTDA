@@ -121,9 +121,9 @@ def generate_and_bin_test_data(block_path, kwikfile, bin_id, bin_def_file,
 	top.do_bin_data(block_path, spikes, clusters, trials,
 					fs, kwikfile, bin_def_file, bin_id)
 
-def test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells, maxt,
-				  fs, dthetadt, kappa, maxfr, n_trials,
-				  n_cells_in_perm, nperms, thresh):
+def test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells=60, maxt=6,
+				  fs=24000.0, dthetadt=2*np.pi, kappa=2, maxfr=12, n_trials=10,
+				  n_cells_in_perm=40, nperms=1, thresh=4.0):
 
 	kwikfile = 'B999_P00_S00.kwik'
 	generate_and_bin_test_data(block_path, kwikfile, bin_id, bin_def_file,
