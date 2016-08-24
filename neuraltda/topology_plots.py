@@ -115,11 +115,17 @@ def plot_average_betti(persistence_files, betti, maxt, figsize, plot_savepath):
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    print(nplots)
-    nsubplotrows = np.round(nplots/4)
-    print(nsubplotrows)
-    subplot_shape = (nsubplotrows, 4)
-    fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
+    print('Nplots = {}'.nplots)
+    if nplots == 1:
+        fig, axs = plt.subplots(figsize=figsize)
+        axs = [axs]
+    else:
+        print(nplots)
+        nsubplotrows = np.int_(np.round(nplots/4.))
+        nsubplotrows = np.maximum(nsubplotrows, 1)
+        print(nsubplotrows)
+        subplot_shape = (nsubplotrows, 4)
+        fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
 
 
     for pf_num, pf in enumerate(persistence_files):
@@ -165,11 +171,17 @@ def plot_average_betti_with_shuffled(persistence_files,
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    print(nplots)
-    nsubplotrows = np.round(nplots/4)
-    print(nsubplotrows)
-    subplot_shape = (nsubplotrows, 4)
-    fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
+    print('Nplots = {}'.nplots)
+    if nplots == 1:
+        fig, axs = plt.subplots(figsize=figsize)
+        axs = [axs]
+    else:
+        print(nplots)
+        nsubplotrows = np.int_(np.round(nplots/4.))
+        nsubplotrows = np.maximum(nsubplotrows, 1)
+        print(nsubplotrows)
+        subplot_shape = (nsubplotrows, 4)
+        fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
 
 
     for pf_num, (pf, pf_shuff) in enumerate(zip(persistence_files, 
@@ -222,7 +234,7 @@ def plot_all_bettis_together(persistence_files, maxbetti,
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-
+    print('Nplots = {}'.nplots)
     if nplots == 1:
         fig, axs = plt.subplots(figsize=figsize)
         axs = [axs]
