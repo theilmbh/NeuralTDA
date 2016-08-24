@@ -8,10 +8,10 @@ import logging
 import datetime
 
 import numpy as np
-import scipy as sp
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import scipy as sp
 from scipy.io import wavfile
 import scipy.signal as signal
 from scipy.interpolate import interp1d
@@ -250,7 +250,7 @@ def plot_all_bettis_together(persistence_files, maxbetti,
         ax.set_ylabel('Betti Value'.format(betti))
     sfn = 'B{}_AllBetti_{}ms_{}_permuted_avg.png'.format(bird, dt, prd)
     sfn = os.path.join(plot_savepath, sfn)
-    plt.savefig(os.path.join(plot_savepath, sfn)
+    plt.savefig(os.path.join(plot_savepath, sfn))
 
 def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
     block_path = os.path.abspath(block_path)
@@ -278,4 +278,3 @@ def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
                                       maxt, figsize, figs_folder)
         print('Plotting All Bettis Together...')
         plot_all_bettis_together(real_pfs, maxbetti, maxt, figsize, figs_folder)
-        
