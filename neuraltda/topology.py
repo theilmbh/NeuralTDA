@@ -15,7 +15,7 @@ from scipy import integrate
 
 from ephys import events, core
 
-module_logger = logging.getLogger('NeuralTDA')
+TOPOLOGY_LOG = logging.getLogger('NeuralTDA')
 
 DEFAULT_CG_PARAMS = {'cluster_group': None, 'subwin_len': 100,
                      'threshold': 6.0, 'n_subwin': 5}
@@ -69,15 +69,6 @@ def setup_logging(func_name):
     # Log initialization
     logger.info('Starting {}.'.format(func_name))
 
-def topology_log(logfile, log_str):
-    '''
-    Obsolete logging function
-    '''
-
-    with open(logfile, 'a+') as lf:
-        log_line = str(time.time()) + ' ' + log_str + '\n'
-        lf.write(log_line)
-
 def get_spikes_in_window(spikes, window):
     '''
     Returns a spike DataFrame containing all spikes within a time window.
@@ -100,20 +91,6 @@ def get_spikes_in_window(spikes, window):
     mask = ((spikes['time_samples'] <= window[1]) &
             (spikes['time_samples'] >= window[0]))
     return spikes[mask]
-
-
-def mean_fr_decorator(mean_fr_func):
-
-    def decorated(cluster_row, *args, **kwargs):
-
-        try:
-            int(cluster_row)
-            mean_fr = mean_fr_func(cluster_row, *args, **kwargs)
-            return pd.DataFrame({'mean_fr': mean_fr})
-        except ValueError:
-            mean_fr = mean_fr_func(cluster_row['cluster'], *args, **kwargs)
-            return pd.DataFrame({'mean_fr': mean_fr})
-    return decorated
 
 def calc_mean_fr(cluster_row, spikes, window):
     '''
@@ -175,8 +152,6 @@ def create_subwindows(segment, subwin_len, n_subwin_starts):
         Each subwindow is a list containing
         the starting sample and ending sample.
     '''
-
-
     starts = np.floor(np.linspace(segment[0],
                                   segment[0]+subwin_len,
                                   n_subwin_starts))
@@ -211,14 +186,13 @@ def calc_population_vectors(spikes, clusters, windows, thresh):
         Each element is a list containing the window and the population vector.
         The population vector is an array containing cluster ID and firing rate.
     '''
-    module_logger.info('Building population vectors...')
+    TOPOLOGY_LOG.info('Building population vectors...')
     total_win = len(windows)
     popvec_list = []
     for win_num, win in enumerate(windows):
         if np.mod(win_num, 500) == 0:
-            module_logger.info("Window {} of {}".format(str(win_num),
-                                                        str(total_win)))
-            sys.stdout.flush()
+            TOPOLOGY_LOG.info("Window {} of {}".format(str(win_num),
+                                                       str(total_win)))
         popvec = np.zeros([len(clusters.index), 3])
         for ind, cluster in enumerate(clusters['cluster'].values):
             fr = calc_mean_fr_int(cluster, spikes, win)
@@ -322,7 +296,6 @@ def build_perseus_input(cell_groups, savefile):
             vert_str = vert_str.replace(',', ' ')
             out_str = str(grp_dim) + ' ' + vert_str + ' 1\n'
             pfile.write(out_str)
-
     return savefile
 
 def build_perseus_persistent_input(cell_groups, savefile):
@@ -345,7 +318,6 @@ def build_perseus_persistent_input(cell_groups, savefile):
         file suitable for running perseus on
     '''
     with open(savefile, 'w+') as pfile:
-
         pfile.write('1\n')
         for ind, win_grp in enumerate(cell_groups):
             grp = list(win_grp[1])
@@ -359,7 +331,6 @@ def build_perseus_persistent_input(cell_groups, savefile):
             vert_str = vert_str.replace(',', ' ')
             out_str = str(grp_dim) + ' ' + vert_str + ' {}\n'.format(str(ind+1))
             pfile.write(out_str)
-
     return savefile
 
 def run_perseus(pfile):
@@ -377,13 +348,13 @@ def run_perseus(pfile):
         File containing resultant betti numbers
 
     '''
-    module_logger.info('In run_perseus')
+    TOPOLOGY_LOG.info('In run_perseus')
     pfile_split = os.path.splitext(pfile)
     of_string = pfile_split[0]
     perseus_command = "/home/btheilma/bin/perseus"
     perseus_return_code = subprocess.call([perseus_command, 'nmfsimtop', pfile,
                                            of_string])
-    module_logger.info('Perseus return code: {}'.format(perseus_return_code))
+    TOPOLOGY_LOG.info('Perseus return code: {}'.format(perseus_return_code))
     betti_file = of_string+'_betti.txt'
     betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
     return betti_file
@@ -416,12 +387,10 @@ def calc_bettis(spikes, segment, clusters, pfile, cg_params=DEFAULT_CG_PARAMS,
         filtration time and the second being betti numbers
     '''
     cell_groups = calc_cell_groups(spikes, segment, clusters, cg_params)
-
     if persistence:
         build_perseus_persistent_input(cell_groups, pfile)
     else:
         build_perseus_input(cell_groups, pfile)
-
     betti_file = run_perseus(pfile)
     bettis = []
     with open(betti_file, 'r') as bf:
@@ -429,7 +398,6 @@ def calc_bettis(spikes, segment, clusters, pfile, cg_params=DEFAULT_CG_PARAMS,
             if len(bf_line) < 2:
                 continue
             betti_data = bf_line.split()
-
             filtration_time = int(betti_data[0])
             betti_numbers = map(int, betti_data[1:])
             bettis.append([filtration_time, betti_numbers])
@@ -460,19 +428,11 @@ def get_segment(trial_bounds, fs, segment_info):
     if segment_info['period'] == 1:
         return trial_bounds
     else:
-        seg_start = trial_bounds[0] + \
-                    np.floor(segment_info['segstart']*(fs/1000.))
-        seg_end = trial_bounds[0] + \
-                  np.floor(segment_info['segend']*(fs/1000.))
+        seg_start = trial_bounds[0] \
+                    + np.floor(segment_info['segstart']*(fs/1000.))
+        seg_end = trial_bounds[0] \
+                  + np.floor(segment_info['segend']*(fs/1000.))
     return [seg_start, seg_end]
-
-def spike_time_subtracter(row, trial_start, trial_end, first_trial_start):
-    spiketime = row['time_samples']
-    if (spiketime >= trial_start) and (spiketime <= trial_end):
-        return spiketime - (trial_start - first_trial_start)
-    else:
-        return spiketime
-
 
 #############################################
 ###### Binned Data Auxiliary Functions ######
@@ -488,12 +448,12 @@ def calc_cell_groups_from_binned_data(binned_dataset, thresh):
     binned_dataset : h5py group
         This is the group at the lowest level of the bin hierarchy.
         It must contain three datasets: 'pop_vec', 'clusters', and 'windows'.
-        'pop_vec' is an nclu x nwin matrix with each element containing
-        the firing rate in Hz of that unit for that window.
-        'clusters' is an nclu x 1 matrix containing the cluster ids of each row
-        of 'pop_vec'
-        'windows' is an nwin x 2 matrix containing the start and end samples
-        of each window used for the binning.
+        - 'pop_vec' is an nclu x nwin matrix with each element containing
+          the firing rate in Hz of that unit for that window.
+        - 'clusters' is an nclu x 1 matrix containing the cluster ids of each
+          row of 'pop_vec'
+        - 'windows' is an nwin x 2 matrix containing the start and end samples
+          of each window used for the binning.
     thresh : float
         Multiple of average firing rate in order for a cluster to be included
         in a cell group.
@@ -527,12 +487,12 @@ def calc_bettis_from_binned_data(binned_dataset, pfile, thresh):
     binned_dataset : h5py group
         This is the group at the lowest level of the bin hierarchy.
         It must contain three datasets: 'pop_vec', 'clusters', and 'windows'.
-        'pop_vec' is an nclu x nwin matrix with each element containing
-        the firing rate in Hz of that unit for that window.
-        'clusters' is an nclu x 1 matrix containing the cluster ids of each row
-        of 'pop_vec'
-        'windows' is an nwin x 2 matrix containing the start and end samples
-        of each window used for the binning.
+        - 'pop_vec' is an nclu x nwin matrix with each element containing
+          the firing rate in Hz of that unit for that window.
+        - 'clusters' is an nclu x 1 matrix containing the cluster ids of each
+          row of 'pop_vec'
+        - 'windows' is an nwin x 2 matrix containing the start and end samples
+          of each window used for the binning.
     pfile : str
         The name of the file to store the Perseus input.
     thresh : float
@@ -556,12 +516,10 @@ def calc_bettis_from_binned_data(binned_dataset, pfile, thresh):
             if len(bf_line) < 2:
                 continue
             betti_data = bf_line.split()
-
             filtration_time = int(betti_data[0])
             betti_numbers = map(int, betti_data[1:])
             bettis.append([filtration_time, betti_numbers])
     return bettis
-
 
 #######################################
 ###### Current Binning Functions ######
@@ -576,16 +534,26 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs,
     ------
     spikes : pandas dataframe
         Spike frame from ephys.core
-
+    trials : pandas dataframe
+        Trials dataframe from ephys.trials
+    clusters : Pandas DataFrame
+        Clusters frame from ephys.core
     win_size : float
-        window size in ms
+        Window size in milliseconds
+    fs : float
+        Sampling rate in Hz
+    cluster_group : list
+        List containing cluster sort quality strings to include in embedding
+        Possible entries include 'Good', 'MUA'
+    segment_info : dict
+        Dictionary containing parameters for segment generation
+    popvec_fname : str
+        File in which to store the embedding
     '''
     with h5py.File(popvec_fname, "w") as popvec_f:
 
         popvec_f.attrs['win_size'] = win_size
         popvec_f.attrs['fs'] = fs
-        #f.attrs['cluster_group'] = cluster_group
-
         if cluster_group != None:
             mask = np.ones(len(clusters.index)) < 0
             for grp in cluster_group:
@@ -597,7 +565,6 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs,
         popvec_f.attrs['nclus'] = nclus
         stims = trials['stimulus'].unique()
 
-
         for stim in stims:
             stimgrp = popvec_f.create_group(stim)
             stim_trials = trials[trials['stimulus'] == stim]
@@ -605,7 +572,6 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs,
 
             for rep in range(nreps):
                 trialgrp = stimgrp.create_group(str(rep))
-
                 trial_start = stim_trials.iloc[rep]['time_samples']
                 trial_end = stim_trials.iloc[rep]['stimulus_end']
                 trial_bounds = [trial_start, trial_end]
@@ -613,24 +579,18 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs,
                                                  fs, segment_info)
                 this_segment = [seg_start, seg_end]
                 win_size_samples = np.round(win_size/1000. * fs)
-
                 windows = create_subwindows(this_segment, win_size_samples, 1)
                 nwins = len(windows)
                 popvec_dset_init = np.zeros((nclus, nwins))
                 popvec_dset = trialgrp.create_dataset('pop_vec',
                                                       data=popvec_dset_init)
-                popvec_clu_dset = trialgrp.create_dataset('clusters',
-                                                          data=clusters_list)
-                popvec_win_dset = trialgrp.create_dataset('windows',
-                                                          data=np.array(windows)
-                                                         )
+                trialgrp.create_dataset('clusters', data=clusters_list)
+                trialgrp.create_dataset('windows', data=np.array(windows))
                 popvec_dset.attrs['fs'] = fs
                 popvec_dset.attrs['win_size'] = win_size
                 for win_ind, win in enumerate(windows):
-                # compute population activity vectors
                     spikes_in_win = get_spikes_in_window(spikes, win)
                     clus_that_spiked = spikes_in_win['cluster'].unique()
-                    # find spikes from each cluster
                     if len(clus_that_spiked) > 0:
                         for clu in clus_that_spiked:
                             clu_msk = (spikes_in_win['cluster'] == clu)
@@ -640,25 +600,43 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs,
                             popvec_dset[pvclu_msk, win_ind] = nsp_clu/win_s
 
 def prep_and_bin_data(block_path, bin_def_file, bin_id, nshuffs):
+    '''
+    Loads dataset using ephys and bins it
+    according to the parameters in a bin definition file
+
+    Parameters
+    ----------
+    block_path : str
+        Path to the directory containing the sorted spike data
+    bin_def_file : str
+        Path to the file containing bin definitions strings
+        The format is:
+        <bin_id> <winsize (ms)> <clu_group> <seg_period> <seg_start> <seg_end>
+    bin_id : str
+        Unique identifier for this binning session
+        Typically a date/time string is used
+    '''
 
     spikes = core.load_spikes(block_path)
     clusters = core.load_clusters(block_path)
     trials = events.load_trials(block_path)
     fs = core.load_fs(block_path)
     kwikfile = core.find_kwik(block_path)
-    binning_folder = do_bin_data(block_path, spikes, clusters, trials, fs,
-                                 kwikfile, bin_def_file, bin_id)
+    binning_folder = do_bin_data(block_path, spikes,
+                                 clusters, trials,
+                                 fs, kwikfile,
+                                 bin_def_file, bin_id)
     if nshuffs:
-        module_logger.info('Making shuffled controls.')
+        TOPOLOGY_LOG.info('Making shuffled controls.')
         make_shuffled_controls_recursive(binning_folder, nshuffs)
-
 
 def do_bin_data(block_path, spikes, clusters, trials,
                 fs, kwikfile, bin_def_file, bin_id):
     '''
     Bins the data using build_population_embedding
     Parameters are given in bin_def_file
-    Each line of bin_def_file contains the parameters for each binning
+    For each line of bin_def_file, bin the data
+    according to the parameters in the line.
 
     Parameters
     ------
@@ -679,14 +657,10 @@ def do_bin_data(block_path, spikes, clusters, trials,
     bin_id : str
         Identifier for this particular binning run
     '''
-
-    # Try to make a folder to store the binnings
-
     binning_folder = os.path.join(block_path, 'binned_data/{}'.format(bin_id))
     if not os.path.exists(binning_folder):
         os.makedirs(binning_folder)
     kwikname = os.path.splitext(os.path.basename(kwikfile))[0]
-
 
     with open(bin_def_file, 'r') as bdf:
         for bdf_line in bdf:
@@ -695,7 +669,7 @@ def do_bin_data(block_path, spikes, clusters, trials,
             win_size = float(binning_params[1])
             cluster_groups = binning_params[2]
             segment = int(binning_params[3])
-            module_logger.info('segment specifier: {}'.format(segment))
+            TOPOLOGY_LOG.info('segment specifier: {}'.format(segment))
             seg_start = float(binning_params[4])
             seg_end = float(binning_params[5])
             segment_info = {'period': segment,
@@ -705,15 +679,15 @@ def do_bin_data(block_path, spikes, clusters, trials,
             binning_fname = '{}-{}.binned'.format(kwikname, binning_id)
             binning_path = os.path.join(binning_folder, binning_fname)
             if os.path.exists(binning_path):
-                module_logger.warn('Binning file {} \
+                TOPOLOGY_LOG.warn('Binning file {} \
                                     already exists.'.format(binning_path))
                 continue
-            module_logger.info('Binning data into {}'.format(binning_fname))
+            TOPOLOGY_LOG.info('Binning data into {}'.format(binning_fname))
             build_population_embedding(spikes, trials,
                                        clusters, win_size,
                                        fs, cluster_group,
                                        segment_info, binning_path)
-            module_logger.info('Done')
+            TOPOLOGY_LOG.info('Done')
     return binning_folder
 
 def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
@@ -722,8 +696,6 @@ def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
         clusters = data_group['clusters']
         popvec = data_group['pop_vec']
         windows = data_group['windows']
-
-
         for perm_num in range(nperms):
             permt = np.random.permutation(nclus)
             if len(clusters) >= n_cells_in_perm:
@@ -819,11 +791,10 @@ def cij_recursive(data_group, tmax, fs):
                                      data_group['windows'],
                                      fs, nclus, tmax)
         data_group.create_dataset('Cij', data=Cij_mat)
-        module_logger.info('Cij matrix computed.')
+        TOPOLOGY_LOG.info('Cij matrix computed.')
     else:
         for inst_num, inst in enumerate(data_group.keys()):
             cij_recursive(data_group[inst], tmax, fs)
-
 
 def compute_cij_recusive(binned_data_file, tmax):
 
@@ -831,24 +802,23 @@ def compute_cij_recusive(binned_data_file, tmax):
         fs = popvec_f.attrs['fs']
         stims = popvec_f.keys()
         for stim in stims:
-            module_logger.info("Computing Cij matrix for stim: {}".format(stim))
+            TOPOLOGY_LOG.info('Computing Cij matrix \
+                                for stim: {}'.format(stim))
             stimdata = popvec_f[stim]
             cij_recursive(stimdata, tmax, fs)
 
 def make_cij(path_to_binned, tmax):
 
-    # get list of binned data files
     path_to_binned = os.path.abspath(path_to_binned)
     binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
     if not binned_data_files:
-        module_logger.error('NO BINNED DATA FILES')
-
+        TOPOLOGY_LOG.error('NO BINNED DATA FILES')
         sys.exit(-1)
 
     for binned_data_file in binned_data_files:
-        module_logger.info('Computing Cij for: {}'.format(binned_data_file))
+        TOPOLOGY_LOG.info('Computing Cij for: {}'.format(binned_data_file))
         compute_cij_recusive(binned_data_file, tmax)
-        module_logger.info('Cij computation complete.')
+        TOPOLOGY_LOG.info('Cij computation complete.')
 
 
 def make_shuffled_controls_recursive(path_to_binned, nshuffs):
@@ -864,15 +834,11 @@ def make_shuffled_controls_recursive(path_to_binned, nshuffs):
         Number of shuffles per control
     '''
 
-    # get list of binned data files
     path_to_binned = os.path.abspath(path_to_binned)
     binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
     if not binned_data_files:
-        module_logger.error('NO BINNED DATA FILES')
-
+        TOPOLOGY_LOG.error('NO BINNED DATA FILES')
         sys.exit(-1)
-
-    # Try to make shuffled_controls folder
     shuffled_controls_folder = os.path.join(path_to_binned, 'shuffled_controls')
     if not os.path.exists(shuffled_controls_folder):
         os.makedirs(shuffled_controls_folder)
@@ -904,10 +870,8 @@ def make_permuted_binned_data_recursive(path_to_binned,
     path_to_binned = os.path.abspath(path_to_binned)
     binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
     if not binned_data_files:
-        module_logger.error('NO BINNED DATA FILES')
-
+        TOPOLOGY_LOG.error('NO BINNED DATA FILES')
         sys.exit(-1)
-
     permuted_binned_folder = os.path.join(path_to_binned, 'permuted_binned')
     if not os.path.exists(permuted_binned_folder):
         os.makedirs(permuted_binned_folder)
@@ -917,19 +881,17 @@ def make_permuted_binned_data_recursive(path_to_binned,
         bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
         pbd_name = bdf_name + '-permuted.binned'
         permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
-
         permute_binned_data_recursive(binned_data_file, permuted_data_file,
                                       n_cells_in_perm, n_perms)
 
-
-#######################################################
-###### Current Topological Computation Functions ######
-#######################################################
+##########################################################
+###### Cell Group Topological Computation Functions ######
+##########################################################
 
 def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict,
                       analysis_path, thresh):
     if 'pop_vec' in data_group.keys():
-        module_logger.info('compute_recursive: calculating CI bettis')
+        TOPOLOGY_LOG.info('compute_recursive: calculating CI bettis')
         pfile = pfile_stem + '-simplex.txt'
         pfile = os.path.join(analysis_path, pfile)
         bettis = calc_bettis_from_binned_data(data_group, pfile, thresh)
@@ -962,8 +924,8 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file,
     thresh : float
         Threshold to use when identifying cell groups
     '''
-    module_logger.info('Starting calc_CI_bettis_hierarchical_binned_data')
-    module_logger.info('analysis_id: {}'.format(analysis_id))
+    TOPOLOGY_LOG.info('Starting calc_CI_bettis_hierarchical_binned_data')
+    TOPOLOGY_LOG.info('analysis_id: {}'.format(analysis_id))
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path,
                                  'topology/{}/{}'.format(analysis_id, bdf_name))
@@ -972,52 +934,53 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file,
 
     analysis_files_prefix = '{}-{}'.format(bdf_name, analysis_id)
     analysis_logfile_name = '{}-{}.log'.format(bdf_name, analysis_id)
-    module_logger.info('bdf_name: {}'.format(bdf_name))
-    module_logger.info('analysis_path: {}'.format(analysis_path))
+    TOPOLOGY_LOG.info('bdf_name: {}'.format(bdf_name))
+    TOPOLOGY_LOG.info('analysis_path: {}'.format(analysis_path))
 
     maxbetti = 50
     kwikfile = core.find_kwik(block_path)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
 
-    module_logger.info('Beginning Curto+Itskov \
+    TOPOLOGY_LOG.info('Beginning Curto+Itskov \
                         Topological Analysis of: {}'.format(kwikfile))
-    module_logger.info('Theshold: {}'.format(thresh))
+    TOPOLOGY_LOG.info('Theshold: {}'.format(thresh))
     with h5py.File(binned_data_file, 'r') as bdf:
 
         stims = bdf.keys()
         nstims = len(stims)
-
         for stim in stims:
-            module_logger.info('Calculating bettis for stim: {}'.format(stim))
+            TOPOLOGY_LOG.info('Calculating bettis for stim: {}'.format(stim))
             stim_trials = bdf[stim]
             nreps = len(stim_trials)
-            module_logger.info('Number of repetitions \
+            TOPOLOGY_LOG.info('Number of repetitions \
                                 for stim {}: {}'.format(stim, str(nreps)))
             stim_bettis = np.zeros([nreps, maxbetti])
 
-            betti_savefile = analysis_files_prefix + \
-                             '-stim-{}'.format(stim) + \
-                             '-betti.csv'
+            betti_savefile = analysis_files_prefix \
+                             + '-stim-{}'.format(stim) \
+                             + '-betti.csv'
             betti_savefile = os.path.join(analysis_path, betti_savefile)
-            module_logger.info('Betti savefile: {}'.format(betti_savefile))
-            bps = analysis_files_prefix + \
-                  '-stim-{}'.format(stim) + \
-                  '-bettiPersistence.pkl'
+            TOPOLOGY_LOG.info('Betti savefile: {}'.format(betti_savefile))
+            bps = analysis_files_prefix \
+                  + '-stim-{}'.format(stim) \
+                  + '-bettiPersistence.pkl'
             betti_persistence_savefile = os.path.join(analysis_path, bps)
-            module_logger.info('Betti persistence \
+            TOPOLOGY_LOG.info('Betti persistence \
                                savefile: {}'.format(betti_persistence_savefile))
             betti_persistence_dict = dict()
-            pfile_stem = analysis_files_prefix + \
-                         '-stim-{}'.format(stim) + \
-                         '-rep-'
+            pfile_stem = analysis_files_prefix \
+                         + '-stim-{}'.format(stim) \
+                         + '-rep-'
             betti_persistence_dict = compute_recursive(stim_trials, pfile_stem,
                                                        betti_persistence_dict,
                                                        analysis_path, thresh)
-
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(betti_persistence_dict, bpfile)
-        module_logger.info('Completed All Stimuli')
+        TOPOLOGY_LOG.info('Completed All Stimuli')
 
+###################################################
+###### Clique Topology Computation Functions ######
+###################################################
 
 def calc_fr_funcs(binned_dataset, windows, fs, i, j):
 
@@ -1089,7 +1052,6 @@ def calc_corr_interp(binned_dataset, windows, fs, i, j, tmax):
 def calc_corr_raw(binned_dataset, windows, fs, i, j, tmax):
 
     dt = (windows[0, 1] - windows[0, 0]) / fs
-
     fr_i_vec = binned_dataset[i, :]
     fr_j_vec = binned_dataset[j, :]
 
@@ -1100,7 +1062,6 @@ def calc_corr_raw(binned_dataset, windows, fs, i, j, tmax):
     N = len(fr_i_vec)
     corr_ij = np.correlate(fr_i_vec, fr_j_vec, mode='full')/float(N)
     corr_ji = np.correlate(fr_j_vec, fr_i_vec, mode='full')/float(N)
-
     int_lim = np.round(tmax/dt)
     if int_lim >= len(corr_ij):
         int_lim = len(corr_ij)
@@ -1113,7 +1074,6 @@ def ccg(fr_i, fr_j, T, tau):
     '''
     Returns cross correlogram of Giusti et al. 2015
     '''
-
     ccg_ij, err = integrate.quad(lambda x: fr_i(x)*fr_j(x+tau), 0, T)/T
     return ccg_ij
 
@@ -1137,12 +1097,10 @@ def compute_Cij(binned_dataset, windows, fs, i, j, tmax):
     Cij = Cij_unnorm/(tmax*r_i*r_j)
     return Cij
 
-
 def compute_Cij_matrix(binned_dataset, windows, fs, nclus, tmax):
 
     Cij = np.zeros((nclus, nclus))
     bds = np.array(binned_dataset)
-
     for i in range(nclus):
         for j in range(i+1, nclus):
             Cij_val = calc_corr_raw(bds, windows, fs, i, j, tmax)
@@ -1167,28 +1125,24 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
     savefile : text File
         file suitable for running perseus on
     '''
-
-    ### NEED TO REMOVE NANs ###
-    module_logger.info('Building perseus corrmat input')
-
+    TOPOLOGY_LOG.info('Building perseus corrmat input')
     No, Mo = cij.shape
     if abs(No-Mo):
-        module_logger.error('Not a square matrix! Aborting')
+        TOPOLOGY_LOG.error('Not a square matrix! Aborting')
         return
-
-    module_logger.info('Removing NaNs.')
+    TOPOLOGY_LOG.info('Removing NaNs.')
     ctr = np.isnan(cij[0, :])
     cij = cij[~ctr]
     cij = cij[:, ~ctr]
 
     N, M = cij.shape
-    module_logger.info('Shape before NaN removal: {}, {}   \
+    TOPOLOGY_LOG.info('Shape before NaN removal: {}, {}   \
                         After: {}'.format(No, Mo, N))
     #if (1-np.diag(cij)).any():
-    #   module_logger.warn('Diagonal entries of Cij not equal to 1. Correcting')
+    #   TOPOLOGY_LOG.warn('Diagonal entries of Cij not equal to 1. Correcting')
     #  cij = cij + np.diag(1-np.diag(cij))
     step_size = np.amax(cij)/float(nsteps)
-    module_logger.info('Using persistence step_size: {}'.format(step_size))
+    TOPOLOGY_LOG.info('Using persistence step_size: {}'.format(step_size))
 
     with open(savefile, 'w+') as pfile:
         #write num coords per vertex
@@ -1203,7 +1157,6 @@ def build_perseus_input_corrmat(cij, nsteps, savefile):
             row_str = row_str.replace(',', ' ')
             out_str = row_str+'\n'
             pfile.write(out_str)
-
     return savefile
 
 def run_perseus_corrmat(pfile):
@@ -1221,21 +1174,20 @@ def run_perseus_corrmat(pfile):
         file containing resultant betti numbers
 
     '''
-    module_logger.info('Running perseus-corrmat')
+    TOPOLOGY_LOG.info('Running perseus-corrmat')
     of_string, ext = os.path.splitext(pfile)
     perseus_command = "/home/btheilma/bin/perseus"
     perseus_return_code = subprocess.call([perseus_command, 'corrmat', pfile,
                                            of_string])
-    module_logger.info('pfile: {}'.format(pfile))
+    TOPOLOGY_LOG.info('pfile: {}'.format(pfile))
     betti_file = of_string+'_betti.txt'
     betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
     return betti_file
 
 def calc_clique_topology_bettis(cij, nsteps, pfile):
 
-    module_logger.info('Calculating clique topology bettis')
+    TOPOLOGY_LOG.info('Calculating clique topology bettis')
     build_perseus_input_corrmat(cij, nsteps, pfile)
-
     betti_file = run_perseus_corrmat(pfile)
     bettis = []
     with open(betti_file, 'r') as bf:
@@ -1259,7 +1211,7 @@ def compute_cliquetop_recursive(data_group, pfile_stem,
                                              nsteps, pfile)
         return bettis
     elif ('Cij' not in data_group.keys()) and ('pop_vec' in data_group.keys()):
-        module_logger.error('Cij matrix not present.')
+        TOPOLOGY_LOG.error('Cij matrix not present.')
         return dict()
     else:
         for perm, permkey in enumerate(data_group.keys()):
@@ -1293,61 +1245,55 @@ def calc_cliquetop_bettis_recursive(analysis_id, binned_data_file,
     thresh : float
         Threshold to use when identifying cell groups
     '''
-    module_logger.info('Starting calc_CliqueTop_bettis_recursive')
-    module_logger.info('analysis_id: {}'.format(analysis_id))
+    TOPOLOGY_LOG.info('Starting calc_CliqueTop_bettis_recursive')
+    TOPOLOGY_LOG.info('analysis_id: {}'.format(analysis_id))
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path_ex = 'topology/clique_top/{}/{}'.format(analysis_id, bdf_name)
     analysis_path = os.path.join(block_path, analysis_path_ex)
-
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
-
     analysis_files_prefix = '{}-{}-CliqueTop-'.format(bdf_name, analysis_id)
     analysis_logfile_name = '{}-{}.log'.format(bdf_name, analysis_id)
-    module_logger.info('bdf_name: {}'.format(bdf_name))
-    module_logger.info('analysis_path: {}'.format(analysis_path))
-
+    TOPOLOGY_LOG.info('bdf_name: {}'.format(bdf_name))
+    TOPOLOGY_LOG.info('analysis_path: {}'.format(analysis_path))
     maxbetti = 50
     kwikfile = core.find_kwik(block_path)
     kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
 
-    module_logger.info('Beginning Clique Topology \
+    TOPOLOGY_LOG.info('Beginning Clique Topology \
                         Analysis of: {}'.format(kwikfile))
     with h5py.File(binned_data_file, 'r') as bdf:
 
         stims = bdf.keys()
         nstims = len(stims)
-
         for stim in stims:
-            module_logger.info('Calculating CliqueTop Bettis \
+            TOPOLOGY_LOG.info('Calculating CliqueTop Bettis \
                                 for stim: {}'.format(stim))
             stim_trials = bdf[stim]
             nreps = len(stim_trials)
-            module_logger.info('Number of repetitions \
+            TOPOLOGY_LOG.info('Number of repetitions \
                                for stim {}: {}'.format(stim, str(nreps)))
             stim_bettis = np.zeros([nreps, maxbetti])
 
-            betti_savefile = analysis_files_prefix + \
-                             '-stim-{}'.format(stim) + \
-                             '-betti.csv'
+            betti_savefile = analysis_files_prefix \
+                             + '-stim-{}'.format(stim) \
+                             + '-betti.csv'
             betti_savefile = os.path.join(analysis_path, betti_savefile)
-            module_logger.info('Betti savefile: {}'.format(betti_savefile))
-            bps = analysis_files_prefix + \
-                  '-stim-{}'.format(stim) + \
-                  '-bettiPersistence.pkl'
+            TOPOLOGY_LOG.info('Betti savefile: {}'.format(betti_savefile))
+            bps = analysis_files_prefix \
+                  + '-stim-{}'.format(stim) \
+                  + '-bettiPersistence.pkl'
             betti_persistence_savefile = os.path.join(analysis_path, bps)
-            module_logger.info('Betti persistence savefile: \
+            TOPOLOGY_LOG.info('Betti persistence savefile: \
                                {}'.format(betti_persistence_savefile))
             betti_persistence_dict = dict()
-
-            pfile_stem = analysis_files_prefix + \
-                         '-stim-{}'.format(stim) + \
-                         '-rep-'
+            pfile_stem = analysis_files_prefix \
+                         + '-stim-{}'.format(stim) \
+                         + '-rep-'
             bpd = compute_cliquetop_recursive(stim_trials,
                                               pfile_stem,
                                               betti_persistence_dict,
                                               analysis_path, nsteps)
-
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(bpd, bpfile)
-        module_logger.info('Completed All Stimuli')
+        TOPOLOGY_LOG.info('Completed All Stimuli')
