@@ -222,13 +222,17 @@ def plot_all_bettis_together(persistence_files, maxbetti,
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    print(nplots)
-    nsubplotrows = np.int_(np.round(nplots/4.))
-    print(nsubplotrows)
-    nsubplotrows = np.maximum(nsubplotrows, 1)
-    subplot_shape = (nsubplotrows, 4)
-    fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
 
+    if nplots == 1:
+        fig, axs = plt.subplots(figsize=figsize)
+        axs = [axs]
+    else:
+        print(nplots)
+        nsubplotrows = np.int_(np.round(nplots/4.))
+        nsubplotrows = np.maximum(nsubplotrows, 1)
+        print(nsubplotrows)
+        subplot_shape = (nsubplotrows, 4)
+        fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
 
     for pf_num, pf in enumerate(persistence_files):
         pf_metadata = extract_metadata(pf)
