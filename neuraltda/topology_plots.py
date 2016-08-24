@@ -1,26 +1,31 @@
+import pickle
+import os
+import sys
+import glob
+import string
+from itertools import groupby
 import logging
+import datetime
+
 import numpy as np
 import scipy as sp
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import pickle
-import os
-import sys
-from ephys import core, events, rasters
-from neuraltda import topology
-import glob
-import string
 from scipy.io import wavfile
 import scipy.signal as signal
 from scipy.interpolate import interp1d
-from itertools import groupby
+
+from ephys import core, events, rasters
+from neuraltda import topology
 
 def compute_avg_betti_recursive(bettidata, betticurves, betti, windt, t):
     
     if type(bettidata) is dict:
         for permnum, perm in enumerate(bettidata.keys()):
-            betticurves = compute_avg_betti_recursive(bettidata[perm], betticurves, betti, windt, t)
+            betticurves = compute_avg_betti_recursive(bettidata[perm], 
+                                                      betticurves, betti, 
+                                                      windt, t)
         return betticurves
     else:
         betti1 = np.zeros([len(bettidata), 2])
@@ -31,7 +36,9 @@ def compute_avg_betti_recursive(bettidata, betticurves, betti, windt, t):
             except IndexError:
                 betti1[ind, 1] = 0
                 
-        bettifunc = interp1d(betti1[:, 0], betti1[:, 1], kind='zero', bounds_error=False, fill_value=(betti1[0, 1], betti1[-1, 1]))
+        bettifunc = interp1d(betti1[:, 0], betti1[:, 1], kind='zero',
+                             bounds_error=False,
+                             fill_value=(betti1[0, 1], betti1[-1, 1]))
         betticurve = bettifunc(t)
         betticurves = np.vstack((betticurves, betticurve))
         return betticurves
@@ -64,8 +71,8 @@ def plot_betti_trace_recursive(trialdata, ax, upper):
 
 def get_persistence_files(topology_folder):
 
-    persistence_files = sorted(glob.glob(os.path.join(topology_folder, '*.pkl')))
-    return persistence_files
+    pfs = sorted(glob.glob(os.path.join(topology_folder, '*.pkl')))
+    return pfs
 
 def extract_metadata(topology_file):
 
@@ -126,21 +133,33 @@ def plot_average_betti(persistence_files, betti, maxt, figsize, plot_savepath):
         bettiTrialspline=[]
         ax = axs.flatten()[pf_num]
         betticurves = np.empty_like(t)
-        betticurves = compute_avg_betti_recursive(pdata, betticurves, betti, dt, t)
+        betticurves = compute_avg_betti_recursive(pdata,
+                                                  betticurves,
+                                                  betti,
+                                                  dt, t)
         avgbetticurve = np.mean(betticurves[1:], axis=0)
         ax.plot(t, avgbetticurve, lw=2)
         ax.set_title('Stimulus: {}'.format(stimname))
         ax.set_xlabel('Time (seconds)')
         ax.set_ylabel('Betti {} Value'.format(betti))
-    plt.savefig(os.path.join(plot_savepath, 'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, betti, dt, prd)))
-
+    sfn = 'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, 
+                                                                     betti,
+                                                                     dt, prd)
+    save_filename = os.path.join(plot_savepath, sfn)
+    plt.savefig(save_filename)
 
 def plot_all_bettis(persistence_files, maxbetti, maxt, figsize, plot_savepath):
 
     for betti in range(maxbetti):
-        plot_average_betti(persistence_files, betti, maxt, figsize, plot_savepath)
+        plot_average_betti(persistence_files, 
+                           betti, maxt, 
+                           figsize, plot_savepath)
 
-def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffled, betti, maxt, figsize, plot_savepath, difference=False):
+def plot_average_betti_with_shuffled(persistence_files, 
+                                     persistence_files_shuffled, 
+                                     betti, maxt, figsize, 
+                                     plot_savepath, difference=False):
+
     plot_savepath = os.path.abspath(plot_savepath)
     t = np.linspace(0, maxt, num=1000)
     bettiStimspline=[]
@@ -153,7 +172,8 @@ def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffl
     fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
 
 
-    for pf_num, (pf, pf_shuff) in enumerate(zip(persistence_files, persistence_files_shuffled)):
+    for pf_num, (pf, pf_shuff) in enumerate(zip(persistence_files, 
+                                                persistence_files_shuffled)):
         pf_metadata = extract_metadata(pf)
         stimname = pf_metadata['stimname']
         dt = pf_metadata['dt']
@@ -164,11 +184,13 @@ def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffl
         pdata = pickle.load(open(pf, 'r'))
         pdata_shuff = pickle.load(open(pf_shuff, 'r'))
         betticurves = np.empty_like(t)
-        betticurves = compute_avg_betti_recursive(pdata, betticurves, betti, dt, t)
+        betticurves = compute_avg_betti_recursive(pdata, betticurves,
+                                                  betti, dt, t)
         avgbetticurve = np.mean(betticurves[1:], axis=0)
     
         bc_shuff = np.empty_like(t)
-        bc_shuff = compute_avg_betti_recursive(pdata_shuff, bc_shuff, betti, dt, t)
+        bc_shuff = compute_avg_betti_recursive(pdata_shuff, bc_shuff, 
+                                               betti, dt, t)
         avgbcshuff = np.mean(bc_shuff[1:], axis=0)
         if difference:
             ax.plot(t, avgbetticurve-avgbcshuff, 'b', lw=2)
@@ -178,14 +200,22 @@ def plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffl
         ax.set_title('Stimulus: {}'.format(stimname))
         ax.set_xlabel('Time (seconds)')
         ax.set_ylabel('Betti {} Value'.format(betti))
-    plt.savefig(os.path.join(plot_savepath, 'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, betti, dt, prd)))
+    sfn = 'B{}_betti{}_{}ms_{}_permuted_avg_withshuffled.png'.format(bird, 
+                                                                     betti, 
+                                                                     dt, prd)
+    sfn = os.path.join(plot_savepath, sfn)
+    plt.savefig(sfn)
 
-def plot_all_bettis_with_shuffled(persistence_files, persistence_files_shuffled, maxbetti, maxt, figsize, plot_savepath):
+def plot_all_bettis_with_shuffled(persistence_files, persistence_files_shuffled,
+                                  maxbetti, maxt, figsize, plot_savepath):
 
     for betti in range(maxbetti):
-        plot_average_betti_with_shuffled(persistence_files, persistence_files_shuffled, betti, maxt, figsize, plot_savepath)
+        plot_average_betti_with_shuffled(persistence_files,
+                                         persistence_files_shuffled,
+                                         betti, maxt, figsize, plot_savepath)
 
-def plot_all_bettis_together(persistence_files, maxbetti, maxt, figsize, plot_savepath):
+def plot_all_bettis_together(persistence_files, maxbetti, 
+                             maxt, figsize, plot_savepath):
 
     plot_savepath = os.path.abspath(plot_savepath)
     t = np.linspace(0, maxt, num=1000)
@@ -211,27 +241,32 @@ def plot_all_bettis_together(persistence_files, maxbetti, maxt, figsize, plot_sa
         ax = axs.flatten()[pf_num]
         for betti in range(maxbetti):
             betticurves = np.empty_like(t)
-            betticurves = compute_avg_betti_recursive(pdata, betticurves, betti, dt, t)
+            betticurves = compute_avg_betti_recursive(pdata, betticurves,
+                                                      betti, dt, t)
             avgbetticurve = np.mean(betticurves[1:], axis=0)
             ax.plot(t, avgbetticurve, lw=2)
         ax.set_title('Stimulus: {}'.format(stimname))
         ax.set_xlabel('Time (seconds)')
         ax.set_ylabel('Betti Value'.format(betti))
-    plt.savefig(os.path.join(plot_savepath, 'B{}_AllBetti_{}ms_{}_permuted_avg.png'.format(bird, dt, prd)))
+    sfn = 'B{}_AllBetti_{}ms_{}_permuted_avg.png'.format(bird, dt, prd)
+    sfn = os.path.join(plot_savepath, sfn)
+    plt.savefig(os.path.join(plot_savepath, sfn)
 
 def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
     block_path = os.path.abspath(block_path)
-    real_topology_folder = os.path.join(block_path, 'topology/{}_real/'.format(analysis_id))
-    shuffled_topology_folder = os.path.join(block_path, 'topology/{}_shuffled/'.format(analysis_id))
-    print(real_topology_folder)
-    # make figures dir
 
+    real_subfolder = 'topology/{}_real/'.format(analysis_id)
+    shuffled_subfolder = 'topology/{}_shuffled/'.format(analysis_id)
+    real_topology_folder = os.path.join(block_path, real_subfolder)
+    shuffled_topology_folder = os.path.join(block_path, shuffled_subfolder)
 
     real_topology_folders = sorted(glob.glob(real_topology_folder+'*'))
     shuffled_topology_folders = sorted(glob.glob(shuffled_topology_folder+'*'))
 
-    for s_real, s_shuff in zip(real_topology_folders, shuffled_topology_folders):
-        figs_folder = os.path.join(block_path,  'figures/{}'.format(analysis_id))
+    for s_real, s_shuff in zip(real_topology_folders,
+                               shuffled_topology_folders):
+
+        figs_folder = os.path.join(block_path, 'figures/{}'.format(analysis_id))
         if not os.path.exists(figs_folder):
             os.makedirs(figs_folder)
         print('Real: {}     Shuffled: {}'.format(s_real, s_shuff))
@@ -239,7 +274,8 @@ def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
         real_pfs = get_persistence_files(s_real)
         shuff_pfs = get_persistence_files(s_shuff)
         print('Plotting Bettis with Shuffled...')
-        plot_all_bettis_with_shuffled(real_pfs, shuff_pfs, maxbetti, maxt, figsize, figs_folder)
+        plot_all_bettis_with_shuffled(real_pfs, shuff_pfs, maxbetti,
+                                      maxt, figsize, figs_folder)
         print('Plotting All Bettis Together...')
         plot_all_bettis_together(real_pfs, maxbetti, maxt, figsize, figs_folder)
-
+        
