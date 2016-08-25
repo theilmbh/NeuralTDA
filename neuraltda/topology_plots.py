@@ -19,6 +19,20 @@ from scipy.interpolate import interp1d
 from ephys import core, events, rasters
 from neuraltda import topology
 
+def get_subplots(nplots, cols=4):
+
+    if nplots == 1:
+        fig, axs = plt.subplots(figsize=figsize)
+        axs = [axs]
+    else:
+        print(nplots)
+        nsubplotrows = np.int_(np.round(nplots/(float(cols))))
+        nsubplotrows = np.maximum(nsubplotrows, 1)
+        print(nsubplotrows)
+        subplot_shape = (nsubplotrows, cols)
+        fig, axs = plt.subplots(nsubplotrows, cols, figsize=figsize)
+    return (fig, axs)
+
 def compute_avg_betti_recursive(bettidata, betticurves, betti, windt, t):
     
     if type(bettidata) is dict:
@@ -115,25 +129,14 @@ def plot_average_betti(persistence_files, betti, maxt, figsize, plot_savepath):
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    
-    if nplots == 1:
-        fig, axs = plt.subplots(figsize=figsize)
-        axs = [axs]
-    else:
-        print(nplots)
-        nsubplotrows = np.int_(np.round(nplots/4.))
-        nsubplotrows = np.maximum(nsubplotrows, 1)
-        print(nsubplotrows)
-        subplot_shape = (nsubplotrows, 4)
-        fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
-
+    fig, axs = get_subplots(nplots)
 
     for pf_num, pf in enumerate(persistence_files):
-        pf_metadata = extract_metadata(pf)
-        stimname = pf_metadata['stimname']
-        dt = pf_metadata['dt']
-        prd = pf_metadata['period']
-        bird = pf_metadata['birdID']
+        #pf_metadata = extract_metadata(pf)
+        stimname = 'NaN'
+        dt = 'NaN'
+        prd = 'NaN'
+        bird = 'NaN'
         pdata = pickle.load(open(pf, 'r'))
         upper=0
         bettiTrialspline=[]
@@ -171,26 +174,15 @@ def plot_average_betti_with_shuffled(persistence_files,
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    
-    if nplots == 1:
-        fig, axs = plt.subplots(figsize=figsize)
-        axs = [axs]
-    else:
-        print(nplots)
-        nsubplotrows = np.int_(np.round(nplots/4.))
-        nsubplotrows = np.maximum(nsubplotrows, 1)
-        print(nsubplotrows)
-        subplot_shape = (nsubplotrows, 4)
-        fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
-
+    fig, axs = get_subplots(nplots)
 
     for pf_num, (pf, pf_shuff) in enumerate(zip(persistence_files, 
                                                 persistence_files_shuffled)):
-        pf_metadata = extract_metadata(pf)
-        stimname = pf_metadata['stimname']
-        dt = pf_metadata['dt']
-        prd = pf_metadata['period']
-        bird = pf_metadata['birdID']
+        #pf_metadata = extract_metadata(pf)
+        stimname = 'NaN'
+        dt = 'NaN'
+        prd = 'NaN'
+        bird = 'NaN'
         ax = axs.flatten()[pf_num]
 
         pdata = pickle.load(open(pf, 'r'))
@@ -234,24 +226,14 @@ def plot_all_bettis_together(persistence_files, maxbetti,
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    
-    if nplots == 1:
-        fig, axs = plt.subplots(figsize=figsize)
-        axs = [axs]
-    else:
-        print(nplots)
-        nsubplotrows = np.int_(np.round(nplots/4.))
-        nsubplotrows = np.maximum(nsubplotrows, 1)
-        print(nsubplotrows)
-        subplot_shape = (nsubplotrows, 4)
-        fig, axs = plt.subplots(nsubplotrows, 4, figsize=figsize)
+    fig, axs = get_subplots(nplots)
 
     for pf_num, pf in enumerate(persistence_files):
-        pf_metadata = extract_metadata(pf)
-        stimname = pf_metadata['stimname']
-        dt = pf_metadata['dt']
-        prd = pf_metadata['period']
-        bird = pf_metadata['birdID']
+        #pf_metadata = extract_metadata(pf)
+        stimname = 'NaN'
+        dt = 'NaN'
+        prd = 'NaN'
+        bird = 'NaN'
         pdata = pickle.load(open(pf, 'r'))
         upper=0
         bettiTrialspline=[]
