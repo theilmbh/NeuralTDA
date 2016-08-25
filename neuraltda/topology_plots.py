@@ -19,7 +19,7 @@ from scipy.interpolate import interp1d
 from ephys import core, events, rasters
 from neuraltda import topology
 
-def get_subplots(nplots, cols=4):
+def get_subplots(figsize, nplots, cols=4):
 
     if nplots == 1:
         fig, axs = plt.subplots(figsize=figsize)
@@ -129,7 +129,7 @@ def plot_average_betti(persistence_files, betti, maxt, figsize, plot_savepath):
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    fig, axs = get_subplots(nplots)
+    fig, axs = get_subplots(figsize, nplots)
 
     for pf_num, pf in enumerate(persistence_files):
         #pf_metadata = extract_metadata(pf)
@@ -174,7 +174,7 @@ def plot_average_betti_with_shuffled(persistence_files,
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    fig, axs = get_subplots(nplots)
+    fig, axs = get_subplots(figsize, nplots)
 
     for pf_num, (pf, pf_shuff) in enumerate(zip(persistence_files, 
                                                 persistence_files_shuffled)):
@@ -226,7 +226,7 @@ def plot_all_bettis_together(persistence_files, maxbetti,
     bettiStimspline=[]
     
     nplots = len(persistence_files)
-    fig, axs = get_subplots(nplots)
+    fig, axs = get_subplots(figsize, nplots)
 
     for pf_num, pf in enumerate(persistence_files):
         #pf_metadata = extract_metadata(pf)
