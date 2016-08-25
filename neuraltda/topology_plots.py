@@ -23,7 +23,7 @@ def get_subplots(figsize, nplots, cols=4):
 
     if nplots == 1:
         fig, axs = plt.subplots(figsize=figsize)
-        axs = [axs]
+        axs = np.array([axs])
     else:
         print(nplots)
         nsubplotrows = np.int_(np.round(nplots/(float(cols))))
