@@ -902,7 +902,7 @@ def compute_recursive(data_group, pfile_stem, h_stem, betti_persistence_perm_dic
         betti_persistence_perm_dict['hstr'] = h_stem
         bettis = calc_bettis_from_binned_data(data_group, pfile, thresh)
         betti_persistence_perm_dict['bettis'] = bettis
-        return bettis
+        return betti_persistence_perm_dict
     else:
         for perm, permkey in enumerate(data_group.keys()):
             new_data_group = data_group[permkey]
@@ -1001,10 +1001,10 @@ def bptd_recursive(bpd, bpdf):
         betti_dict = dict()
         for filt, betti_nums in bettis:
             for dim, betti_num in enumerate(betti_nums):
-                betti_dict[dim] = betti_num
+                betti_dict[str(dim)] = betti_num
             betti_dict['filtration'] = filt
             betti_dict['hierarchy'] = bpd['hstr']
-            filtdataframe = pd.DataFrame(data=betti_dict)
+            filtdataframe = pd.DataFrame(data=betti_dict, index=[1])
             bpdf = bpdf.append(filtdataframe, ignore_index=True)
         return bpdf
     else:
@@ -1014,8 +1014,9 @@ def bptd_recursive(bpd, bpdf):
 
 def betti_pickle_to_dataframe(bpd):
 
-    bpdf = dict()
+    bpdf = pd.DataFrame(columns=['hierarchy', 'filtration', '0', '1', '2'])
     bpdf = bptd_recursive(bpd, bpdf)
+    return bpdf
 
 ###################################################
 ###### Clique Topology Computation Functions ######
