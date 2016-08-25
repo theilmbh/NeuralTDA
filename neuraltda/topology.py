@@ -985,6 +985,7 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file,
                          + '-rep-'
             bpd = compute_recursive(stim_trials,
                                     pfile_stem,
+                                    h_stem,
                                     bpd,
                                     analysis_path,
                                     thresh)
