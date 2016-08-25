@@ -355,7 +355,7 @@ def run_perseus(pfile):
     TOPOLOGY_LOG.info('In run_perseus')
     pfile_split = os.path.splitext(pfile)
     of_string = pfile_split[0]
-    perseus_command = "/home/btheilma/bin/perseus"
+    perseus_command = "perseus"
     perseus_return_code = subprocess.call([perseus_command, 'nmfsimtop', pfile,
                                            of_string])
     TOPOLOGY_LOG.info('Perseus return code: {}'.format(perseus_return_code))
