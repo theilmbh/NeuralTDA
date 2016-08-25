@@ -893,21 +893,26 @@ def make_permuted_binned_data_recursive(path_to_binned,
 ###### Cell Group Topological Computation Functions ######
 ##########################################################
 
-def compute_recursive(data_group, pfile_stem, betti_persistence_perm_dict,
+def compute_recursive(data_group, pfile_stem, h_stem, betti_persistence_perm_dict,
                       analysis_path, thresh):
     if 'pop_vec' in data_group.keys():
         TOPOLOGY_LOG.info('compute_recursive: calculating CI bettis')
         pfile = pfile_stem + '-simplex.txt'
         pfile = os.path.join(analysis_path, pfile)
+        betti_persistence_perm_dict['hstr'] = h_stem
         bettis = calc_bettis_from_binned_data(data_group, pfile, thresh)
+        betti_persistence_perm_dict['bettis'] = bettis
         return bettis
     else:
         for perm, permkey in enumerate(data_group.keys()):
             new_data_group = data_group[permkey]
             new_pfile_stem = pfile_stem + '-{}'.format(permkey)
+            new_h_stem = h_stem + '-{}'.format(permkey)
             new_bpp_dict = dict()
-            bettis = compute_recursive(new_data_group, new_pfile_stem,
-                                       new_bpp_dict, analysis_path, thresh)
+            bettis = compute_recursive(new_data_group,
+                                                  new_pfile_stem, new_h_stem,
+                                                  new_bpp_dict, analysis_path,
+                                                  thresh)
             betti_persistence_perm_dict['{}'.format(permkey)] = bettis
         return betti_persistence_perm_dict
 
@@ -949,12 +954,14 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file,
     TOPOLOGY_LOG.info('Beginning Curto+Itskov \
                         Topological Analysis of: {}'.format(kwikfile))
     TOPOLOGY_LOG.info('Theshold: {}'.format(thresh))
+
     with h5py.File(binned_data_file, 'r') as bdf:
 
         stims = bdf.keys()
         nstims = len(stims)
         for stim in stims:
             TOPOLOGY_LOG.info('Calculating bettis for stim: {}'.format(stim))
+            h_stem = stim + '-'
             stim_trials = bdf[stim]
             nreps = len(stim_trials)
             TOPOLOGY_LOG.info('Number of repetitions \
@@ -972,16 +979,42 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file,
             betti_persistence_savefile = os.path.join(analysis_path, bps)
             TOPOLOGY_LOG.info('Betti persistence \
                                savefile: {}'.format(betti_persistence_savefile))
-            betti_persistence_dict = dict()
+            bpd = dict()
             pfile_stem = analysis_files_prefix \
                          + '-stim-{}'.format(stim) \
                          + '-rep-'
-            betti_persistence_dict = compute_recursive(stim_trials, pfile_stem,
-                                                       betti_persistence_dict,
-                                                       analysis_path, thresh)
+            bpd = compute_recursive(stim_trials,
+                                    pfile_stem,
+                                    bpd,
+                                    analysis_path,
+                                    thresh)
             with open(betti_persistence_savefile, 'w') as bpfile:
-                pickle.dump(betti_persistence_dict, bpfile)
+                pickle.dump(bpd, bpfile)
         TOPOLOGY_LOG.info('Completed All Stimuli')
+
+def bptd_recursive(bpd, bpdf):
+
+    if 'hstr' in bpd.keys():
+        bettis = bpd['bettis']
+        nfilt = len(bettis)
+        betti_dict = dict()
+        for filt, betti_nums in bettis:
+            for dim, betti_num in enumerate(betti_nums):
+                betti_dict[dim] = betti_num
+            betti_dict['filtration'] = filt
+            betti_dict['hierarchy'] = bpd['hstr']
+            filtdataframe = pd.DataFrame(data=betti_dict)
+            bpdf = bpdf.append(filtdataframe, ignore_index=True)
+        return bpdf
+    else:
+        for indx, h_level in enumerate(bpd.keys()):
+            bpdf = bptd_recursive(bpd[h_level], bpdf)
+        return bpdf
+
+def betti_pickle_to_dataframe(bpd):
+
+    bpdf = dict()
+    bpdf = bptd_recursive(bpd, bpdf)
 
 ###################################################
 ###### Clique Topology Computation Functions ######
