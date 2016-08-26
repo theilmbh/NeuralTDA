@@ -16,8 +16,6 @@ def get_args():
 													 'containing the data')
 	parser.add_argument('bin_def_file', type=str, help='Path to folder'
 													 'containing the data')
-	parser.add_argument('-n', dest=n_cells, help='Number of cells in test dataset')
-	parser.add_argument('-t', dest=maxt, help='Length (seconds) of test stimulus')
 	return parser.parse_args()
 
 
