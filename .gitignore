@@ -38,5 +38,8 @@ Thumbs.db
 
 # More specific #
 #################
-.pyc
-notebooks/.ipynb_checkpoints/**
+*.pyc
+notebooks/.ipynb_checkpoints/
+old_code/
+*.egg_info
+
