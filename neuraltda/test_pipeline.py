@@ -168,10 +168,6 @@ def test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells=60, max
 		top.calc_CI_bettis_hierarchical_binned_data(analysis_id+'_shuffled',
 													spdf, block_path, thresh)
 
-	maxbetti = 5
-	figsize=(22,22)
-	TEST_PIPELINE_LOGGER.info('Making topology plots')
-	topplt.make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize)
 	TEST_PIPELINE_LOGGER.info('Test NeuralTDA Complete')
 
 
