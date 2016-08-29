@@ -159,9 +159,10 @@ def create_subwindows(segment, subwin_len, n_subwin_starts):
     starts = np.floor(np.linspace(segment[0],
                                   segment[0]+subwin_len,
                                   n_subwin_starts))
+    nsubwin = np.floor((segment[1]-segment[0])/subwin_len)
     subwindows = []
     for start in starts:
-        subwin_front = np.round(np.linspace(start, segment[1], subwin_len))
+        subwin_front = np.round(np.arange(start, segment[1], subwin_len))
         for front in subwin_front:
             subwin_end = front + subwin_len
             subwindows.append([front, subwin_end])
@@ -893,17 +894,22 @@ def make_permuted_binned_data_recursive(path_to_binned,
 ###### Cell Group Topological Computation Functions ######
 ##########################################################
 
-def compute_barcode(pfile_stem, betti, barcode_dict):
+def compute_barcode(pfile_stem, barcode_dict):
     '''
     Given a pfile, return a dictionary containing the persistence intervals
     for all generators of homology of all dimensions
     '''
-
+    betti=0
     barcode_file = pfile_stem + '-simplex_{}.txt'.format(betti)
-    with open(barcode_file, 'r') as bcf:
-        barcode = np.fromfile(bcf, sep=' ')
-        barcode_dict[str(betti)] = barcode
+    while os.path.exists(barcode_file):
+        
+        with open(barcode_file, 'r') as bcf:
+            barcode = np.fromfile(bcf, sep=' ')
+            barcode_dict[str(betti)] = barcode
+        betti = betti+1
+        barcode_file = pfile_stem + '-simplex_{}.txt'.format(betti)
     return barcode_dict
+
 
 
 def compute_recursive(data_group, pfile_stem, h_stem, betti_persistence_perm_dict,
@@ -915,9 +921,9 @@ def compute_recursive(data_group, pfile_stem, h_stem, betti_persistence_perm_dic
         betti_persistence_perm_dict['hstr'] = h_stem
         bettis = calc_bettis_from_binned_data(data_group, pfile, thresh)
         nbetti = len(bettis)
+        print(nbetti)
         barcode_dict = dict()
-        for betti in range(nbetti):
-            barcode_dict = compute_barcode(pfile_stem, betti, barcode_dict)
+        barcode_dict = compute_barcode(os.path.join(analysis_path,pfile_stem), barcode_dict)
         betti_persistence_perm_dict['bettis'] = bettis
         betti_persistence_perm_dict['barcodes'] = barcode_dict
         return betti_persistence_perm_dict
