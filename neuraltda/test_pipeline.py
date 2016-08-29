@@ -148,7 +148,7 @@ def test_pipeline(block_path, bin_id, analysis_id, bin_def_file, n_cells=60, max
 	top.make_shuffled_controls_recursive(permuted_folder, 1)
 
 	# compute topology for permuted data:
-	top.compute_all_ci_topology(binned_folder, permuted_folder, shuffled_folder,
+	top.compute_all_ci_topology(binned_folder, permuted_folder, shuffled_permuted_folder,
 								analysis_id, block_path, thresh)
 
 	TEST_PIPELINE_LOGGER.info('Test NeuralTDA Complete')
