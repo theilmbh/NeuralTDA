@@ -4,7 +4,8 @@ import topology as top
 
 def calc_avalanche_frequencies(binned_data, nbins):
 	'''
-	Calculates the frequencies of the number of spikes in each time binned_data
+	Calculates the frequencies of the number of 
+	spikes in each time binned_data
 	'''
 
 	with h5.File(binned_data, 'r') as f:

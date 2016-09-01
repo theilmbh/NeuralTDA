@@ -6,6 +6,7 @@ import glob
 import pickle
 import logging
 import datetime
+import csv
 
 import numpy as np
 import pandas as pd
@@ -674,6 +675,7 @@ def do_bin_data(block_path, spikes, clusters, trials,
             win_size = float(binning_params[1])
             cluster_groups = binning_params[2]
             segment = int(binning_params[3])
+            # bin_str = ''.join(cluster_groups) + '-' + str(win_size) + '-' 
             TOPOLOGY_LOG.info('segment specifier: {}'.format(segment))
             seg_start = float(binning_params[4])
             seg_end = float(binning_params[5])
@@ -904,13 +906,15 @@ def compute_barcode(pfile_stem, barcode_dict):
     while os.path.exists(barcode_file):
         
         with open(barcode_file, 'r') as bcf:
-            barcode = np.fromfile(bcf, sep=' ')
+            barcode = []
+            bcreader = csv.reader(bcf, delimiter=' ')
+            for row in bcreader:
+                introw = [int(s) for s in row]
+                barcode.append(introw)
             barcode_dict[str(betti)] = barcode
         betti = betti+1
         barcode_file = pfile_stem + '-simplex_{}.txt'.format(betti)
     return barcode_dict
-
-
 
 def compute_recursive(data_group, pfile_stem, h_stem, betti_persistence_perm_dict,
                       analysis_path, thresh):
@@ -921,7 +925,6 @@ def compute_recursive(data_group, pfile_stem, h_stem, betti_persistence_perm_dic
         betti_persistence_perm_dict['hstr'] = h_stem
         bettis = calc_bettis_from_binned_data(data_group, pfile, thresh)
         nbetti = len(bettis)
-        print(nbetti)
         barcode_dict = dict()
         barcode_dict = compute_barcode(os.path.join(analysis_path,pfile_stem), barcode_dict)
         betti_persistence_perm_dict['bettis'] = bettis

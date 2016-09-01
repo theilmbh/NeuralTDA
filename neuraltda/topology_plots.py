@@ -277,3 +277,20 @@ def make_all_plots(block_path, analysis_id, maxbetti, maxt, figsize):
                                       maxt, figsize, figs_folder)
         print('Plotting All Bettis Together...')
         plot_all_bettis_together(real_pfs, maxbetti, maxt, figsize, figs_folder)
+
+def plot_barcode(barcode, betti, ax, maxf):
+
+    try:
+        betti_barcode = barcode[str(betti)]
+    except KeyError:
+        print("No barcode for betti %d" % betti)
+        return
+
+    nGenerators = len(betti_barcode)
+    generatorY = np.arange(0, nGenerators, 1)
+    for ind, bc in enumerate(betti_barcode):
+        if bc[1] == -1:
+            ax.plot([bc[0], maxf], [generatorY[ind], generatorY[ind]], 'r', lw=3)
+        else:
+            ax.plot([bc[0], bc[1]], [generatorY[ind], generatorY[ind]], 'b', lw=3)
+    ax.set_ylim([0, nGenerators])
