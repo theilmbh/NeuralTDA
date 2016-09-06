@@ -892,6 +892,45 @@ def make_permuted_binned_data_recursive(path_to_binned,
         permute_binned_data_recursive(binned_data_file, permuted_data_file,
                                       n_cells_in_perm, n_perms)
 
+def compute_avg_acty_binned(binned_file):
+    '''
+    Takes an already-binned data file and computes average activity over trials
+    '''
+    bdf_fold, bdf_full_name = os.path.split(binned_data_file)
+    bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
+
+    avgactyf = os.path.join(bdf_fold, bdf_name +'-avgacty.binned')
+    with h5py.File(binned_file, 'r') as bdf:
+        win_size = popvec_f.attrs['win_size']
+        fs = popvec_f.attrs['fs']
+        nclus = popvec_f.attrs['nclus']
+        stims = popvec_f.keys()
+        with h5py.File(avgactyf, 'r') as avgf:
+            # Copy metadata in binned file
+            avgf.attrs['win_size'] = win_size
+            avgf.attrs['avg'] = 1
+            avgf.attrs['fs'] = fs
+            avgf.attrs['nclus'] = nclus
+            for stim in stims:
+                avg_stimgrp = avgf.create_group(stim)
+                stimdata = popvec_f[stim]
+                wins = np.array(stimdata['0']['windows'])
+                clus = np.array(stimdata['0']['clusters'])
+                avgact = calc_avg(stimdata)
+                avg_stimgrp.create_dataset('pop_vec', data=avgact)
+                avg_stimgrp.create_dataset('clusters', data=clus)
+                avg_stimgrp.create_dataset('windows', data=wins)
+            
+def calc_avg(stimdata):
+
+    ntrial = len(stimdata.keys())
+    popvec_run = np.zeros(stimdata['0']['pop_vec'].shape)
+    for trial in stimdata.keys():
+        popvec_run = popvec_run+np.array(stimdata[trial]['pop_vec'])
+
+    avg = popvec_run / ntrial
+    return avg
+
 ##########################################################
 ###### Cell Group Topological Computation Functions ######
 ##########################################################
