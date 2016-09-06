@@ -892,20 +892,17 @@ def make_permuted_binned_data_recursive(path_to_binned,
         permute_binned_data_recursive(binned_data_file, permuted_data_file,
                                       n_cells_in_perm, n_perms)
 
-def compute_avg_acty_binned(binned_file):
+def compute_avg_acty_binned(binned_file, avgfile):
     '''
     Takes an already-binned data file and computes average activity over trials
     '''
-    bdf_fold, bdf_full_name = os.path.split(binned_file)
-    bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
 
-    avgactyf = os.path.join(bdf_fold, bdf_name +'-avgacty.binned')
     with h5py.File(binned_file, 'r') as bdf:
         win_size = bdf.attrs['win_size']
         fs = bdf.attrs['fs']
         nclus = bdf.attrs['nclus']
         stims = bdf.keys()
-        with h5py.File(avgactyf, 'w') as avgf:
+        with h5py.File(avgfile, 'w') as avgf:
             # Copy metadata in binned file
             avgf.attrs['win_size'] = win_size
             avgf.attrs['avg'] = 1
@@ -930,6 +927,29 @@ def calc_avg(stimdata):
 
     avg = popvec_run / ntrial
     return avg
+
+def bin_avg(binned_folder):
+    '''
+    Takes a folder containing binned files and computes 
+    average ctivity for each binned file and places them
+    in a new folder 
+    '''
+
+    path_to_binned = os.path.abspath(binned_folder)
+    binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
+
+    if not binned_data_files:
+        TOPOLOGY_LOG.error('NO BINNED DATA FILES')
+        sys.exit(-1)
+    avg_folder = os.path.join(path_to_binned, 'avgacty')
+    if not os.path.exists(avg_folder):
+        os.makedirs(avg_folder)
+
+    for bdf in binned_data_files:
+        bdf_fold, bdf_full_name = os.path.split(bdf)
+        bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
+        avgactyf = os.path.join(avg_folder, bdf_name +'-avgacty.binned')
+        compute_avg_acty_binned(bdf, avgactyf)
 
 ##########################################################
 ###### Cell Group Topological Computation Functions ######
