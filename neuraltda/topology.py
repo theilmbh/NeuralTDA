@@ -896,16 +896,16 @@ def compute_avg_acty_binned(binned_file):
     '''
     Takes an already-binned data file and computes average activity over trials
     '''
-    bdf_fold, bdf_full_name = os.path.split(binned_data_file)
+    bdf_fold, bdf_full_name = os.path.split(binned_file)
     bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
 
     avgactyf = os.path.join(bdf_fold, bdf_name +'-avgacty.binned')
     with h5py.File(binned_file, 'r') as bdf:
-        win_size = popvec_f.attrs['win_size']
-        fs = popvec_f.attrs['fs']
-        nclus = popvec_f.attrs['nclus']
-        stims = popvec_f.keys()
-        with h5py.File(avgactyf, 'r') as avgf:
+        win_size = bdf.attrs['win_size']
+        fs = bdf.attrs['fs']
+        nclus = bdf.attrs['nclus']
+        stims = bdf.keys()
+        with h5py.File(avgactyf, 'w') as avgf:
             # Copy metadata in binned file
             avgf.attrs['win_size'] = win_size
             avgf.attrs['avg'] = 1
@@ -913,7 +913,7 @@ def compute_avg_acty_binned(binned_file):
             avgf.attrs['nclus'] = nclus
             for stim in stims:
                 avg_stimgrp = avgf.create_group(stim)
-                stimdata = popvec_f[stim]
+                stimdata = bdf[stim]
                 wins = np.array(stimdata['0']['windows'])
                 clus = np.array(stimdata['0']['clusters'])
                 avgact = calc_avg(stimdata)
@@ -1061,7 +1061,7 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file,
                 pickle.dump(bpd, bpfile)
         bpdws_sfn = os.path.join(analysis_path, analysis_files_prefix+'-bettiResultsDict.pkl')
         with open(bpdws_sfn, 'w') as bpdwsfile:
-                pickle.dumbp(bpd_withstim, bpdwsfile)
+                pickle.dump(bpd_withstim, bpdwsfile)
         TOPOLOGY_LOG.info('Completed All Stimuli')
 
 def bptd_recursive(bpd, bpdf):
