@@ -1513,8 +1513,11 @@ def bin_topology_dag(block_path, winsize, thresh, ncellsperm):
     
     binned_folder = os.path.join(block_path, 'binned_data/{}/'.format(analysis_id))
     average_binned_folder = os.path.join(binned_folder, 'avgacty/')
-    permuted_binned = os.path.join(binned_folder, 'permuted_binned/')
+
+    permuted_binned_folder = os.path.join(binned_folder, 'permuted_binned/')
     permuted_average_folder = os.path.join(average_binned_folder, 'permuted_binned/')
+    permuted_shuffled_folder = os.path.join(permuted_binned_folder, 'shuffled_controls/')
+    average_permuted_shuffled_folder = os.path.join(permuted_average_folder, 'shuffled_controls/')
 
     # Load Raw Data
     spikes = core.load_spikes(block_path)
@@ -1547,6 +1550,36 @@ def bin_topology_dag(block_path, winsize, thresh, ncellsperm):
     TOPOLOGY_LOG.info('Shuffling permuted average data')
     make_shuffled_controls_recursive(permuted_average_folder, nshuffs)
 
+    # Make topology ids
+    tpid_permute = analysis_id + '-permuted'
+    tpid_avgpermute = analysis_id + '-permuted-average'
+    tpid_permuteshuff = analysis_id + '-permuted-shuffled'
+    tpid_avgpermuteshuff = analysis_id + '-permuted-average-shuffled'
     # Run topologies
+
+    permuted_data_files = glob.glob(os.path.join(permuted_binned_folder, '*.binned'))
+    for pdf in permuted_data_files:
+        TOPOLOGY_LOG.info('Computing topology for: %s' % bdf)
+        calc_CI_bettis_hierarchical_binned_data(tpid_permute, pdf,
+                                                    block_path, thresh)
+
+    spdfs = os.path.join(permuted_shuffled_folder, '*.binned')
+    shuffled_permuted_data_files = glob.glob(spdfs)
+    for spdf in shuffled_permuted_data_files:
+        TOPOLOGY_LOG.info('Computing topology for: %s' % bdf)
+        calc_CI_bettis_hierarchical_binned_data(tpid_permuteshuff,
+                                                    spdf, block_path, thresh)
+
+    avgpermuted_data_files = glob.glob(os.path.join(permuted_average_folder, '*.binned'))
+    for pdf in avgpermuted_data_files:
+        TOPOLOGY_LOG.info('Computing topology for: %s' % bdf)
+        calc_CI_bettis_hierarchical_binned_data(tpid_avgpermute, pdf,
+                                                    block_path, thresh)
+
+    shuffavgpermuted_data_files = glob.glob(os.path.join(average_permuted_shuffled_folder, '*.binned'))
+    for pdf in shuffavgpermuted_data_files:
+        TOPOLOGY_LOG.info('Computing topology for: %s' % bdf)
+        calc_CI_bettis_hierarchical_binned_data(tpid_avgpermuteshuff, pdf,
+                                                    block_path, thresh)
 
     # Collect results 
