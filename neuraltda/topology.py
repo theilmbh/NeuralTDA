@@ -1508,8 +1508,13 @@ def compute_all_ci_topology(binned_folder, permuted_folder, shuffled_folder, ana
 def bin_topology_dag(block_path, winsize, thresh, ncellsperm):
 
     # Create directories and filenames
-
+    analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+    raw_binned_fname = analysis_id + '-{}-'.format(winsize) + '-{}.binned'.format(thresh) 
     
+    binned_folder = os.path.join(block_path, 'binned_data/{}/'.format(analysis_id))
+    average_binned_folder = os.path.join(binned_folder, 'avgacty/')
+    permuted_binned = os.path.join(binned_folder, 'permuted_binned/')
+    permuted_average_folder = os.path.join(average_binned_folder, 'permuted_binned/')
 
     # Load Raw Data
     spikes = core.load_spikes(block_path)
@@ -1518,18 +1523,29 @@ def bin_topology_dag(block_path, winsize, thresh, ncellsperm):
     clusters = core.load_clusters(block_path)
 
     # Bin the raw data
+    TOPOLOGY_LOG.info('Binning data')
     build_population_embedding(spikes, trials, clusters, winsize, fs,
                                cluster_group, segment_info, popvec_fname)
 
     # Average binned raw data
+    TOPOLOGY_LOG.info('Averaging activity')
+    bin_avg(binned_folder)
 
-    # Permute raw data 
+    # Permute raw data
+    TOPOLOGY_LOG.info('Permuting data') 
+    make_permuted_binned_data_recursive(binned_folder, ncellsperm, nperms)
 
-    # Permute Averaged data 
+    # Permute Averaged data
+    TOPOLOGY_LOG.info('Permuting Averaged data') 
+    make_permuted_binned_data_recursive(average_binned_folder, ncellsperm, nperms)
 
-    # Shuffle Permuted data 
+    # Shuffle Permuted data
+    TOPOLOGY_LOG.info('Shuffling permuted data') 
+    make_shuffled_controls_recursive(permuted_binned_folder, nshuffs)
 
     # Shuffle Permuted Average Data 
+    TOPOLOGY_LOG.info('Shuffling permuted average data')
+    make_shuffled_controls_recursive(permuted_average_folder, nshuffs)
 
     # Run topologies
 
