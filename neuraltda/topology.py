@@ -697,6 +697,60 @@ def do_bin_data(block_path, spikes, clusters, trials,
             TOPOLOGY_LOG.info('Done')
     return binning_folder
 
+def do_bin_data_direct(block_path, spikes, clusters, trials,
+                fs, kwikfile, win_size, cgroups, segment, sstart, send, bin_id):
+    '''
+    Bins the data using build_population_embedding
+    Parameters are given directly, without a definition file.
+
+    Parameters
+    ------
+    block_path : str
+        Path to the folder containing all the original datafiles
+    spikes : Pandas DataFrame
+        Dataframe containing spike data
+    clusters : Pandas DataFrame
+        DataFrame containing cluster information
+    trials : PD DataFrame
+        Containing trial information
+    fs : int
+        sampling rate
+    kwikfile: str
+        path to kwikfile
+    bin_id : str
+        Identifier for this particular binning run
+    '''
+    binning_folder = os.path.join(block_path, 'binned_data/{}'.format(bin_id))
+    if not os.path.exists(binning_folder):
+        os.makedirs(binning_folder)
+    kwikname = os.path.splitext(os.path.basename(kwikfile))[0]
+
+    binning_params = bdf_line.split(' ')
+    binning_id = binning_params[0]
+    win_size = float(binning_params[1])
+    cluster_groups = binning_params[2]
+    segment = int(binning_params[3])
+    TOPOLOGY_LOG.info('segment specifier: {}'.format(segment))
+    seg_start = float(binning_params[4])
+    seg_end = float(binning_params[5])
+    segment_info = {'period': segment,
+                    'segstart':seg_start,
+                    'segend': seg_end}
+    cluster_group = cluster_groups.split(',')
+    binning_fname = '{}-{}.binned'.format(kwikname, binning_id)
+    binning_path = os.path.join(binning_folder, binning_fname)
+    if os.path.exists(binning_path):
+        TOPOLOGY_LOG.warn('Binning file {} \
+                            already exists.'.format(binning_path))
+        continue
+    TOPOLOGY_LOG.info('Binning data into {}'.format(binning_fname))
+    build_population_embedding(spikes, trials,
+                               clusters, win_size,
+                               fs, cluster_group,
+                               segment_info, binning_path)
+    TOPOLOGY_LOG.info('Done')
+    return binning_folder
+
 def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
 
     if 'pop_vec' in data_group.keys():
@@ -1450,3 +1504,33 @@ def compute_all_ci_topology(binned_folder, permuted_folder, shuffled_folder, ana
             TOPOLOGY_LOG.info('Computing topology for: %s' % bdf)
             calc_CI_bettis_hierarchical_binned_data(analysis_id+'_shuffled',
                                                     spdf, block_path, thresh)
+
+def bin_topology_dag(block_path, winsize, thresh, ncellsperm):
+
+    # Create directories and filenames
+
+    
+
+    # Load Raw Data
+    spikes = core.load_spikes(block_path)
+    trials = events.load_trials(block_path)
+    fs = core.load_fs(block_path)
+    clusters = core.load_clusters(block_path)
+
+    # Bin the raw data
+    build_population_embedding(spikes, trials, clusters, winsize, fs,
+                               cluster_group, segment_info, popvec_fname)
+
+    # Average binned raw data
+
+    # Permute raw data 
+
+    # Permute Averaged data 
+
+    # Shuffle Permuted data 
+
+    # Shuffle Permuted Average Data 
+
+    # Run topologies
+
+    # Collect results 
