@@ -986,6 +986,7 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file,
 
         stims = bdf.keys()
         nstims = len(stims)
+        bpd_withstim = dict()
         for stim in stims:
             TOPOLOGY_LOG.info('Calculating bettis for stim: {}'.format(stim))
             h_stem = stim + '-'
@@ -1016,8 +1017,12 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file,
                                     bpd,
                                     analysis_path,
                                     thresh)
+            bpd_withstim[stim] = bpd
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(bpd, bpfile)
+        bpdws_sfn = os.path.join(analysis_path, analysis_files_prefix+'-bettiResultsDict.pkl')
+        with open(bpdws_sfn, 'w') as bpdwsfile:
+                pickle.dumbp(bpd_withstim, bpdwsfile)
         TOPOLOGY_LOG.info('Completed All Stimuli')
 
 def bptd_recursive(bpd, bpdf):
