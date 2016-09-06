@@ -1550,6 +1550,20 @@ def bin_topology_dag(block_path, winsize, thresh, ncellsperm):
     TOPOLOGY_LOG.info('Shuffling permuted average data')
     make_shuffled_controls_recursive(permuted_average_folder, nshuffs)
 
+    bfdict = dict()
+    bfdict['permuted': permuted_binned_folder, 'avgpermuted': permuted_average_folder,
+           'permutedshuff': permuted_shuffled_folder, 'avgpermshuff': average_permuted_shuffled_folder,
+           'raw': binned_folder]
+    return bfdict
+
+
+def dag_topology(block_path, analysis_id, thresh, bfdict):
+    
+    permuted_binned_folder = bfdict['permuted']
+    permuted_average_folder = bfdict['avgpermuted']
+    permuted_shuffled_folder = bfdict['permutedshuff']
+    average_permuted_shuffled_folder = bfdict['avgpermshuff']
+
     # Make topology ids
     tpid_permute = analysis_id + '-permuted'
     tpid_avgpermute = analysis_id + '-permuted-average'
@@ -1583,3 +1597,4 @@ def bin_topology_dag(block_path, winsize, thresh, ncellsperm):
                                                     block_path, thresh)
 
     # Collect results 
+    
