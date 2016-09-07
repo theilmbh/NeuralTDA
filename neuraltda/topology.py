@@ -1518,6 +1518,7 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms):
     permuted_shuffled_folder = os.path.join(permuted_binned_folder, 'shuffled_controls/')
     average_permuted_shuffled_folder = os.path.join(permuted_average_folder, 'shuffled_controls/')
 
+    raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
     # Load Raw Data
     spikes = core.load_spikes(block_path)
     trials = events.load_trials(block_path)
@@ -1530,7 +1531,7 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms):
     # Bin the raw data
     TOPOLOGY_LOG.info('Binning data')
     build_population_embedding(spikes, trials, clusters, winsize, fs,
-                               cluster_group, segment_info, raw_binned_fname)
+                               cluster_group, segment_info, raw_binned_f)
 
     # Average binned raw data
     TOPOLOGY_LOG.info('Averaging activity')
