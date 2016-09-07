@@ -1556,10 +1556,10 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs):
     TOPOLOGY_LOG.info('Shuffling permuted average data')
     make_shuffled_controls_recursive(permuted_average_folder, nshuffs)
 
-    bfdict = dict()
-    bfdict['permuted': permuted_binned_folder, 'avgpermuted': permuted_average_folder,
+    
+    bfdict={'permuted': permuted_binned_folder, 'avgpermuted': permuted_average_folder,
            'permutedshuff': permuted_shuffled_folder, 'avgpermshuff': average_permuted_shuffled_folder,
-           'raw': binned_folder, 'analysis_id': analysis_id]
+           'raw': binned_folder, 'analysis_id': analysis_id}
     return bfdict
 
 
