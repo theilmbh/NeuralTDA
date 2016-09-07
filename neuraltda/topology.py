@@ -1508,7 +1508,7 @@ def dag_bin(block_path, winsize, ncellsperm, nperms):
 
     # Create directories and filenames
     analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
-    raw_binned_fname = analysis_id + '-{}-'.format(winsize) + '-{}.binned'.format(thresh) 
+    raw_binned_fname = analysis_id + '-{}.binned'.format(winsize) 
     
     binned_folder = os.path.join(block_path, 'binned_data/{}/'.format(analysis_id))
     average_binned_folder = os.path.join(binned_folder, 'avgacty/')
