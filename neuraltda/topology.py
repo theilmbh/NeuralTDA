@@ -1504,7 +1504,7 @@ def compute_all_ci_topology(binned_folder, permuted_folder, shuffled_folder, ana
             calc_CI_bettis_hierarchical_binned_data(analysis_id+'_shuffled',
                                                     spdf, block_path, thresh)
 
-def dag_bin(block_path, winsize, ncellsperm, nperms):
+def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms):
 
     # Create directories and filenames
     analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
