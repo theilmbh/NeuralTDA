@@ -1505,7 +1505,7 @@ def compute_all_ci_topology(binned_folder, permuted_folder, shuffled_folder, ana
             calc_CI_bettis_hierarchical_binned_data(analysis_id+'_shuffled',
                                                     spdf, block_path, thresh)
 
-def bin_topology_dag(block_path, winsize, thresh, ncellsperm):
+def dag_bin(block_path, winsize, thresh, ncellsperm, nperms):
 
     # Create directories and filenames
     analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
@@ -1597,4 +1597,30 @@ def dag_topology(block_path, analysis_id, thresh, bfdict):
                                                     block_path, thresh)
 
     # Collect results 
-    
+    analysis_dict = dict()
+
+    p_results = glob.glob(os.path.join(permuted_binned_folder, '*-bettiResultsDict.pkl'))[0]
+    pavg_results = glob.glob(os.path.join(permuted_average_folder, '*-bettiResultsDict.pkl'))[0]
+    pshuff_results = glob.glob(os.path.join(permuted_shuffled_folder, '*-bettiResultsDict.pkl'))[0]
+    apshuff_results = glob.glob(os.path.join(average_permuted_shuffled_folder, '*-bettiResultsDict.pkl'))[0]
+
+    with open(p_results, 'r') as f:
+        res = pickle.load(f)
+        analysis_dict['permuted'] = res
+
+    with open(pavg_results, 'r') as f:
+        res = pickle.load(f)
+        analysis_dict['average-permuted'] = res
+
+    with open(pshuff_results, 'r') as f:
+        res = pickle.load(f)
+        analysis_dict['permuted-shuffled'] = res
+
+    with open(apshuff_results, 'r') as f:
+        res = pickle.load(f)
+        analysis_dict['average-permuted-shuffled'] = res
+
+    master_fname = analysis_id+'-masterResults.pkl'
+    master_f = os.path.join(block_path, master_fname)
+    with open(master_f, 'w') as f:
+            pickle.dump(analysis_dict, f)
