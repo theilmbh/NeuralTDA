@@ -742,7 +742,6 @@ def do_bin_data_direct(block_path, spikes, clusters, trials,
     if os.path.exists(binning_path):
         TOPOLOGY_LOG.warn('Binning file {} \
                             already exists.'.format(binning_path))
-        continue
     TOPOLOGY_LOG.info('Binning data into {}'.format(binning_fname))
     build_population_embedding(spikes, trials,
                                clusters, win_size,
