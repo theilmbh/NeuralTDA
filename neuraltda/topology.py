@@ -1506,6 +1506,7 @@ def compute_all_ci_topology(binned_folder, permuted_folder, shuffled_folder, ana
 
 def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms):
 
+    block_path = os.path.abspath(block_path)
     # Create directories and filenames
     analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
     raw_binned_fname = analysis_id + '-{}.binned'.format(winsize) 
