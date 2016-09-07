@@ -1524,6 +1524,9 @@ def dag_bin(block_path, winsize, ncellsperm, nperms):
     fs = core.load_fs(block_path)
     clusters = core.load_clusters(block_path)
 
+    #Cluster group
+    cluster_group = ['Good']
+
     # Bin the raw data
     TOPOLOGY_LOG.info('Binning data')
     build_population_embedding(spikes, trials, clusters, winsize, fs,
