@@ -1530,7 +1530,7 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms):
     # Bin the raw data
     TOPOLOGY_LOG.info('Binning data')
     build_population_embedding(spikes, trials, clusters, winsize, fs,
-                               cluster_group, segment_info, popvec_fname)
+                               cluster_group, segment_info, raw_binned_fname)
 
     # Average binned raw data
     TOPOLOGY_LOG.info('Averaging activity')
