@@ -1512,6 +1512,8 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms):
     raw_binned_fname = analysis_id + '-{}.binned'.format(winsize) 
     
     binned_folder = os.path.join(block_path, 'binned_data/{}/'.format(analysis_id))
+    if not os.path.exists(binned_folder):
+        os.makedirs(binned_folder)
     average_binned_folder = os.path.join(binned_folder, 'avgacty/')
 
     permuted_binned_folder = os.path.join(binned_folder, 'permuted_binned/')
