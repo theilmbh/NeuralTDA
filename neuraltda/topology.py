@@ -1552,16 +1552,17 @@ def dag_bin(block_path, winsize, ncellsperm, nperms):
     bfdict = dict()
     bfdict['permuted': permuted_binned_folder, 'avgpermuted': permuted_average_folder,
            'permutedshuff': permuted_shuffled_folder, 'avgpermshuff': average_permuted_shuffled_folder,
-           'raw': binned_folder]
+           'raw': binned_folder, 'analysis_id': analysis_id]
     return bfdict
 
 
-def dag_topology(block_path, analysis_id, thresh, bfdict):
+def dag_topology(block_path, thresh, bfdict):
     
     permuted_binned_folder = bfdict['permuted']
     permuted_average_folder = bfdict['avgpermuted']
     permuted_shuffled_folder = bfdict['permutedshuff']
     average_permuted_shuffled_folder = bfdict['avgpermshuff']
+    analysis_id = bfdict['analysis_id']
 
     # Make topology ids
     tpid_permute = analysis_id + '-permuted'
