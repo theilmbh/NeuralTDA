@@ -1509,7 +1509,8 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs):
     block_path = os.path.abspath(block_path)
     # Create directories and filenames
     analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
-    raw_binned_fname = analysis_id + '-{}.binned'.format(winsize) 
+    raw_binned_fname = analysis_id + '-{}.binned'.format(winsize)
+    analysis_id_forward = analysis_id + '-{}'.format(winsize) 
     
     binned_folder = os.path.join(block_path, 'binned_data/{}/'.format(analysis_id))
     if not os.path.exists(binned_folder):
@@ -1559,7 +1560,7 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs):
     
     bfdict={'permuted': permuted_binned_folder, 'avgpermuted': permuted_average_folder,
            'permutedshuff': permuted_shuffled_folder, 'avgpermshuff': average_permuted_shuffled_folder,
-           'raw': binned_folder, 'analysis_id': analysis_id}
+           'raw': binned_folder, 'analysis_id': analysis_id_forward}
     return bfdict
 
 
@@ -1572,10 +1573,10 @@ def dag_topology(block_path, thresh, bfdict):
     analysis_id = bfdict['analysis_id']
 
     # Make topology ids
-    tpid_permute = analysis_id + '-permuted'
-    tpid_avgpermute = analysis_id + '-permuted-average'
-    tpid_permuteshuff = analysis_id + '-permuted-shuffled'
-    tpid_avgpermuteshuff = analysis_id + '-permuted-average-shuffled'
+    tpid_permute = analysis_id + '-{}-permuted'.format(thresh)
+    tpid_avgpermute = analysis_id + '-{}-permuted-average'.format(thresh)
+    tpid_permuteshuff = analysis_id + '-{}-permuted-shuffled'.format(thresh)
+    tpid_avgpermuteshuff = analysis_id + '-{}-permuted-average-shuffled'.format(thresh)
     # Run topologies
 
     permuted_data_files = glob.glob(os.path.join(permuted_binned_folder, '*.binned'))
@@ -1627,7 +1628,7 @@ def dag_topology(block_path, thresh, bfdict):
         res = pickle.load(f)
         analysis_dict['average-permuted-shuffled'] = res
 
-    master_fname = analysis_id+'-masterResults.pkl'
+    master_fname = analysis_id+'-{}-masterResults.pkl'.format(thresh)
     master_f = os.path.join(block_path, master_fname)
     with open(master_f, 'w') as f:
             pickle.dump(analysis_dict, f)
