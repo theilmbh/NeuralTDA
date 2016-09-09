@@ -1077,11 +1077,11 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file,
     TOPOLOGY_LOG.info('analysis_id: {}'.format(analysis_id))
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path,
-                                 'topology/{}/{}'.format(analysis_id, bdf_name))
+                                 'topology/{}/'.format(analysis_id, bdf_name))
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
 
-    analysis_files_prefix = '{}-{}'.format(bdf_name, analysis_id)
+    analysis_files_prefix = analysis_id
     analysis_logfile_name = '{}-{}.log'.format(bdf_name, analysis_id)
     TOPOLOGY_LOG.info('bdf_name: {}'.format(bdf_name))
     TOPOLOGY_LOG.info('analysis_path: {}'.format(analysis_path))
