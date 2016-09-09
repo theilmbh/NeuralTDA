@@ -1034,6 +1034,7 @@ def compute_recursive(data_group, pfile_stem, h_stem, betti_persistence_perm_dic
         TOPOLOGY_LOG.info('compute_recursive: calculating CI bettis')
         pfile = pfile_stem + '-simplex.txt'
         pfile = os.path.join(analysis_path, pfile)
+        TOPOLOGY_LOG.info('pfile: %s' % pfile)
         betti_persistence_perm_dict['hstr'] = h_stem
         bettis = calc_bettis_from_binned_data(data_group, pfile, thresh)
         nbetti = len(bettis)
@@ -1077,7 +1078,7 @@ def calc_CI_bettis_hierarchical_binned_data(analysis_id, binned_data_file,
     TOPOLOGY_LOG.info('analysis_id: {}'.format(analysis_id))
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path,
-                                 'topology/{}/'.format(analysis_id, bdf_name))
+                                 'topology/{}/'.format(analysis_id))
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
 
