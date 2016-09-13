@@ -28,10 +28,20 @@ def computeDiagonalEntry(Xi, Xil, Xip, alpha):
 	compute the alpha-th diagonal entry of ith laplacian
 	'''
 
-def computeOffDiagonalEntry(Xi, Xip, alpha, beta):
+def computeOffDiagonalEntry(Xi, Xip, alpha, beta, i):
 	'''
 	Computes the alpha,beta entry in the ith laplacian
 	'''
+	(NFaces, ip1) = np.shape(Xi)
+	XiAlpha = Xi[alpha, :]
+	XiBeta = Xi[beta, :]
+	# compute union
+	XaUXb = np.union1d(XiAlpha, XiBeta)
+	if np.size(XaUXb) ~= i+1:
+		return 0
+	if XaUXb in [Xi[s, :] for s in range(NFaces)]:
+
+
 
 def computeSimplicialLaplacian(bin_mat, i):
 	'''
