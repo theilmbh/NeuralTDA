@@ -18,7 +18,7 @@ class Simplex:
 
 class SimplicialComplex:
 
-    def __init__(self, maximal_simplices):
+    def __init__(self, maximal_simplices, collapseVertices=False):
 
         self.simplices = []
         self.edges = set()
@@ -30,8 +30,16 @@ class SimplicialComplex:
 
         self.createSimplex([]) # empty simplex
         self.setRoot(self.simplices[0])
-        for ms in self.maximalSimplices:
-            self.addMaximalSimplexOld(ms)
+
+        if collapseVertices:
+            maxVertex = max(map(max, self.maximalSimplices))
+            self.createVertices(maxVertex)
+            for ms in self.maximalSimplices:
+                self.addMaximalSimplex(ms)
+
+        else:
+            for ms in self.maximalSimplices:
+                self.addMaximalSimplexOld(ms)
 
     def setRoot(self, simplex):
         self.root = simplex
@@ -41,6 +49,12 @@ class SimplicialComplex:
 
     def createEdge(self, source, target):
         self.edges.add((source.absindex, target.absindex))
+
+    def createVertices(self, maxvertex):
+        for vert in range(maxvertex):
+            self.createSimplex([vert])
+            newSimplex = self.simplices[-1]
+            self.addFaceCoface(self.getRoot(), newSimplex)
 
     def createSimplex(self, vertices):
 
@@ -87,16 +101,18 @@ class SimplicialComplex:
 
     def addBoundarySimplices(self, simplex):
 
-        if len(simplex.vertices) > 1:
+        if len(simplex.vertices) > 2:
             boundaryFaces = self._boundary(simplex)
             for face in boundaryFaces:
                 self.createSimplex(face)
                 newSimplex = self.simplices[-1]
                 self.addFaceCoface(newSimplex, simplex)
                 self.addBoundarySimplices(newSimplex)
-        else:
-            self.addFaceCoface(self.getRoot(), simplex)
-
+        if len(simplex.vertices) == 2:
+            v1 = self.getSimplex([simplex.vertices[0]])
+            v2 = self.getSimplex([simplex.vertices[1]])
+            self.addFaceCoface(v1, simplex)
+            self.addFaceCoface(v2, simplex)
 
     def getSimplex(self, address, first=True, simplex=None):
         if first:
