@@ -190,6 +190,16 @@ class SimplicialComplex:
         w, v = LA.eig(L)
         return w
 
+    def computeSpectralEntropy(self, dimension, beta):
+
+        spec = self.getSpectrum(dimension)
+
+        gibbsdist = np.exp(beta*spec)
+        gibbsdist = gibbsdist/sum(gibbsdist)
+
+        entropy = -1.0*sum(np.multiply(gibbsdist, np.log(gibbsdist)/np.log(2)))
+        return entropy
+
 def test_binmat(Ncells, Nwin):
 
     randBinMat = np.random.random((Ncells, Nwin))
