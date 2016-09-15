@@ -11,6 +11,7 @@ class Simplex:
         self.absindex=None
         self.index=None
         self.label=None
+        self.boundaryChain = None
 
         self._cfaces=[]
         self._children={}
@@ -25,8 +26,16 @@ class SimplicialComplex:
         self.maximalSimplices = maximal_simplices
         self.dimension = max(map(len, self.maximalSimplices)) - 1
         self.nSimplexDict = {}
+        self.LUpDict = {}
+        self.LDownDict = {}
+        self.LaplacianDict = {}
+        self.spectrum = {}
         for i in range(-1, self.dimension+1):
             self.nSimplexDict[i] = []
+            self.LUpDict[i] = []
+            self.LDownDict[i] = []
+            self.LaplacianDict[i] = []
+            self.spectrum[i] = []
 
         self.createSimplex([]) # empty simplex
         self.setRoot(self.simplices[0])
@@ -155,13 +164,14 @@ class SimplicialComplex:
 
         vertices = simplex.vertices
         n = len(vertices)
-        lowerSimps = self.nSimplexDict[n-2]
+        lowerSimps = self.nSimplexDict[simplex.dimension-1]
         boundary = []
         simpVect = np.zeros(len(lowerSimps))
         boundaryFaces = simplex.faces
         for index, face in enumerate(boundaryFaces):
-            sgn = (-1)**(index+1)
-            simpVect[face.index] = simpVect[face.index] + sgn
+            pos = set(simplex.vertices) - set(face.vertices)
+            simpVect[face.index] = (-1)**(simplex.vertices.index(list(pos)[0]))
+        simplex.boundaryChain = simpVect
         return simpVect
 
     def getBoundaryMap(self, dimension):
@@ -170,25 +180,32 @@ class SimplicialComplex:
         lowerD = len(self.nSimplexDict[dimension-1])
 
         boundaryMap = np.zeros((lowerD, upperD))
-        for indx, sourceBasis in enumerate(self.nSimplexDict[dimension]):
-            boundaryMap[:, indx] = self.getBoundaryChain(sourceBasis)
+        for indx, sourceSimplex in enumerate(self.nSimplexDict[dimension]):
+            boundaryMap[:, indx] = self.getBoundaryChain(sourceSimplex)
         return boundaryMap
 
     def getLaplacian(self, dimension):
 
-        Di = self.getBoundaryMap(dimension)
-        Di1 = self.getBoundaryMap(dimension+1)
+        if self.LaplacianDict[dimension]:
+            return self.LaplacianDict[dimension]
+        else:
+            Di = self.getBoundaryMap(dimension)
+            Di1 = self.getBoundaryMap(dimension+1)
 
-        Lup = np.dot(Di1, np.transpose(Di1))
-        Ldown = np.dot(np.transpose(Di), Di)
-
-        return np.add(Lup, Ldown)
+            Lup = np.dot(Di1, np.transpose(Di1))
+            Ldown = np.dot(np.transpose(Di), Di)
+            L = np.add(Lup, Ldown)
+            self.LaplacianDict[dimension] = L
+            return L
 
     def getSpectrum(self, dimension):
 
-        L = self.getLaplacian(dimension)
-        w, v = LA.eig(L)
-        return w
+        if self.spectrum[dimension]:
+            return self.spectrum[dimension]
+        else:
+            L = self.getLaplacian(dimension)
+            w, v = LA.eig(L)
+            return w
 
     def computeSpectralEntropy(self, dimension, beta):
 
@@ -199,6 +216,75 @@ class SimplicialComplex:
 
         entropy = -1.0*sum(np.multiply(gibbsdist, np.log(gibbsdist)/np.log(2)))
         return entropy
+
+    def getUpperCommonSimplex(self, s1, s2):
+
+        s1c = s1.cofaces
+        s2c = s2.cofaces
+        return list(set(s1c) & set(s2c))
+
+    def getLowerCommonSimplex(self, s1, s2):
+
+        s1f = s1.faces
+        s2f = s2.faces
+        return list(set(s1f) & set(s2f))
+
+    def computeUpperLaplacianDirect(self, dimension):
+
+        if self.LUpDict[dimension]:
+            return self.LUpDict[dimension]
+        else:
+            dsimplices = self.nSimplexDict[dimension]
+            nSimplices = len(dsimplices)
+            LUp = np.zeros((nSimplices, nSimplices))
+            for sind1i in range(nSimplices):
+                for sind2i in range(sind1i, nSimplices, 1):
+                    s1 = dsimplices[sind1i]
+                    s2 = dsimplices[sind2i]
+                    sind1 = s1.index
+                    sind2 = s2.index
+                    if sind1 == sind2:
+                        degU = len(s1.cofaces)
+                        LUp[sind1, sind2] = degU
+                    else:
+                        UCS = self.getUpperCommonSimplex(s1, s2)
+                        if UCS:
+                            # Find orientation rel to upper common simplex
+                            vertdiff = [abs(v1-v2) for v1, v2 in zip(s1.vertices, s2.vertices)]
+                            sgn = (-1)**(sum(vertdiff))
+                            LUp[sind1, sind2] = sgn
+                            LUp[sind2, sind1] = sgn
+            self.LUpDict[dimension] = LUp
+            return LUp
+
+    def computeLowerLaplacianDirect(self, dimension):
+
+        if self.LDownDict[dimension]:
+            return self.LDownDict[dimension]
+        else:
+
+            dsimplices = self.nSimplexDict[dimension]
+            nSimplices = len(dsimplices)
+            LDown = np.zeros((nSimplices, nSimplices))
+            for sind1i in range(nSimplices):
+                for sind2i in range(sind1i, nSimplices, 1):
+                    s1 = dsimplices[sind1i]
+                    s2 = dsimplices[sind2i]
+                    sind1 = s1.index
+                    sind2 = s2.index
+                    if sind1 == sind2:
+                        degL = len(s1.faces)
+                        LDown[sind1, sind2] = degL
+                    else:
+                        LCS = self.getLowerCommonSimplex(s1, s2)
+                        if LCS:
+                            vect1 = self.getBoundaryChain(s1)
+                            vect2 = self.getBoundaryChain(s2)
+                            sgn = vect1[LCS[0].index]*vect2[LCS[0].index]
+                            LDown[sind1, sind2] = sgn
+                            LDown[sind2, sind1] = sgn
+            self.LDownDict[dimension] = LDown
+            return LDown
 
 def test_binmat(Ncells, Nwin):
 
