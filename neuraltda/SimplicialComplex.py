@@ -30,12 +30,14 @@ class SimplicialComplex:
         self.LDownDict = {}
         self.LaplacianDict = {}
         self.spectrum = {}
+        self.entropy = {}
         for i in range(-1, self.dimension+1):
             self.nSimplexDict[i] = []
             self.LUpDict[i] = []
             self.LDownDict[i] = []
             self.LaplacianDict[i] = []
             self.spectrum[i] = []
+            self.entropy[i] = []
 
         self.createSimplex([]) # empty simplex
         self.setRoot(self.simplices[0])
@@ -205,17 +207,22 @@ class SimplicialComplex:
         else:
             L = self.getLaplacian(dimension)
             w, v = LA.eig(L)
+            self.spectrum[dimension] = w
             return w
 
     def computeSpectralEntropy(self, dimension, beta):
 
-        spec = self.getSpectrum(dimension)
+        if self.entropy[dimension]:
+            return self.entropy[dimension]
+        else:
+            spec = self.getSpectrum(dimension)
 
-        gibbsdist = np.exp(beta*spec)
-        gibbsdist = gibbsdist/sum(gibbsdist)
+            gibbsdist = np.exp(beta*spec)
+            gibbsdist = gibbsdist/sum(gibbsdist)
 
-        entropy = -1.0*sum(np.multiply(gibbsdist, np.log(gibbsdist)/np.log(2)))
-        return entropy
+            entropy = -1.0*sum(np.multiply(gibbsdist, np.log(gibbsdist)/np.log(2)))
+            self.entropy[dimension] = entropy
+            return entropy
 
     def getUpperCommonSimplex(self, s1, s2):
 
