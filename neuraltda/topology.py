@@ -362,7 +362,7 @@ def run_perseus(pfile):
                                            of_string])
     TOPOLOGY_LOG.info('Perseus return code: {}'.format(perseus_return_code))
     betti_file = of_string+'_betti.txt'
-    betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
+    #betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
     TOPOLOGY_LOG.info('Betti file from run_perseus: %s' % betti_file)
     return betti_file
 

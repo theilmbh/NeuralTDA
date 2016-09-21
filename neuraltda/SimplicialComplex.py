@@ -224,6 +224,24 @@ class SimplicialComplex:
             self.entropy[dimension] = entropy
             return entropy
 
+    def computeDensityMatrix(self, dimension, beta):
+
+        if self.densityMatrix[dimension]:
+            return self.densityMatrix[dimension]
+        else:
+            L = self.getLaplacian(dimension)
+            rho = np.exp(beta*L)
+            rho = rho / np.trace(rho)
+            self.densityMatrix[dimension] = rho
+            return rho
+
+    def computeKLDivergence(self, dimension, beta, sigmaComplex):
+
+        rho = self.computeDensityMatrix(dimension, beta)
+        sigma = sigmaComplex.computeDensityMatrix(dimension, beta)
+
+        
+
     def getUpperCommonSimplex(self, s1, s2):
 
         s1c = s1.cofaces
