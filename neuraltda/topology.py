@@ -1579,6 +1579,12 @@ def dag_topology(block_path, thresh, bfdict):
     tpid_avgpermute = analysis_id + '-{}-permuted-average'.format(thresh)
     tpid_permuteshuff = analysis_id + '-{}-permuted-shuffled'.format(thresh)
     tpid_avgpermuteshuff = analysis_id + '-{}-permuted-average-shuffled'.format(thresh)
+
+    bpt = os.path.join(block_path, 'topology/')
+    tpf_permute = os.path.join(bpt, tpid_permute)
+    tpf_avgpermute = os.path.join(bpt, tpid_avgpermute)
+    tpf_permuteshuff = os.path.join(bpt, tpid_permuteshuff)
+    tpf_avgpermuteshuff = os.path.join(bpt, tpid_avgpermuteshuff)
     # Run topologies
 
     permuted_data_files = glob.glob(os.path.join(permuted_binned_folder, '*.binned'))
@@ -1609,10 +1615,10 @@ def dag_topology(block_path, thresh, bfdict):
     # Collect results 
     analysis_dict = dict()
 
-    p_results = glob.glob(os.path.join(permuted_binned_folder, '*-bettiResultsDict.pkl'))[0]
-    pavg_results = glob.glob(os.path.join(permuted_average_folder, '*-bettiResultsDict.pkl'))[0]
-    pshuff_results = glob.glob(os.path.join(permuted_shuffled_folder, '*-bettiResultsDict.pkl'))[0]
-    apshuff_results = glob.glob(os.path.join(average_permuted_shuffled_folder, '*-bettiResultsDict.pkl'))[0]
+    p_results = glob.glob(os.path.join(tpf_permute, '*-bettiResultsDict.pkl'))[0]
+    pavg_results = glob.glob(os.path.join(tpf_avgpermute, '*-bettiResultsDict.pkl'))[0]
+    pshuff_results = glob.glob(os.path.join(tpf_permuteshuff, '*-bettiResultsDict.pkl'))[0]
+    apshuff_results = glob.glob(os.path.join(tpf_avgpermuteshuff, '*-bettiResultsDict.pkl'))[0]
 
     with open(p_results, 'r') as f:
         res = pickle.load(f)
