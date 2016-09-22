@@ -24,7 +24,7 @@ class TopologicalLogisticClassPredictor:
 
         if 'hstr' in bpd.keys():
             barcode = bpd['barcodes']
-            nfilt = len(bettis)
+            
             betti_dict = dict()
             for dimindx, dim in barcode.keys():
                 nPersist = sum([-1 in s for s in barcode[dim]])
