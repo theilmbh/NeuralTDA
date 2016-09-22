@@ -28,7 +28,7 @@ class TopologicalLogisticClassPredictor:
             betti_dict = dict()
             for dim in barcode.keys():
                 nPersist = sum([-1 in s for s in barcode[dim]])
-                betti_dict[dim] = betti_num
+                betti_dict[dim] = nPersist
             betti_dict['hierarchy'] = bpd['hstr']
             filtdataframe = pd.DataFrame(data=betti_dict, index=[1])
             bpdf = bpdf.append(filtdataframe, ignore_index=True)
