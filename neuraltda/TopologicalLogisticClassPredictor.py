@@ -16,7 +16,7 @@ class TopologicalLogisticClassPredictor:
 
         clData = self.resultsDict[computationClass]
         for stim in clData.keys():
-            if stim in self.stimuliClasses.keys():
+            if stim in self.stimClasses.keys():
                 self.trainedStimuliData[stim] = clData[stim]
 
     def bptd_recursive(self, bpd, bpdf):
