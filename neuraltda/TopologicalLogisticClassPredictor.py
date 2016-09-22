@@ -1,6 +1,7 @@
 import numpy as np
 import topology as tp
 import pickle
+import pandas as pd
 
 class TopologicalLogisticClassPredictor:
 
