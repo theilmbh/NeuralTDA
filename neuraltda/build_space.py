@@ -9,6 +9,7 @@ import subprocess
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import SimplicialComplex as sc 
 
 def build_graph_recursive(graph, cell_group, parent_name):
 
@@ -302,4 +303,208 @@ def make_hyperbolic_embeds(binned_datafile, thresh, savepath, dfunc_params, hmds
             hyperbolic_embed_recursive(bdf[stim], thresh, title, new_savepath, dfunc_params, hmds_params)
     return 
 
+def binnedToBinary(popvec, thresh):
+    
+    popvec = np.array(popvec)
+    Ncells, Nwin = np.shape(popvec)
+    means = popvec.sum(1)/Nwin
+    means = np.tile(means, (Nwin, 1)).T
+    meanthr = thresh*means
+    
+    activeUnits = np.greater(popvec, meanthr).astype(int)
+    return activeUnits
+    
+def binaryToMaxSimplex(binMat):
+    
+    Ncells, Nwin = np.shape(binMat)
+    MaxSimps = []
+    for cell in range(Ncells):
+        if binMat[cell, :].any():
+            verts = np.arange(Nwin)[binMat[cell, :] == 1]
+            verts = np.sort(verts)
+            MaxSimps.append(list(verts))
+    return MaxSimps
+        
+def shuffleBinary(binMat):
+    retMat = np.array(binMat)
+    Ncells, Nwin = np.shape(binMat)
+    for cell in range(Ncells):
+        np.random.shuffle(retMat[cell, :])
+    return retMat
 
+def adjacencyToTopSimplices(adj):
+    
+    n = np.shape(adj)[0]
+    topSimplexList = []
+    for i in range(n):
+        for j in range(i, n, 1):
+            if adj[i, j]:
+                topSimplexList.append([i,j])
+    return topSimplexList
+        
+def computeSpectrogram(spec, sigma, lam):
+    
+    sig = np.zeros(np.shape(lam))
+    for eigval in spec:
+        gaussian = np.exp(-(lam-eigval)**2 / (2*sigma**2)) / (np.sqrt(2*np.pi*sigma**2))
+        sig = sig+gaussian
+    return sig
+
+def computeAvgSpectrogram(stimdata, thresh, sigma, dim):
+    
+    t = np.linspace(0, 100, 5000)
+    sigspec = np.zeros(t.shape)
+    sigspecshuff = np.zeros(t.shape)
+    ntrials = len(stimdata.keys())
+    for trial in stimdata.keys():
+        popvec = np.array(stimdata[trial]['pop_vec'])
+        tst = binnedtobinary(popvec, thresh)
+        tst_shuffled = ShuffleBinary(tst)
+        tst = np.transpose(tst)
+        tst_shuffled = np.transpose(tst_shuffled)
+        tst2 = BinaryToMaxSimplex(tst)
+        tst2_shuffled = BinaryToMaxSimplex(tst_shuffled)
+        
+        print('Creating spike complexes for trial: %s' % trial)
+        spikeComplex = sc.SimplicialComplex(tst2)
+        spikeComplex.updateAdjacency()
+        shuffledSpikeComplex = sc.SimplicialComplex(tst2_shuffled)
+        shuffledSpikeComplex.updateAdjacency()
+        try:
+            spec = spikeComplex.getSpectrum(dim)
+            sigspec = sigspec + computeSpectrogram(spec, sigma, t)
+        except KeyError:
+            sigspec = sigspec + np.zeros(t.shape)
+        try:
+            specshuff = shuffledSpikeComplex.getSpectrum(dim)
+            sigspecshuff = sigspecshuff + computeSpectrogram(specshuff, sigma, t)
+        except KeyError:
+            sigspecshuff = sigspecshuff + np.zeros(t.shape)            
+    sigspec = sigspec/(float(ntrials))
+    sigspecshuff = sigspecshuff/(float(ntrials))
+    
+    return (sigspec, sigspecshuff)
+
+def computeTrialSpectrograms(stimdata, thresh, sigma, dim):
+    
+    tlen = 5000
+    t = np.linspace(0, 100, tlen)
+
+    ntrials = len(stimdata.keys())
+    sigspec = np.zeros((ntrials, tlen))
+    sigspecshuff = np.zeros((ntrials, tlen))
+    for trialnum, trial in enumerate(stimdata.keys()):
+        popvec = np.array(stimdata[trial]['pop_vec'])
+        tst = binnedtobinary(popvec, thresh)
+        tst_shuffled = ShuffleBinary(tst)
+        tst = np.transpose(tst)
+        tst_shuffled = np.transpose(tst_shuffled)
+        tst2 = BinaryToMaxSimplex(tst)
+        tst2_shuffled = BinaryToMaxSimplex(tst_shuffled)
+        
+        print('Creating spike complexes for trial: %s' % trial)
+        spikeComplex = sc.SimplicialComplex(tst2)
+        spikeComplex.updateAdjacency()
+        shuffledSpikeComplex = sc.SimplicialComplex(tst2_shuffled)
+        shuffledSpikeComplex.updateAdjacency()
+        try:
+            spec = spikeComplex.getSpectrum(dim)
+            sigspec[trialnum, :] = computeSpectrogram(spec, sigma, t)
+        except KeyError:
+            sigspec[trialnum, :] = np.zeros(t.shape)
+        try:
+            specshuff = shuffledSpikeComplex.getSpectrum(dim)
+            sigspecshuff[trialnum, :] = computeSpectrogram(specshuff, sigma, t)
+        except KeyError:
+            sigspecshuff[trialnum, :] = np.zeros(t.shape)            
+    
+    return (sigspec, sigspecshuff)
+
+def computeAvgSpectrogramOld(stimdata, thresh, sigma, dim):
+    
+    t = np.linspace(0, 100, 5000)
+    sigspec = np.zeros(t.shape)
+    sigspecshuff = np.zeros(t.shape)
+    ntrials = len(stimdata.keys())
+    for trial in stimdata.keys():
+        popvec = np.array(stimdata[trial]['pop_vec'])
+        tst = binnedtobinary(popvec, thresh)
+        tst_shuffled = ShuffleBinary(tst)
+        tst = np.transpose(tst)
+        tst_shuffled = np.transpose(tst_shuffled)
+        tst2 = BinaryToMaxSimplex(tst)
+        tst2_shuffled = BinaryToMaxSimplex(tst_shuffled)
+
+        print('Creating spike complexes for trial: %s' % trial)
+        spikeComplex = sc.SimplicialComplex(tst2)
+        spikeComplex.updateAdjacency()
+        shuffledSpikeComplex = sc.SimplicialComplex(tst2_shuffled)
+        shuffledSpikeComplex.updateAdjacency()
+        spec = spikeComplex.getSpectrum(dim)
+        sigspec = sigspec + computeSpectrogram(spec, sigma, t)
+
+        specshuff = shuffledSpikeComplex.getSpectrum(dim)
+        sigspecshuff = sigspecshuff + computeSpectrogram(specshuff, sigma, t)
+         
+    sigspec = sigspec/(float(ntrials))
+    sigspecshuff = sigspecshuff/(float(ntrials))
+    
+    return (sigspec, sigspecshuff)
+
+from scipy.io import savemat
+def computeSpectraAllTrials(binnedDataset, thresh):
+    
+    stimuli = binnedDataset.keys()
+    nStim = len(stimuli)
+    
+    spectrumDict = {}
+    for stimIndx, stim in enumerate(stimuli):
+        print('Computing spectrum for stimulus: %s' % stim)
+        stimData = binnedDataset[stim]
+        stimDict = {}
+        trials = stimData.keys()
+        nTrials = len(trials)
+        
+        t = np.linspace(0, 100, 5000)
+    
+        for trial in stimData.keys():
+            trialSpectrumDict = {}
+            trialDict = {}
+            trialShuffleSpectrumDict = {}
+            popvec = np.array(stimData[trial]['pop_vec'])
+            tst = binnedtobinary(popvec, thresh)
+            tst_shuffled = ShuffleBinary(tst)
+            tst = np.transpose(tst)
+            tst_shuffled = np.transpose(tst_shuffled)
+            tst2 = BinaryToMaxSimplex(tst)
+            tst2_shuffled = BinaryToMaxSimplex(tst_shuffled)
+        
+            #print('Creating spike complexes for trial: %s' % trial)
+            spikeComplex = sc.SimplicialComplex(tst2)
+            spikeComplex.updateAdjacency()
+            shuffledSpikeComplex = sc.SimplicialComplex(tst2_shuffled)
+            shuffledSpikeComplex.updateAdjacency()
+            
+            scDim = spikeComplex.dimension
+            sscDim = shuffledSpikeComplex.dimension
+            for sDim in range(scDim):
+                #print('Dimension: %d' % sDim)
+                try:
+                    spec = spikeComplex.getSpectrum(sDim)     
+                except KeyError:
+                    spec = np.zeros(t.shape)
+                trialSpectrumDict[sDim] = spec
+            for ssDim in range(sscDim):
+                #print('Shuffled Dimension: %d' % ssDim)
+                try:
+                    specshuff = shuffledSpikeComplex.getSpectrum(ssDim)
+                except KeyError:
+                    specshuff = np.zeros(t.shape)    
+                trialShuffleSpectrumDict[ssDim] = specshuff
+            trialDict['real'] = trialSpectrumDict
+            trialDict['shuffle'] = trialShuffleSpectrumDict
+            stimDict[trial] = trialDict
+        spectrumDict[stim] = stimDict
+    print('Writing matfile...')
+    savemat('SimplicialLaplacianSpectrum', spectrumDict)
+    return spectrumDict   
