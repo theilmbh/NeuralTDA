@@ -2,6 +2,8 @@ import numpy as np
 import topology as tp
 import pickle
 import pandas as pd
+import patsy
+import statsmodels.api as sm 
 
 class TopologicalLogisticClassPredictor:
 
@@ -52,6 +54,22 @@ class TopologicalLogisticClassPredictor:
         self.persistentBettiFrame = self.bptd_recursive(self.trainedStimuliData, self.persistentBettiFrame)
         self.persistentBettiFrame['stimClass'] = self.persistentBettiFrame.apply(lambda row: self.getStimClass(row), axis=1)
 
+    def formatModelInput(self):
+
+        self.persistentBettiFrame.rename(columns={'0': 'B0',
+                                                '1': 'B1',
+                                                '2': 'B2',
+                                                '3': 'B3',
+                                                '4': 'B4',
+                                                '5': 'B5'})
+        formula = 'C(stimClass) ~ B0 + B1 + B2 + B3 + B4 + B5'
+
+        self.y, self.X = patsy.dmatrices(formula, self.persistentBettiFrame, return_type='dataframe')
+
+    def fitLogistic(self):
+
+        self.formatModelInput()
+        sm.Logit(self.y['C(stimClass)[L]'], self.X).fit().summary()
 
 
 
