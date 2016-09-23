@@ -50,7 +50,7 @@ class TopologicalLogisticClassPredictor:
 
     def buildPredictionDataMatrix(self):
 
-        self.persistentBettiFrame = pd.DataFrame(columns=['hierarchy','0', '1', '2'])
+        self.persistentBettiFrame = pd.DataFrame(columns=['hierarchy','0', '1', '2', '3', '4', '5', '6'])
         self.persistentBettiFrame = self.bptd_recursive(self.trainedStimuliData, self.persistentBettiFrame)
         self.persistentBettiFrame['stimClass'] = self.persistentBettiFrame.apply(lambda row: self.getStimClass(row), axis=1)
 
