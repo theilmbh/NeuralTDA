@@ -56,7 +56,7 @@ class TopologicalLogisticClassPredictor:
 
     def formatModelInput(self):
 
-        self.persistentBettiFrame.rename(columns={'0': 'B0',
+        self.persistentBettiFrame = self.persistentBettiFrame.rename(columns={'0': 'B0',
                                                 '1': 'B1',
                                                 '2': 'B2',
                                                 '3': 'B3',
