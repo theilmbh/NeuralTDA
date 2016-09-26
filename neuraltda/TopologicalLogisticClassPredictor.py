@@ -76,7 +76,7 @@ class TopologicalLogisticClassPredictor:
             return
         else:
             for indx, hLevel in enumerate(bpd.keys()):
-                self.buildPredictionDataMatrixRecursive(bpd[hlevel])
+                self.buildPredictionDataMatrixRecursive(bpd[hLevel])
             return
 
     def getStimClass(self, row):
