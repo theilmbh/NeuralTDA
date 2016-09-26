@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.interpolate import interp1d
 import topology as tp
 import pickle
 import pandas as pd
