@@ -68,7 +68,7 @@ class TopologicalLogisticClassPredictor:
             bettiDataRow = np.reshape(curveStore, (1, self.predMaxBetti*self.predNTimes))
             self.persistentBettiArray.append(bettiDataRow)
             newDF = pd.DataFrame(data=bettiDataRow, columns=self.colnames, index=[1])
-            self.persistentBettiFrame = self.persistentBettiFrame.append(bettiDataRow, ignore_index=True)
+            self.persistentBettiFrame = self.persistentBettiFrame.append(newDF, ignore_index=True)
             hstr = bpd['hstr']
             for stim in self.stimClasses.keys():
                 if stim in hstr:
