@@ -73,9 +73,11 @@ class TopologicalLogisticClassPredictor:
                 if stim in hstr:
                     stmcls = self.stimClasses[stim]
                     self.predClassArray.append(stmcls)
+            return
         else:
             for indx, hLevel in enumerate(bpd.keys()):
                 self.buildPredictionDataMatrixRecursive(bpd)
+            return
 
     def getStimClass(self, row):
 
