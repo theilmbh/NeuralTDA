@@ -30,7 +30,7 @@ class TopologicalLogisticClassPredictor:
             betti_dict = dict()
             for dim in barcode.keys():
                 nPersist = sum([-1 in s for s in barcode[dim]])
-                betti_dict[dim] = nPersist
+                betti_dict['B%s' % dim] = nPersist
             betti_dict['hierarchy'] = bpd['hstr']
             filtdataframe = pd.DataFrame(data=betti_dict, index=[1])
             bpdf = bpdf.append(filtdataframe, ignore_index=True)
@@ -50,18 +50,12 @@ class TopologicalLogisticClassPredictor:
 
     def buildPredictionDataMatrix(self):
 
-        self.persistentBettiFrame = pd.DataFrame(columns=['hierarchy','0', '1', '2', '3', '4', '5', '6'])
+        self.persistentBettiFrame = pd.DataFrame(columns=['hierarchy','B0', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6'])
         self.persistentBettiFrame = self.bptd_recursive(self.trainedStimuliData, self.persistentBettiFrame)
         self.persistentBettiFrame['stimClass'] = self.persistentBettiFrame.apply(lambda row: self.getStimClass(row), axis=1)
 
     def formatModelInput(self):
 
-        self.persistentBettiFrame = self.persistentBettiFrame.rename(columns={'0': 'B0',
-                                                '1': 'B1',
-                                                '2': 'B2',
-                                                '3': 'B3',
-                                                '4': 'B4',
-                                                '5': 'B5'})
         formula = 'C(stimClass) ~ B0 + B1 + B2 + B3 + B4 + B5'
 
         self.y, self.X = patsy.dmatrices(formula, self.persistentBettiFrame, return_type='dataframe')
