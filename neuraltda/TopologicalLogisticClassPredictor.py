@@ -99,8 +99,10 @@ class TopologicalLogisticClassPredictor:
         self.trainX = self.persistentBettiFrame.sample(frac=0.8)
         self.testX = self.persistentBettiFrame.sample(frac=0.2)
 
+        self.trainX = np.array(self.trainX)
+        self.testX = np.array(self.testX)
         self.trainY = self.trainX[:, -1]
-        self.trainX = np.array(self.trainX[:, 0:-1])
+        self.trainX = self.trainX[:, 0:-1]
 
         self.testY = self.testX[:, -1]
         self.testX = np.array(self.testX[:, 0:-1])
