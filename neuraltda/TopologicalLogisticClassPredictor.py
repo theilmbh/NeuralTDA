@@ -6,6 +6,7 @@ import pandas as pd
 import patsy
 import statsmodels.api as sm 
 import itertools
+from sklearn.linear_model import LogisticRegression
 
 class TopologicalLogisticClassPredictor:
 
@@ -95,14 +96,29 @@ class TopologicalLogisticClassPredictor:
 
     def formatModelInput(self):
 
-        formula = 'C(stimClass) ~ B0 + B1 + B2 + B3 + B4 + B5'
+        self.trainX = self.persistentBettiFrame.sample(frac=0.8)
+        self.testX = self.persistentBettiFrame.sample(frac=0.2)
 
-        self.y, self.X = patsy.dmatrices(formula, self.persistentBettiFrame, return_type='dataframe')
+        self.trainY = self.trainX[:, -1]
+        self.trainX = np.array(self.trainX[:, 0:-1])
+
+        self.testY = self.testX[:, -1]
+        self.testX = np.array(self.testX[:, 0:-1])
+
+        self.trainY = 1.0*np.array([s is 'R' for s in self.trainY])
+        self.testY = 1.0*np.array([s is 'R' for s in self.testY])
+
+        self.shufftrainY = np.random.permutation(self.trainY)
 
     def fitLogistic(self):
 
         self.formatModelInput()
-        sm.Logit(self.y['C(stimClass)[L]'], self.X).fit().summary()
+        self.tMod = LogisticRegression()
+        self.tMod.fit(self.trainX, self.trainY)
+        self.modelScore = self.tMod.score(self.testX, self.testY)
 
+        self.shufftMod = LogisticRegression()
+        self.shufftMod.fit(self.trainX, self.shufftrainY)
+        self.shuffmodelScore = self.shufftMod.score(self.testX, self.testY)        
 
 
