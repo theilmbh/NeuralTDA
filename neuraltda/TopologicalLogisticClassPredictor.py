@@ -96,11 +96,12 @@ class TopologicalLogisticClassPredictor:
 
     def formatModelInput(self):
 
-        self.trainX = self.persistentBettiFrame.sample(frac=0.8)
-        self.testX = self.persistentBettiFrame.sample(frac=0.2)
-
-        self.trainX = np.array(self.trainX)
-        self.testX = np.array(self.testX)
+        self.trainX = np.array(self.persistentBettiFrame.sample(frac=1))
+        (samps, feats) = np.shape(self.trainX)
+        testInd = np.round(0.2*samps) # select 20%
+        self.testX = self.trainX[0:testInd, :]
+        self.trainX = self.trainX[testInd:, :]
+        
         self.trainY = self.trainX[:, -1]
         self.trainX = self.trainX[:, 0:-1]
 
