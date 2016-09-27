@@ -10,13 +10,13 @@ from sklearn.linear_model import LogisticRegression
 
 class TopologicalLogisticClassPredictor:
 
-    def __init__(self, masterResults, stimuliClasses, **kwargs):
+    def __init__(self, masterResults, stimuliClasses, predNTimes=10, **kwargs):
 
         self.stimClasses = stimuliClasses
         with open(masterResults, 'r') as f:
             self.resultsDict = pickle.load(f)
         self.predMaxBetti = 5
-        self.predNTimes = 10
+        self.predNTimes = predNTimes
         self.trainedStimuliData = {}
         self.persistentBettiArray = []
         self.predClassArray = []
@@ -101,7 +101,7 @@ class TopologicalLogisticClassPredictor:
         testInd = np.round(0.2*samps) # select 20%
         self.testX = self.trainX[0:testInd, :]
         self.trainX = self.trainX[testInd:, :]
-        
+
         self.trainY = self.trainX[:, -1]
         self.trainX = self.trainX[:, 0:-1]
 
