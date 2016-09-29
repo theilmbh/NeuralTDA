@@ -29,6 +29,7 @@ class FiringRateLogisticClassPredictor:
         if 'pop_vec' in bpd.keys():
             # We are at bottom of hierarchy
             popVec = np.array(bpd['pop_vec'])
+            print(popVec.shape)
             avgFRVec = np.transpose(np.mean(popVec, 1))
             print(avgFRVec.shape)
             self.FRVecArray.append(avgFRVec)
