@@ -32,7 +32,7 @@ class FiringRateLogisticClassPredictor:
             avgFRVec = np.mean(popVec, 1)
 
             self.FRVecArray.append(avgFRVec)
-            newDF = pd.DataFrame(data=bettiDataRow, columns=self.colnames, index=[1])
+            newDF = pd.DataFrame(data=avgFRVec, columns=self.colnames, index=[1])
             self.persistentBettiFrame = self.persistentBettiFrame.append(newDF, ignore_index=True)
             self.predClassArray.append(stmcls)
             return
