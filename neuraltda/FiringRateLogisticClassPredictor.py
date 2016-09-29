@@ -19,7 +19,7 @@ class FiringRateLogisticClassPredictor:
         self.predMaxBetti = 5
         self.predNTimes = predNTimes
         self.trainedStimuliData = {}
-        self.persistentBettiArray = []
+        self.FRVecArray = []
         self.predClassArray = []
         self.trainedBinnedData = {}
         self.colnames = ['U%d' % s for s in range(self.nclus)]
