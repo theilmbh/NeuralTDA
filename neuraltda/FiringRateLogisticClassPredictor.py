@@ -9,7 +9,7 @@ import itertools
 from sklearn.linear_model import LogisticRegression
 import h5py as h5
 
-class TopologicalLogisticClassPredictor:
+class FiringRateLogisticClassPredictor:
 
     def __init__(self, binnedData, stimuliClasses, predNTimes=10, **kwargs):
 
