@@ -55,7 +55,7 @@ class FiringRateLogisticClassPredictor:
         self.persistentBettiFrame = pd.DataFrame(columns=self.colnames)
         for stim in self.stimClasses.keys():
             self.trainedBinnedData[stim] = self.binnedData[stim]
-        self.buildPredictionDataMatrixRecursive(self.trainedBinnedData)
+        self.buildPredictionDataMatrixRecursive(self.trainedBinnedData, '')
         self.persistentBettiFrame['stimClass'] = self.predClassArray
 
     def formatModelInput(self):
