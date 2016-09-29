@@ -30,7 +30,7 @@ class FiringRateLogisticClassPredictor:
             # We are at bottom of hierarchy
             popVec = np.array(bpd['pop_vec'])
             avgFRVec = np.transpose(np.mean(popVec, 1))
-
+            print(avgFRVec.shape)
             self.FRVecArray.append(avgFRVec)
             newDF = pd.DataFrame(data=avgFRVec, columns=self.colnames, index=[1])
             self.persistentBettiFrame = self.persistentBettiFrame.append(newDF, ignore_index=True)
