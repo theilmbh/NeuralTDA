@@ -21,6 +21,7 @@ class TopologicalLogisticClassPredictor:
         self.trainedStimuliData = {}
         self.persistentBettiArray = []
         self.predClassArray = []
+        self.trainedBinnedData = {}
         self.colnames = ['U%d' % s for s in range(self.nclus)]
 
     def buildPredictionDataMatrixRecursive(self, bpd, stmcls):
@@ -52,7 +53,9 @@ class TopologicalLogisticClassPredictor:
     def buildPredictionDataMatrix(self):
 
         self.persistentBettiFrame = pd.DataFrame(columns=self.colnames)
-        self.buildPredictionDataMatrixRecursive(self.binnedData)
+        for stim in self.stimClasses.keys():
+            self.trainedBinnedData[stim] = self.binnedData[stim]
+        self.buildPredictionDataMatrixRecursive(self.trainedBinnedData)
         self.persistentBettiFrame['stimClass'] = self.predClassArray
 
     def formatModelInput(self):
