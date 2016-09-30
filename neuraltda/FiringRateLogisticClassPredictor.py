@@ -34,7 +34,7 @@ class FiringRateLogisticClassPredictor:
                 cellSubset = np.random.permutation(self.nclus)
                 cellSubset = cellSubset[0:self.nCellsPerm]
                 popVec = popVec[cellSubset, :]
-                self.colnames = self.colnames[cellSubset]
+                self.colnames = np.array(self.colnames)[cellSubset]
 
             avgFRVec = np.mean(popVec, 1)[np.newaxis, :]
             self.FRVecArray.append(avgFRVec)
