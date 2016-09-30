@@ -23,7 +23,10 @@ class FiringRateLogisticClassPredictor:
         self.FRVecArray = []
         self.predClassArray = []
         self.trainedBinnedData = {}
-        self.colnames = ['U%d' % s for s in range(self.nclus)]
+        if self.nCellsPerm:
+            self.colnames = ['U%d' % s for s in range(self.nCellsPerm)]
+        else:
+            self.colnames = ['U%d' % s for s in range(self.nclus)]
 
     def buildPredictionDataMatrixRecursive(self, bpd, stmcls):
 
@@ -34,8 +37,6 @@ class FiringRateLogisticClassPredictor:
                 cellSubset = np.random.permutation(self.nclus)
                 cellSubset = cellSubset[0:self.nCellsPerm]
                 popVec = popVec[cellSubset, :]
-                self.colnames = np.array(self.colnames)[cellSubset]
-
             avgFRVec = np.mean(popVec, 1)[np.newaxis, :]
             self.FRVecArray.append(avgFRVec)
             newDF = pd.DataFrame(data=avgFRVec, columns=self.colnames, index=[1])
