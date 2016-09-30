@@ -30,9 +30,9 @@ class FiringRateLogisticClassPredictor:
         if 'pop_vec' in bpd.keys():
             # We are at bottom of hierarchy
             popVec = np.array(bpd['pop_vec'])
-            if nCellsPerm:
+            if self.nCellsPerm:
                 cellSubset = np.random.permutation(self.nclus)
-                cellSubset = cellSubset[0:nCellsPerm]
+                cellSubset = cellSubset[0:self.nCellsPerm]
                 popVec = popVec[cellSubset, :]
                 self.colnames = self.colnames[cellSubset]
 
