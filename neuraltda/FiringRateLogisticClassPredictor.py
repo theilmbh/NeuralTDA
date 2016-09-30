@@ -11,9 +11,10 @@ import h5py as h5
 
 class FiringRateLogisticClassPredictor:
 
-    def __init__(self, binnedData, stimuliClasses, predNTimes=10, **kwargs):
+    def __init__(self, binnedData, stimuliClasses, predNTimes=10, nCellsPerm=None, **kwargs):
 
         self.stimClasses = stimuliClasses
+        self.nCellsPerm = nCellsPerm
         self.binnedData = h5.File(binnedData, 'r')
         self.nclus = self.binnedData.attrs['nclus']
         self.predMaxBetti = 5
@@ -29,6 +30,12 @@ class FiringRateLogisticClassPredictor:
         if 'pop_vec' in bpd.keys():
             # We are at bottom of hierarchy
             popVec = np.array(bpd['pop_vec'])
+            if nCellsPerm:
+                cellSubset = np.random.permutation(self.nclus)
+                cellSubset = cellSubset[0:nCellsPerm]
+                popVec = popVec[cellSubset, :]
+                self.colnames = self.colnames[cellSubset]
+
             avgFRVec = np.mean(popVec, 1)[np.newaxis, :]
             self.FRVecArray.append(avgFRVec)
             newDF = pd.DataFrame(data=avgFRVec, columns=self.colnames, index=[1])
