@@ -119,7 +119,7 @@ class TopologicalLogisticClassPredictor:
             self.shufftrainY = np.copy(self.trainY)
             (a,b) = np.shape(self.trainX)
             self.shuffletrainX = np.copy(self.trainX)
-            self.shuffletrainX = np.reshape(np.random.permutation(np.reshape(self.shuffletrainX, (a*b, 1)), (a,b)))
+            self.shuffletrainX = np.reshape(np.random.permutation(np.reshape(self.shuffletrainX, (a*b, 1))), (a,b))
 
 
     def fitLogistic(self):
