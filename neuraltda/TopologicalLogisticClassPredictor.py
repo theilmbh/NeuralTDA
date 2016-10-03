@@ -10,9 +10,10 @@ from sklearn.linear_model import LogisticRegression
 
 class TopologicalLogisticClassPredictor:
 
-    def __init__(self, masterResults, stimuliClasses, predNTimes=10, **kwargs):
+    def __init__(self, masterResults, stimuliClasses, predNTimes=10, shuffle='ClassLabels', **kwargs):
 
         self.stimClasses = stimuliClasses
+        self.shuffle = shuffle
         with open(masterResults, 'r') as f:
             self.resultsDict = pickle.load(f)
         self.predMaxBetti = 5
@@ -110,8 +111,16 @@ class TopologicalLogisticClassPredictor:
 
         self.trainY = 1.0*np.array([s is 'R' for s in self.trainY])
         self.testY = 1.0*np.array([s is 'R' for s in self.testY])
+        if self.shuffle = 'ClassLabels':
 
-        self.shufftrainY = np.random.permutation(self.trainY)
+            self.shufftrainY = np.random.permutation(self.trainY)
+            self.shuffletrainX = np.copy(self.trainX)
+        else:
+            self.shufftrainY = np.copy(self.trainY)
+            (a,b) = np.shape(self.trainX)
+            self.shuffletrainX = np.copy(self.trainX)
+            self.shuffletrainX = np.reshape(np.random.permutation(np.reshape(self.shuffletrainX), (a*b, 1)), (a,b))
+
 
     def fitLogistic(self):
 
@@ -121,7 +130,7 @@ class TopologicalLogisticClassPredictor:
         self.modelScore = self.tMod.score(self.testX, self.testY)
 
         self.shufftMod = LogisticRegression()
-        self.shufftMod.fit(self.trainX, self.shufftrainY)
+        self.shufftMod.fit(self.shuffletrainX, self.shufftrainY)
         self.shuffmodelScore = self.shufftMod.score(self.testX, self.testY)        
 
 
