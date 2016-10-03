@@ -111,7 +111,7 @@ class TopologicalLogisticClassPredictor:
 
         self.trainY = 1.0*np.array([s is 'R' for s in self.trainY])
         self.testY = 1.0*np.array([s is 'R' for s in self.testY])
-        if self.shuffle = 'ClassLabels':
+        if self.shuffle == 'ClassLabels':
 
             self.shufftrainY = np.random.permutation(self.trainY)
             self.shuffletrainX = np.copy(self.trainX)
