@@ -780,6 +780,35 @@ def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
             permute_recursive(data_group[inst], new_perm_group,
                               n_cells_in_perm, nperms)
 
+def trialshuffle_recursive(data_group, perm_group, ntrials):
+
+    if 'pop_vec' in data_group.keys():
+        clusters = data_group['clusters']
+        popvec = data_group['pop_vec']
+        windows = data_group['windows']
+        nclus = len(clusters)
+        for perm_num in range(nperms):
+            permt = np.random.permutation(nclus)
+            if len(clusters) >= n_cells_in_perm:
+                permt = permt[0:n_cells_in_perm].tolist()
+            else:
+                permt = permt[0:].tolist()
+            clusters_to_save = np.zeros(clusters.shape)
+            popvec_save = np.zeros(popvec.shape)
+            popvec.read_direct(popvec_save)
+            clusters.read_direct(clusters_to_save)
+            clusters_to_save = clusters_to_save[permt]
+            popvec_save = popvec_save[permt]
+            perm_permgrp = perm_group.create_group(str(perm_num))
+            perm_permgrp.create_dataset('pop_vec', data=popvec_save)
+            perm_permgrp.create_dataset('clusters', data=clusters_to_save)
+            perm_permgrp.create_dataset('windows', data=windows)
+    else:
+        for inst_num, inst in enumerate(data_group.keys()):
+            new_perm_group = perm_group.create_group(inst)
+            permute_recursive(data_group[inst], new_perm_group,
+                              n_cells_in_perm, nperms)
+
 def shuffle_recursive(data_group, perm_group, nshuffs):
 
     if 'pop_vec' in data_group.keys():
@@ -844,6 +873,36 @@ def permute_binned_data_recursive(binned_data_file, permuted_data_file,
                 stimdata = popvec_f[stim]
                 permute_recursive(stimdata, perm_stimgrp,
                                   n_cells_in_perm, nperms)
+
+def shuffle_trials(binned_data_file, trialshuffle_file):
+    ''' Has to be done on original binned file'''
+    with h5py.File(binned_data_file, "r") as popvec_f:
+        win_size = popvec_f.attrs['win_size']
+        fs = popvec_f.attrs['fs']
+        nclus = popvec_f.attrs['nclus']
+        stims = popvec_f.keys()
+        with h5py.File(trialshuffle_file, "w") as ts_f:
+            ts_f.attrs['win_size'] = win_size
+            ts_f.attrs['trialshuffled'] = '1'
+            ts_f.attrs['fs'] = fs
+            ts_f.attrs['nclus'] = nclus
+            for stim in stims:
+                ts_stimgrp = ts_f.create_group(stim)
+                stimdata = popvec_f[stim]
+                oldTrials = stimdata.keys()
+                for trial in oldTrials:
+                    wins = np.array(stimdata[trial]['windows'])
+                    clus = np.array(stimdata[trial]['clusters'])
+                    ts_newTrialGroup = ts_stimgrp.create_group(str(trial))
+                    newPopVec = np.zeros(stimdata['1']['pop_vec'].shape)
+                    randTrialIDVec = np.random.random_integers(0, high=len(oldTrials)-1, shape=nclus)
+                    for unitIndx in range(nclus):
+                        randTrialID = randTrialIDVec[unitIndx]
+                        newPopVec[unitIndx, :] = np.array(stimdata[str(randTrialID)]['pop_vec'])[unitIndx, :]
+                    ts_newTrialGroup.create_dataset('pop_vec', data=newPopVec)
+                    ts_newTrialGroup.create_dataset('clusters', data=clus)
+                    ts_newTrialGroup.create_dataset('windows', data=wins)
+
 
 def cij_recursive(data_group, tmax, fs):
 
@@ -945,6 +1004,35 @@ def make_permuted_binned_data_recursive(path_to_binned,
         permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
         permute_binned_data_recursive(binned_data_file, permuted_data_file,
                                       n_cells_in_perm, n_perms)
+
+def make_trialshuffled(path_to_binned):
+    '''
+    Takes a folder containing .binned files and makes permuted subsets of them.
+
+    Parameters
+    ------
+    path_to_binned : str
+        Path to a folder containing all the .binned hdf5 files
+        for which permutations are desired.
+    nperms : int
+        Number of permutations
+    '''
+
+    path_to_binned = os.path.abspath(path_to_binned)
+    binned_data_files = glob.glob(os.path.join(path_to_binned, '*.binned'))
+    if not binned_data_files:
+        TOPOLOGY_LOG.error('NO BINNED DATA FILES')
+        sys.exit(-1)
+    trialshuffled_folder = os.path.join(path_to_binned, 'trialshuffle/')
+    if not os.path.exists(trialshuffled_folder):
+        os.makedirs(trialshuffled_folder)
+
+    for binned_data_file in binned_data_files:
+        bdf_fold, bdf_full_name = os.path.split(binned_data_file)
+        bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
+        pbd_name = bdf_name + '-trialshuffled.binned'
+        trialshuffled_file = os.path.join(trialshuffled_folder, pbd_name)
+        shuffle_trials(binned_data_file, trialshuffled_file)
 
 def compute_avg_acty_binned(binned_file, avgfile):
     '''
@@ -1517,12 +1605,16 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs):
     binned_folder = os.path.join(block_path, 'binned_data/{}/'.format(analysis_id))
     if not os.path.exists(binned_folder):
         os.makedirs(binned_folder)
+
+    trialshuffle_folder = os.path.join(binned_folder, 'trialshuffle/')
     average_binned_folder = os.path.join(binned_folder, 'avgacty/')
 
     permuted_binned_folder = os.path.join(binned_folder, 'permuted_binned/')
     permuted_average_folder = os.path.join(average_binned_folder, 'permuted_binned/')
     permuted_shuffled_folder = os.path.join(permuted_binned_folder, 'shuffled_controls/')
     average_permuted_shuffled_folder = os.path.join(permuted_average_folder, 'shuffled_controls/')
+
+    permuted_trialshuffle_folder = os.path.join(trialshuffle_folder, 'permuted_binned/')
 
     raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
     # Load Raw Data
@@ -1559,10 +1651,18 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs):
     TOPOLOGY_LOG.info('Shuffling permuted average data')
     make_shuffled_controls_recursive(permuted_average_folder, nshuffs)
 
+    #Trial Shuffle Original Binned
+    TOPOLOGY_LOG.info('Making Trial Shuffled Binned')
+    make_trialshuffled(binned_folder)
+
+    # Permute TrialShuffled
+    TOPOLOGY_LOG.info('Making Permuted Trial Shuffled')
+    make_permuted_binned_data_recursive(trialshuffle_folder, ncellsperm, nperms)
+
     
     bfdict={'permuted': permuted_binned_folder, 'avgpermuted': permuted_average_folder,
            'permutedshuff': permuted_shuffled_folder, 'avgpermshuff': average_permuted_shuffled_folder,
-           'raw': binned_folder, 'analysis_id': analysis_id_forward}
+           'raw': binned_folder, 'analysis_id': analysis_id_forward, 'trialshuffled': trialshuffle_folder, 'trialshuffperm': permuted_trialshuffle_folder}
     return bfdict
 
 
@@ -1572,6 +1672,7 @@ def dag_topology(block_path, thresh, bfdict):
     permuted_average_folder = bfdict['avgpermuted']
     permuted_shuffled_folder = bfdict['permutedshuff']
     average_permuted_shuffled_folder = bfdict['avgpermshuff']
+    permTrialShuffFold = bfdict['trialshuffperm']
     analysis_id = bfdict['analysis_id']
 
     # Make topology ids
@@ -1579,12 +1680,14 @@ def dag_topology(block_path, thresh, bfdict):
     tpid_avgpermute = analysis_id + '-{}-permuted-average'.format(thresh)
     tpid_permuteshuff = analysis_id + '-{}-permuted-shuffled'.format(thresh)
     tpid_avgpermuteshuff = analysis_id + '-{}-permuted-average-shuffled'.format(thresh)
+    tpid_permTrialShuff = analysis_id + '-{}-permuted-trialShuffled'.format(thresh)
 
     bpt = os.path.join(block_path, 'topology/')
     tpf_permute = os.path.join(bpt, tpid_permute)
     tpf_avgpermute = os.path.join(bpt, tpid_avgpermute)
     tpf_permuteshuff = os.path.join(bpt, tpid_permuteshuff)
     tpf_avgpermuteshuff = os.path.join(bpt, tpid_avgpermuteshuff)
+    tpf_permTrialShuff = os.path.join(bpt, tpid_permTrialShuff)
     # Run topologies
 
     permuted_data_files = glob.glob(os.path.join(permuted_binned_folder, '*.binned'))
@@ -1612,6 +1715,12 @@ def dag_topology(block_path, thresh, bfdict):
         calc_CI_bettis_hierarchical_binned_data(tpid_avgpermuteshuff, pdf,
                                                     block_path, thresh)
 
+    permTrialShuff_files = glob.glob(os.path.join(permTrialShuffFold, '*.binned'))
+    for pdf in permTrialShuff_files:
+        TOPOLOGY_LOG.info('Computing topology for: %s' % pdf)
+        calc_CI_bettis_hierarchical_binned_data(tpid_permTrialShuff, pdf,
+                                                    block_path, thresh)
+
     # Collect results 
     analysis_dict = dict()
 
@@ -1619,6 +1728,7 @@ def dag_topology(block_path, thresh, bfdict):
     pavg_results = glob.glob(os.path.join(tpf_avgpermute, '*-bettiResultsDict.pkl'))[0]
     pshuff_results = glob.glob(os.path.join(tpf_permuteshuff, '*-bettiResultsDict.pkl'))[0]
     apshuff_results = glob.glob(os.path.join(tpf_avgpermuteshuff, '*-bettiResultsDict.pkl'))[0]
+    pTS_results = glob.glob(os.path.join(tpf_permTrialShuff, '*-bettiResultsDict.pkl'))[0]
 
     with open(p_results, 'r') as f:
         res = pickle.load(f)
@@ -1635,6 +1745,10 @@ def dag_topology(block_path, thresh, bfdict):
     with open(apshuff_results, 'r') as f:
         res = pickle.load(f)
         analysis_dict['average-permuted-shuffled'] = res
+
+    with open(pTS_results, 'r') as f:
+        res = pickle.load(f)
+        analysis_dict['permuted-trialShuffled'] = res
 
     master_fname = analysis_id+'-{}-masterResults.pkl'.format(thresh)
     master_f = os.path.join(block_path, master_fname)
