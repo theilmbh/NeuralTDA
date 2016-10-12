@@ -1594,7 +1594,7 @@ def compute_all_ci_topology(binned_folder, permuted_folder, shuffled_folder, ana
             calc_CI_bettis_hierarchical_binned_data(analysis_id+'_shuffled',
                                                     spdf, block_path, thresh)
 
-def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs):
+def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group=['Good']):
 
     block_path = os.path.abspath(block_path)
     # Create directories and filenames
@@ -1624,7 +1624,7 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs):
     clusters = core.load_clusters(block_path)
 
     #Cluster group
-    cluster_group = ['Good']
+    #cluster_group = ['Good']
 
     # Bin the raw data
     TOPOLOGY_LOG.info('Binning data')
