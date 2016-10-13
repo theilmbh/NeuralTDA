@@ -1838,6 +1838,7 @@ def dag_bin_rigid_pandas(block_path, winsize, segment_info, ncellsperm, nperms, 
     raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
     # Load Raw Data
     rpFrame = loadRigidPandas(block_path)
+    spikes = rpFrame
     trials = rpToTrials(rpFrame)
     fs = core.load_fs(block_path)
     clusters = core.load_clusters(block_path)
