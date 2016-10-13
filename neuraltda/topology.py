@@ -1756,6 +1756,7 @@ def dag_topology(block_path, thresh, bfdict):
             pickle.dump(analysis_dict, f)
 
 def loadRigidPandas(block_path):
+    from ephys import rigid_pandas
     spikes = core.load_spikes(block_path)
     stims = rigid_pandas.load_acute_stims(block_path)
     fs = core.load_fs(block_path)
