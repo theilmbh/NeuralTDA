@@ -1754,3 +1754,107 @@ def dag_topology(block_path, thresh, bfdict):
     master_f = os.path.join(block_path, master_fname)
     with open(master_f, 'w') as f:
             pickle.dump(analysis_dict, f)
+
+def loadRigidPandas(block_path):
+    spikes = core.load_spikes(block_path)
+    stims = rigid_pandas.load_acute_stims(block_path)
+    fs = core.load_fs(block_path)
+    stims['stim_duration'] = stims['stim_end'] - stims['stim_start']
+    rigid_pandas.timestamp2time(stims, fs, 'stim_duration')
+    stim_ids = stims['stim_name'].str.replace('_rep\d\d', '')
+    stim_ids = stim_ids.str.replace('[a-i]001', '')
+    for motif in 'abcdefgh':
+        stim_ids = stim_ids.str.replace('[a-i]%s128'%(motif), motif)
+    stims['stim_id'] = stim_ids
+    rigid_pandas.count_events(stims, index='stim_id')
+    spikes = spikes.join(rigid_pandas.align_events(spikes, stims, columns2copy=['stim_id', 'stim_presentation',
+                                                   'stim_start', 'stim_duration', 'stim_end']))
+    spikes['stim_aligned_time'] = (spikes['time_samples'].values.astype('int') -
+                                   spikes['stim_start'].values)
+    rigid_pandas.timestamp2time(spikes, fs, 'stim_aligned_time')
+    return spikes
+
+def rpGetStimID(rpFrame, trialsRow):
+    
+    return rpFrame[rpFrame['stim_start'] == trialsRow['time_samples']]['stim_id'].unique()[0]
+
+def rpToTrials(rpFrame):
+    
+    trialFrame = pd.DataFrame(columns=['time_samples', 'stimulus', 'stimulus_end'])
+    trialFrame['time_samples'] = rpFrame['stim_start'].unique()
+    trialFrame['stimulus_end'] = rpFrame['stim_end'].unique()
+    
+    trialFrame['stimulus'] = trialFrame.apply(lambda row: rpGetStimID(rpFrame, row), axis=1)
+    
+    return trialFrame
+
+def dag_bin_rigid_pandas(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group=['Good']):
+
+    block_path = os.path.abspath(block_path)
+    # Create directories and filenames
+    analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+    raw_binned_fname = analysis_id + '-{}.binned'.format(winsize)
+    analysis_id_forward = analysis_id + '-{}'.format(winsize) 
+    
+    binned_folder = os.path.join(block_path, 'binned_data/{}/'.format(analysis_id))
+    if not os.path.exists(binned_folder):
+        os.makedirs(binned_folder)
+
+    trialshuffle_folder = os.path.join(binned_folder, 'trialshuffle/')
+    average_binned_folder = os.path.join(binned_folder, 'avgacty/')
+
+    permuted_binned_folder = os.path.join(binned_folder, 'permuted_binned/')
+    permuted_average_folder = os.path.join(average_binned_folder, 'permuted_binned/')
+    permuted_shuffled_folder = os.path.join(permuted_binned_folder, 'shuffled_controls/')
+    average_permuted_shuffled_folder = os.path.join(permuted_average_folder, 'shuffled_controls/')
+
+    permuted_trialshuffle_folder = os.path.join(trialshuffle_folder, 'permuted_binned/')
+
+    raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
+    # Load Raw Data
+    rpFrame = loadRigidPandas(block_path)
+    trials = rpToTrials(rpFrame)
+    fs = core.load_fs(block_path)
+    clusters = core.load_clusters(block_path)
+
+    #Cluster group
+    #cluster_group = ['Good']
+
+    # Bin the raw data
+    TOPOLOGY_LOG.info('Binning data')
+    build_population_embedding(spikes, trials, clusters, winsize, fs,
+                               cluster_group, segment_info, raw_binned_f)
+
+    # Average binned raw data
+    TOPOLOGY_LOG.info('Averaging activity')
+    bin_avg(binned_folder)
+
+    # Permute raw data
+    TOPOLOGY_LOG.info('Permuting data') 
+    make_permuted_binned_data_recursive(binned_folder, ncellsperm, nperms)
+
+    # Permute Averaged data
+    TOPOLOGY_LOG.info('Permuting Averaged data') 
+    make_permuted_binned_data_recursive(average_binned_folder, ncellsperm, nperms)
+
+    # Shuffle Permuted data
+    TOPOLOGY_LOG.info('Shuffling permuted data') 
+    make_shuffled_controls_recursive(permuted_binned_folder, nshuffs)
+
+    # Shuffle Permuted Average Data 
+    TOPOLOGY_LOG.info('Shuffling permuted average data')
+    make_shuffled_controls_recursive(permuted_average_folder, nshuffs)
+
+    #Trial Shuffle Original Binned
+    TOPOLOGY_LOG.info('Making Trial Shuffled Binned')
+    make_trialshuffled(binned_folder)
+
+    # Permute TrialShuffled
+    TOPOLOGY_LOG.info('Making Permuted Trial Shuffled')
+    make_permuted_binned_data_recursive(trialshuffle_folder, ncellsperm, nperms)
+
+    
+    bfdict={'permuted': permuted_binned_folder, 'avgpermuted': permuted_average_folder,
+           'permutedshuff': permuted_shuffled_folder, 'avgpermshuff': average_permuted_shuffled_folder,
+           'raw': binned_folder, 'analysis_id': analysis_id_forward, 'trialshuffled': trialshuffle_folder, 'trialshuffperm': permuted_trialshuffle_folder}
+    return bfdict
