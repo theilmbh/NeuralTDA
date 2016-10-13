@@ -1632,33 +1632,60 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, clus
                                cluster_group, segment_info, raw_binned_f)
 
     # Average binned raw data
-    TOPOLOGY_LOG.info('Averaging activity')
-    bin_avg(binned_folder)
+    try:
+        TOPOLOGY_LOG.info('Averaging activity')
+        bin_avg(binned_folder)
+    except:
+        TOPOLOGY_LOG.error('Averaging Failed!')
+        average_binned_folder = ''
 
     # Permute raw data
-    TOPOLOGY_LOG.info('Permuting data') 
-    make_permuted_binned_data_recursive(binned_folder, ncellsperm, nperms)
+    try:
+        TOPOLOGY_LOG.info('Permuting data') 
+        make_permuted_binned_data_recursive(binned_folder, ncellsperm, nperms)
+    except:
+        TOPOLOGY_LOG.error('Permuting Failed!')
+        permuted_binned_folder=''
 
     # Permute Averaged data
-    TOPOLOGY_LOG.info('Permuting Averaged data') 
-    make_permuted_binned_data_recursive(average_binned_folder, ncellsperm, nperms)
-
+    try:
+        TOPOLOGY_LOG.info('Permuting Averaged data') 
+        make_permuted_binned_data_recursive(average_binned_folder, ncellsperm, nperms)
+    except:
+        TOPOLOGY_LOG.error('FAILED!')
+        permuted_average_folder = ''
+    
     # Shuffle Permuted data
-    TOPOLOGY_LOG.info('Shuffling permuted data') 
-    make_shuffled_controls_recursive(permuted_binned_folder, nshuffs)
-
+    try:    
+        TOPOLOGY_LOG.info('Shuffling permuted data') 
+        make_shuffled_controls_recursive(permuted_binned_folder, nshuffs)
+    except:
+        TOPOLOGY_LOG.error('Shuffling FAILED!')
+        permuted_shuffled_folder = ''
+    
     # Shuffle Permuted Average Data 
-    TOPOLOGY_LOG.info('Shuffling permuted average data')
-    make_shuffled_controls_recursive(permuted_average_folder, nshuffs)
-
+    try:
+        TOPOLOGY_LOG.info('Shuffling permuted average data')
+        make_shuffled_controls_recursive(permuted_average_folder, nshuffs)
+    except:
+        TOPOLOGY_LOG.error('Shuffling Permuted AverageFAILED!')
+        average_permuted_shuffled_folder = ''
+    
     #Trial Shuffle Original Binned
-    TOPOLOGY_LOG.info('Making Trial Shuffled Binned')
-    make_trialshuffled(binned_folder)
-
+    try:
+        TOPOLOGY_LOG.info('Making Trial Shuffled Binned')
+        make_trialshuffled(binned_folder)
+    except:
+        TOPOLOGY_LOG.error(' Trial Shuffled FAILED!')
+        permuted_trialshuffle_folder = ''
+    
     # Permute TrialShuffled
-    TOPOLOGY_LOG.info('Making Permuted Trial Shuffled')
-    make_permuted_binned_data_recursive(trialshuffle_folder, ncellsperm, nperms)
-
+    try:    
+        TOPOLOGY_LOG.info('Making Permuted Trial Shuffled')
+        make_permuted_binned_data_recursive(trialshuffle_folder, ncellsperm, nperms)
+    except:
+        TOPOLOGY_LOG.error('Permuted Trial Shuffled FAILED!')
+        permuted_trialshuffle_folder = ''
     
     bfdict={'permuted': permuted_binned_folder, 'avgpermuted': permuted_average_folder,
            'permutedshuff': permuted_shuffled_folder, 'avgpermshuff': average_permuted_shuffled_folder,
@@ -1675,80 +1702,77 @@ def dag_topology(block_path, thresh, bfdict):
     permTrialShuffFold = bfdict['trialshuffperm']
     analysis_id = bfdict['analysis_id']
 
-    # Make topology ids
-    tpid_permute = analysis_id + '-{}-permuted'.format(thresh)
-    tpid_avgpermute = analysis_id + '-{}-permuted-average'.format(thresh)
-    tpid_permuteshuff = analysis_id + '-{}-permuted-shuffled'.format(thresh)
-    tpid_avgpermuteshuff = analysis_id + '-{}-permuted-average-shuffled'.format(thresh)
-    tpid_permTrialShuff = analysis_id + '-{}-permuted-trialShuffled'.format(thresh)
-
     bpt = os.path.join(block_path, 'topology/')
-    tpf_permute = os.path.join(bpt, tpid_permute)
-    tpf_avgpermute = os.path.join(bpt, tpid_avgpermute)
-    tpf_permuteshuff = os.path.join(bpt, tpid_permuteshuff)
-    tpf_avgpermuteshuff = os.path.join(bpt, tpid_avgpermuteshuff)
-    tpf_permTrialShuff = os.path.join(bpt, tpid_permTrialShuff)
-    # Run topologies
-
-    permuted_data_files = glob.glob(os.path.join(permuted_binned_folder, '*.binned'))
-    for pdf in permuted_data_files:
-        TOPOLOGY_LOG.info('Computing topology for: %s' % pdf)
-        calc_CI_bettis_hierarchical_binned_data(tpid_permute, pdf,
-                                                    block_path, thresh)
-
-    spdfs = os.path.join(permuted_shuffled_folder, '*.binned')
-    shuffled_permuted_data_files = glob.glob(spdfs)
-    for spdf in shuffled_permuted_data_files:
-        TOPOLOGY_LOG.info('Computing topology for: %s' % spdf)
-        calc_CI_bettis_hierarchical_binned_data(tpid_permuteshuff,
-                                                    spdf, block_path, thresh)
-
-    avgpermuted_data_files = glob.glob(os.path.join(permuted_average_folder, '*.binned'))
-    for pdf in avgpermuted_data_files:
-        TOPOLOGY_LOG.info('Computing topology for: %s' % pdf)
-        calc_CI_bettis_hierarchical_binned_data(tpid_avgpermute, pdf,
-                                                    block_path, thresh)
-
-    shuffavgpermuted_data_files = glob.glob(os.path.join(average_permuted_shuffled_folder, '*.binned'))
-    for pdf in shuffavgpermuted_data_files:
-        TOPOLOGY_LOG.info('Computing topology for: %s' % pdf)
-        calc_CI_bettis_hierarchical_binned_data(tpid_avgpermuteshuff, pdf,
-                                                    block_path, thresh)
-
-    permTrialShuff_files = glob.glob(os.path.join(permTrialShuffFold, '*.binned'))
-    for pdf in permTrialShuff_files:
-        TOPOLOGY_LOG.info('Computing topology for: %s' % pdf)
-        calc_CI_bettis_hierarchical_binned_data(tpid_permTrialShuff, pdf,
-                                                    block_path, thresh)
-
-    # Collect results 
     analysis_dict = dict()
 
-    p_results = glob.glob(os.path.join(tpf_permute, '*-bettiResultsDict.pkl'))[0]
-    pavg_results = glob.glob(os.path.join(tpf_avgpermute, '*-bettiResultsDict.pkl'))[0]
-    pshuff_results = glob.glob(os.path.join(tpf_permuteshuff, '*-bettiResultsDict.pkl'))[0]
-    apshuff_results = glob.glob(os.path.join(tpf_avgpermuteshuff, '*-bettiResultsDict.pkl'))[0]
-    pTS_results = glob.glob(os.path.join(tpf_permTrialShuff, '*-bettiResultsDict.pkl'))[0]
+    # Run topologies
 
-    with open(p_results, 'r') as f:
-        res = pickle.load(f)
-        analysis_dict['permuted'] = res
+    if permuted_binned_folder:
+        tpid_permute = analysis_id + '-{}-permuted'.format(thresh)
+        tpf_permute = os.path.join(bpt, tpid_permute)
+        permuted_data_files = glob.glob(os.path.join(permuted_binned_folder, '*.binned'))
+        for pdf in permuted_data_files:
+            TOPOLOGY_LOG.info('Computing topology for: %s' % pdf)
+            calc_CI_bettis_hierarchical_binned_data(tpid_permute, pdf,
+                                                    block_path, thresh)
 
-    with open(pavg_results, 'r') as f:
-        res = pickle.load(f)
-        analysis_dict['average-permuted'] = res
+        p_results = glob.glob(os.path.join(tpf_permute, '*-bettiResultsDict.pkl'))[0]
+        with open(p_results, 'r') as f:
+            res = pickle.load(f)
+            analysis_dict['permuted'] = res
 
-    with open(pshuff_results, 'r') as f:
-        res = pickle.load(f)
-        analysis_dict['permuted-shuffled'] = res
+    if permuted_shuffled_folder:
+        tpid_permuteshuff = analysis_id + '-{}-permuted-shuffled'.format(thresh)
+        tpf_permuteshuff = os.path.join(bpt, tpid_permuteshuff)
+        spdfs = os.path.join(permuted_shuffled_folder, '*.binned')
+        shuffled_permuted_data_files = glob.glob(spdfs)
+        for spdf in shuffled_permuted_data_files:
+            TOPOLOGY_LOG.info('Computing topology for: %s' % spdf)
+            calc_CI_bettis_hierarchical_binned_data(tpid_permuteshuff,
+                                                    spdf, block_path, thresh)
+        pshuff_results = glob.glob(os.path.join(tpf_permuteshuff, '*-bettiResultsDict.pkl'))[0]    
+        with open(pshuff_results, 'r') as f:
+            res = pickle.load(f)
+            analysis_dict['permuted-shuffled'] = res
 
-    with open(apshuff_results, 'r') as f:
-        res = pickle.load(f)
-        analysis_dict['average-permuted-shuffled'] = res
+    if permuted_average_folder:
+        tpid_avgpermute = analysis_id + '-{}-permuted-average'.format(thresh)
+        tpf_avgpermute = os.path.join(bpt, tpid_avgpermute)
+        avgpermuted_data_files = glob.glob(os.path.join(permuted_average_folder, '*.binned'))
+        for pdf in avgpermuted_data_files:
+            TOPOLOGY_LOG.info('Computing topology for: %s' % pdf)
+            calc_CI_bettis_hierarchical_binned_data(tpid_avgpermute, pdf,
+                                                    block_path, thresh)
+        pavg_results = glob.glob(os.path.join(tpf_avgpermute, '*-bettiResultsDict.pkl'))[0] 
+        with open(pavg_results, 'r') as f:
+            res = pickle.load(f)
+            analysis_dict['average-permuted'] = res 
 
-    with open(pTS_results, 'r') as f:
-        res = pickle.load(f)
-        analysis_dict['permuted-trialShuffled'] = res
+    if average_permuted_shuffled_folder:
+        tpid_avgpermuteshuff = analysis_id + '-{}-permuted-average-shuffled'.format(thresh)
+        tpf_avgpermuteshuff = os.path.join(bpt, tpid_avgpermuteshuff)
+        shuffavgpermuted_data_files = glob.glob(os.path.join(average_permuted_shuffled_folder, '*.binned'))
+        for pdf in shuffavgpermuted_data_files:
+            TOPOLOGY_LOG.info('Computing topology for: %s' % pdf)
+            calc_CI_bettis_hierarchical_binned_data(tpid_avgpermuteshuff, pdf,
+                                                    block_path, thresh)
+        apshuff_results = glob.glob(os.path.join(tpf_avgpermuteshuff, '*-bettiResultsDict.pkl'))[0]
+        with open(apshuff_results, 'r') as f:
+            res = pickle.load(f)
+            analysis_dict['average-permuted-shuffled'] = res
+
+    if permTrialShuffFold:
+        tpid_permTrialShuff = analysis_id + '-{}-permuted-trialShuffled'.format(thresh)
+        tpf_permTrialShuff = os.path.join(bpt, tpid_permTrialShuff)
+        permTrialShuff_files = glob.glob(os.path.join(permTrialShuffFold, '*.binned'))
+        for pdf in permTrialShuff_files:
+            TOPOLOGY_LOG.info('Computing topology for: %s' % pdf)
+            calc_CI_bettis_hierarchical_binned_data(tpid_permTrialShuff, pdf,
+                                                    block_path, thresh)
+        pTS_results = glob.glob(os.path.join(tpf_permTrialShuff, '*-bettiResultsDict.pkl'))[0]
+        with open(pTS_results, 'r') as f:
+            res = pickle.load(f)
+            analysis_dict['permuted-trialShuffled'] = res
 
     master_fname = analysis_id+'-{}-masterResults.pkl'.format(thresh)
     master_f = os.path.join(block_path, master_fname)
