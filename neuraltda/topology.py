@@ -1594,7 +1594,21 @@ def compute_all_ci_topology(binned_folder, permuted_folder, shuffled_folder, ana
             calc_CI_bettis_hierarchical_binned_data(analysis_id+'_shuffled',
                                                     spdf, block_path, thresh)
 
+def dbLoadData(block_path):
+
+    # Load Raw Data
+    spikes = core.load_spikes(block_path)
+    trials = events.load_trials(block_path)
+    fs = core.load_fs(block_path)
+    clusters = core.load_clusters(block_path)
+    return (spikes, trials, clusters, fs)
+
 def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group=['Good']):
+
+    (spikes, trials, clusters, fs) = dbLoadData(block_path)
+    do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group)
+
+def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group=['Good']):
 
     block_path = os.path.abspath(block_path)
     # Create directories and filenames
@@ -1617,11 +1631,6 @@ def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, clus
     permuted_trialshuffle_folder = os.path.join(trialshuffle_folder, 'permuted_binned/')
 
     raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
-    # Load Raw Data
-    spikes = core.load_spikes(block_path)
-    trials = events.load_trials(block_path)
-    fs = core.load_fs(block_path)
-    clusters = core.load_clusters(block_path)
 
     #Cluster group
     #cluster_group = ['Good']
