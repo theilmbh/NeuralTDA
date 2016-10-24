@@ -12,7 +12,7 @@ import h5py
 import numpy as np 
 import topology as tp
 
-def sspComputeTopology(cellGroupList):
+def sspComputeTopology(dataGroup, pfile, thresh, simplexWinSize):
 	
 	# First get the cell groups:
 	popvec = np.array(dataGroup['pop_vec'])
