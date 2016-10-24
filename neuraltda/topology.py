@@ -1702,7 +1702,7 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, 
     return bfdict
 
 
-def dag_topology(block_path, thresh, bfdict):
+def dag_topology(block_path, thresh, bfdict, simplexWinSize=0):
     
     permuted_binned_folder = bfdict['permuted']
     permuted_average_folder = bfdict['avgpermuted']
@@ -1783,10 +1783,31 @@ def dag_topology(block_path, thresh, bfdict):
             res = pickle.load(f)
             analysis_dict['permuted-trialShuffled'] = res
 
+    if simplexWinSize:
+        tpid_slidingSimplex = analysis_id + '-{}-slidingSimplex'.format(thresh)
+        tpf_slidingSimplex = os.path.join(bpt, tpid_slidingSimplex)
+        slidingSimplex_files = glob.glob(os.path.join(slidingSimplexFold, '*.binned'))
+        for pdf in slidingSimplex_files:
+            TOPOLOGY_LOG.info('Computing topology for: %s' % pdf)
+            ssp.sspSlidingSimplex(tpid_slidingSimplex, pdf,
+                                                    block_path, thresh, simplexWinSize)
+        pSSP_results = glob.glob(os.path.join(tpf_slidingSimplex, '*-bettiResultsDict.pkl'))[0]
+        with open(pSSP_results, 'r') as f:
+            res = pickle.load(f)
+            analysis_dict['slidingSimplex'] = res
+
     master_fname = analysis_id+'-{}-masterResults.pkl'.format(thresh)
     master_f = os.path.join(block_path, master_fname)
     with open(master_f, 'w') as f:
             pickle.dump(analysis_dict, f)
+
+def mergeMasterResults(masterF, results, resultsName):
+    with open(masterF, 'r') as f:
+        currentRes = pickle.load(f)
+    currentRes[resultsName] = results 
+    with open(masterF, 'w') as f:
+        pickle.dump(currentRes, f)
+
 
 def loadRigidPandas(block_path):
     from ephys import rigid_pandas
