@@ -322,3 +322,50 @@ def test_binmat(Ncells, Nwin):
         maxSimps.append(activeInds)
 
     return SimplicialComplex(maxSimps)
+
+def binnedtobinary(popvec, thresh):
+    '''
+    Takes a popvec array from a binned data file and converts to a binary matrix according to thresh
+
+    Parameters
+    ----------
+    popvec : array 
+        An NCells by Nwindow array containing firing rates in that window.  
+    Thresh : float 
+        Multiple of average firing rate to use for thresholding
+    '''
+
+    popvec = np.array(popvec)
+    Ncells, Nwin = np.shape(popvec)
+    means = popvec.sum(1)/Nwin
+    means = np.tile(means, (Nwin, 1)).T
+    meanthr = thresh*means
+    
+    activeUnits = np.greater(popvec, meanthr).astype(int)
+    return activeUnits
+    
+def BinaryToMaxSimplex(binMat):
+    ''' 
+    Takes a binary matrix and computes maximal simplices according to CI 2008 
+
+    Parameters
+    ----------
+    binMat : numpy array 
+        An Ncells x Nwindows array 
+    '''
+
+    Ncells, Nwin = np.shape(binMat)
+    MaxSimps = []
+    for cell in range(Ncells):
+        if binMat[cell, :].any():
+            verts = np.arange(Nwin)[binMat[cell, :] == 1]
+            verts = np.sort(verts)
+            MaxSimps.append(list(verts))
+    return MaxSimps
+        
+def ShuffleBinary(binMat):
+    retMat = np.array(binMat)
+    Ncells, Nwin = np.shape(binMat)
+    for cell in range(Ncells):
+        np.random.shuffle(retMat[cell, :])
+    return retMat
