@@ -897,7 +897,7 @@ def shuffle_trials(binned_data_file, trialshuffle_file):
                     wins = np.array(stimdata[trial]['windows'])
                     clus = np.array(stimdata[trial]['clusters'])
                     ts_newTrialGroup = ts_stimgrp.create_group(str(trial))
-                    newPopVec = np.zeros(stimdata['1']['pop_vec'].shape)
+                    newPopVec = np.zeros(stimdata[stimdata.keys()[0]]['pop_vec'].shape)
                     randTrialIDVec = np.random.random_integers(0, high=len(oldTrials)-1, size=nclus)
                     for unitIndx in range(nclus):
                         randTrialID = randTrialIDVec[unitIndx]
