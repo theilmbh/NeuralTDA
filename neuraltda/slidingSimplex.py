@@ -12,7 +12,7 @@ import h5py
 import numpy as np 
 import topology as tp
 
-def sspComputeTopology(dataGroup, pfile, thresh, simplexWinSize):
+def sspComputeTopology(dataGroup, pfileStem, analysisPath, thresh, simplexWinSize):
     
     # First get the cell groups:
     popvec = np.array(dataGroup['pop_vec'])
@@ -25,6 +25,8 @@ def sspComputeTopology(dataGroup, pfile, thresh, simplexWinSize):
                                 cgTimePoints < winNum+simplexWinSize)
 
         simplexCGs = [masterCellGroups[i] for i in np.nonzero(cgInds)[0]]
+        pfileName = pfileStem +'-win%d-simplex.txt' % winNum
+        pfile = os.path.join(analysisPath, pfileName)
         tp.build_perseus_input(simplexCGs, pfile)
         bettiFile = tp.run_perseus(pfile)
         bettis = []
@@ -45,10 +47,9 @@ def sspSlidingSimplexRecursive(dataGroup, pfileStem, hStem,
                                thresh, simplexWinSize):
 
     if 'pop_vec' in dataGroup.keys():
-        pfileName = pfileStem +'-simplex.txt'
-        pfile = os.path.join(analysisPath, pfileName)
+
         bettiDict['hstr'] = hStem
-        bettis = sspComputeTopology(dataGroup, pfile, thresh, simplexWinSize)
+        bettis = sspComputeTopology(dataGroup, pfileStem, analysisPath, thresh, simplexWinSize)
         nbetti = len(bettis)
         barcodeDict = dict()
         barcodeDict = sspComputeBarcode()
@@ -103,7 +104,7 @@ def sspSlidingSimplex(topologyID, tpBinnedDataFile,
                                                    bettiDict, analysisPath,
                                                    thresh, simplexWinSize)
             bpdStim[stim] = bettiDict
-            with open(bettiPkl, 'r') as bp: 
+            with open(bettiPkl, 'w') as bp: 
                 pickle.dump(bettiDict, bp)
         with open(bettiResultsFile, 'w') as bpResFile:
             pickle.dump(bpdStim, bpResFile)
