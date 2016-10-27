@@ -766,7 +766,7 @@ def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
                 permt = permt[0:].tolist()
             clusters_to_save = np.zeros(clusters.shape)
             popvec_save = np.zeros(popvec.shape)
-            print(popvec.shape)
+            
             if 0 in popvec.shape:
                 print(popvec.name)
             popvec.read_direct(popvec_save)
@@ -1875,11 +1875,6 @@ def dag_bin_rigid_pandas(block_path, winsize, segment_info, ncellsperm, nperms, 
     trials = rpToTrials(rpFrame)
     fs = core.load_fs(block_path)
     clusters = core.load_clusters(block_path)
-
-    print(spikes.head())
-    print(clusters.head())
-    print(trials.head())
-
     # Bin the raw data
     TOPOLOGY_LOG.info('Binning data')
     build_population_embedding(spikes, trials, clusters, winsize, fs,
