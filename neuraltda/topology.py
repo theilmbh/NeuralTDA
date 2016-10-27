@@ -768,7 +768,7 @@ def permute_recursive(data_group, perm_group, n_cells_in_perm, nperms):
             popvec_save = np.zeros(popvec.shape)
             print(popvec.shape)
             if 0 in popvec.shape:
-                print(popvec)
+                print(popvec.name)
             popvec.read_direct(popvec_save)
             clusters.read_direct(clusters_to_save)
             clusters_to_save = clusters_to_save[permt]
