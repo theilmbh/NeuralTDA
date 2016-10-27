@@ -1876,8 +1876,9 @@ def dag_bin_rigid_pandas(block_path, winsize, segment_info, ncellsperm, nperms, 
     fs = core.load_fs(block_path)
     clusters = core.load_clusters(block_path)
 
-    #Cluster group
-    #cluster_group = ['Good']
+    print(spikes.head())
+    print(clusters.head())
+    print(trials.head())
 
     # Bin the raw data
     TOPOLOGY_LOG.info('Binning data')
