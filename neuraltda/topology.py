@@ -169,6 +169,34 @@ def create_subwindows(segment, subwin_len, n_subwin_starts):
             subwindows.append([front, subwin_end])
     return subwindows
 
+def create_overlap_subwindows(segment, subwin_len, noverlap):
+    '''
+    Create list of subwindows for cell group identification.
+
+    Parameters
+    ----------
+    segment : list
+        Sample numbers of the beginning
+        and end of the segment to subdivide into windows.
+    subwin_len : int
+        Number of samples to include in a subwindow.
+    noverlap : int
+        Number of samples to overlap the windows
+
+    Returns
+    ------
+    subwindows : list
+        List of subwindows.
+        Each subwindow is a list containing
+        the starting sample and ending sample.
+    '''
+    dur = segment[1]-segment[0]
+    skip = subwin_len - noverlap
+    maxK = np.floor(float(dur)/float(skip))
+    starts = [segment[0] + k*skip for k in range(maxK)]
+    windows = [[w, min(w + (subwin_len-1), segment[1])] for w in starts]
+    return windows
+
 def calc_population_vectors(spikes, clusters, windows, thresh):
     '''
     Builds population vectors according to Curto and Itskov 2008.
