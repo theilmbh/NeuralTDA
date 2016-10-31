@@ -474,7 +474,7 @@ def calc_cell_groups_from_binned_data(binned_dataset, thresh):
         in the cell group.
     '''
     bds = np.array(binned_dataset['pop_vec'])
-    clusters = np.array(binned_dataset['clusters'])
+    clusters = np.array(binned_dataset['clusters']).astype(int)
     nwin = bds.shape[1]
     mean_frs = np.mean(bds, 1)
     cell_groups = []

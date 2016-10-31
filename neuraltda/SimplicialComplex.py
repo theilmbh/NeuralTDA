@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 from numpy import linalg as LA
 
 class Simplex:
@@ -19,8 +20,9 @@ class Simplex:
 
 class SimplicialComplex:
 
-    def __init__(self, maximal_simplices, collapseVertices=False):
+    def __init__(self, maximal_simplices, collapseVertices=False, name=''):
 
+        assert len(maximal_simplices) > 0, 'Empty Simplex!'
         self.simplices = []
         self.edges = set()
         self.maximalSimplices = maximal_simplices
@@ -31,6 +33,7 @@ class SimplicialComplex:
         self.LaplacianDict = {}
         self.spectrum = {}
         self.entropy = {}
+        self.name = name
         for i in range(-1, self.dimension+1):
             self.nSimplexDict[i] = []
             self.LUpDict[i] = []
@@ -49,7 +52,8 @@ class SimplicialComplex:
                 self.addMaximalSimplex(ms)
 
         else:
-            for ms in self.maximalSimplices:
+            print('Building simplex..')
+            for ms in tqdm(self.maximalSimplices):
                 self.addMaximalSimplexOld(ms)
 
     def setRoot(self, simplex):
