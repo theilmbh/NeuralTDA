@@ -14,6 +14,43 @@ from scipy import integrate
 
 from ephys import events, core
 
+###################################
+###### Old Utility Functions ######
+###################################
+
+def create_subwindows(segment, subwin_len, n_subwin_starts):
+    '''
+    Create list of subwindows for cell group identification.
+
+    Parameters
+    ----------
+    segment : list
+        Sample numbers of the beginning
+        and end of the segment to subdivide into windows.
+    subwin_len : int
+        Number of samples to include in a subwindow.
+    n_subwin_starts : int
+        Number of shifts of the subwindows
+
+    Returns
+    ------
+    subwindows : list
+        List of subwindows.
+        Each subwindow is a list containing
+        the starting sample and ending sample.
+    '''
+    starts = np.floor(np.linspace(segment[0],
+                                  segment[0]+subwin_len,
+                                  n_subwin_starts))
+    nsubwin = np.floor((segment[1]-segment[0])/subwin_len)
+    subwindows = []
+    for start in starts:
+        subwin_front = np.round(np.arange(start, segment[1], subwin_len))
+        for front in subwin_front:
+            subwin_end = front + subwin_len
+            subwindows.append([front, subwin_end])
+    return subwindows
+
 ################################################
 ###### Old Topology Computation Functions ######
 ################################################

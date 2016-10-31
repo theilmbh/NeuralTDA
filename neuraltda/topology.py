@@ -136,40 +136,8 @@ def calc_mean_fr_int(cluster, spikes, window):
     mean_fr = (1.0*nspikes) / dt
     return mean_fr
 
-def create_subwindows(segment, subwin_len, n_subwin_starts):
-    '''
-    Create list of subwindows for cell group identification.
 
-    Parameters
-    ----------
-    segment : list
-        Sample numbers of the beginning
-        and end of the segment to subdivide into windows.
-    subwin_len : int
-        Number of samples to include in a subwindow.
-    n_subwin_starts : int
-        Number of shifts of the subwindows
-
-    Returns
-    ------
-    subwindows : list
-        List of subwindows.
-        Each subwindow is a list containing
-        the starting sample and ending sample.
-    '''
-    starts = np.floor(np.linspace(segment[0],
-                                  segment[0]+subwin_len,
-                                  n_subwin_starts))
-    nsubwin = np.floor((segment[1]-segment[0])/subwin_len)
-    subwindows = []
-    for start in starts:
-        subwin_front = np.round(np.arange(start, segment[1], subwin_len))
-        for front in subwin_front:
-            subwin_end = front + subwin_len
-            subwindows.append([front, subwin_end])
-    return subwindows
-
-def create_overlap_subwindows(segment, subwin_len, noverlap):
+def create_subwindows(segment, subwin_len, noverlap=0):
     '''
     Create list of subwindows for cell group identification.
 
@@ -192,7 +160,7 @@ def create_overlap_subwindows(segment, subwin_len, noverlap):
     '''
     dur = segment[1]-segment[0]
     skip = subwin_len - noverlap
-    maxK = np.floor(float(dur)/float(skip))
+    maxK = int(np.floor(float(dur)/float(skip)))
     starts = [segment[0] + k*skip for k in range(maxK)]
     windows = [[w, min(w + (subwin_len-1), segment[1])] for w in starts]
     return windows
@@ -561,7 +529,7 @@ def calc_bettis_from_binned_data(binned_dataset, pfile, thresh):
 #######################################
 
 def build_population_embedding(spikes, trials, clusters, win_size, fs,
-                               cluster_group, segment_info, popvec_fname):
+                               cluster_group, segment_info, popvec_fname, dtOverlap=0.0):
     '''
     Embeds binned population activity into R^n
 
@@ -613,8 +581,9 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs,
                 seg_start, seg_end = get_segment(trial_bounds,
                                                  fs, segment_info)
                 this_segment = [seg_start, seg_end]
-                win_size_samples = np.round(win_size/1000. * fs)
-                windows = create_subwindows(this_segment, win_size_samples, 1)
+                win_size_samples = int(np.round(win_size/1000. * fs))
+                overlap_samples = int(np.round(dtOverlap/1000. * fs))
+                windows = create_subwindows(this_segment, win_size_samples, overlap_samples)
                 nwins = len(windows)
                 popvec_dset_init = np.zeros((nclus, nwins))
                 popvec_dset = trialgrp.create_dataset('pop_vec',
@@ -1874,7 +1843,7 @@ def rpToTrials(rpFrame):
     
     return trialFrame
 
-def dag_bin_rigid_pandas(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group=['Good']):
+def dag_bin_rigid_pandas(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group=['Good'], dtOverlap=0.0):
 
     block_path = os.path.abspath(block_path)
     # Create directories and filenames
@@ -1906,7 +1875,7 @@ def dag_bin_rigid_pandas(block_path, winsize, segment_info, ncellsperm, nperms, 
     # Bin the raw data
     TOPOLOGY_LOG.info('Binning data')
     build_population_embedding(spikes, trials, clusters, winsize, fs,
-                               cluster_group, segment_info, raw_binned_f)
+                               cluster_group, segment_info, raw_binned_f, dtOverlap)
 
     # Average binned raw data
     TOPOLOGY_LOG.info('Averaging activity')
