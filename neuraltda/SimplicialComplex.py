@@ -1,6 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 from numpy import linalg as LA
+from scipy import linalg as LAS 
 
 class Simplex:
     def __init__(self, vertices, **kwargs):
@@ -41,6 +42,7 @@ class SimplicialComplex:
             self.LaplacianDict[i] = []
             self.spectrum[i] = []
             self.entropy[i] = []
+            self.densityMatrix[i] = []
 
         self.createSimplex([]) # empty simplex
         self.setRoot(self.simplices[0])
@@ -244,7 +246,7 @@ class SimplicialComplex:
         rho = self.computeDensityMatrix(dimension, beta)
         sigma = sigmaComplex.computeDensityMatrix(dimension, beta)
 
-        
+
 
     def getUpperCommonSimplex(self, s1, s2):
 
@@ -373,3 +375,18 @@ def ShuffleBinary(binMat):
     for cell in range(Ncells):
         np.random.shuffle(retMat[cell, :])
     return retMat
+
+def computeRD(rho, sigma, q):
+    
+    mat = np.dot(LAS.fractional_matrix_power(rho, q), LAS.fractional_matrix_power(sigma, 1.0-q))
+    return np.log(np.trace(mat))/(np.log(2)*(q-1))
+
+def computeRenyiEntropy(rho, q):
+
+    return np.log(np.trace(LAS.fractional_matrix_power(rho, q)))/(np.log(2)*(q-1))
+
+def computeJSDivergence(rho, sigma, q):
+
+    rho = self.densityMatrix[dimension]
+    mix = (rho+sigma)/2.0
+    J = computeRenyiEntropy(mix, q) - (0.5)*(computeRenyiEntropy(rho, q) + computeRenyiEntropy(sigma, q))
