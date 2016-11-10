@@ -1606,7 +1606,7 @@ def dbLoadData(block_path):
 def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, **kwargs):
 
     (spikes, trials, clusters, fs) = dbLoadData(block_path)
-    do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group, **kwargs)
+    do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, **kwargs)
 
 def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group=['Good'], dtOverlap=0.0):
 
