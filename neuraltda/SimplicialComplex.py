@@ -34,6 +34,7 @@ class SimplicialComplex:
         self.LaplacianDict = {}
         self.spectrum = {}
         self.entropy = {}
+        self.densityMatrix = {}
         self.name = name
         for i in range(-1, self.dimension+1):
             self.nSimplexDict[i] = []
@@ -383,10 +384,23 @@ def computeRD(rho, sigma, q):
 
 def computeRenyiEntropy(rho, q):
 
-    return np.log(np.trace(LAS.fractional_matrix_power(rho, q)))/(np.log(2)*(q-1))
+    return -np.log(np.trace(LAS.fractional_matrix_power(rho, q)))/(np.log(2)*(q-1))
 
 def computeJSDivergence(rho, sigma, q):
 
-    rho = self.densityMatrix[dimension]
     mix = (rho+sigma)/2.0
     J = computeRenyiEntropy(mix, q) - (0.5)*(computeRenyiEntropy(rho, q) + computeRenyiEntropy(sigma, q))
+    return J
+
+def adjacency2maxsimp(adjmat):
+    '''
+    Converts an adjacency matrix to a list of maximum 1-simplices (edges),
+    allowing SimplicialComplex to handle graphs
+    '''
+    maxsimps = []
+    uptr = np.triu(adjmat)
+    for ind, row in enumerate(uptr):
+        for targ, val in enumerate(row):
+            if val >0:
+                maxsimps.append(np.sort([ind, targ]))
+    return maxsimps 

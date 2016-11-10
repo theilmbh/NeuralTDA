@@ -1603,12 +1603,12 @@ def dbLoadData(block_path):
     clusters = core.load_clusters(block_path)
     return (spikes, trials, clusters, fs)
 
-def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group=['Good']):
+def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, **kwargs):
 
     (spikes, trials, clusters, fs) = dbLoadData(block_path)
-    do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group)
+    do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group, **kwargs)
 
-def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group=['Good']):
+def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, cluster_group=['Good'], dtOverlap=0.0):
 
     block_path = os.path.abspath(block_path)
     # Create directories and filenames
@@ -1638,7 +1638,7 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, 
     # Bin the raw data
     TOPOLOGY_LOG.info('Binning data')
     build_population_embedding(spikes, trials, clusters, winsize, fs,
-                               cluster_group, segment_info, raw_binned_f)
+                               cluster_group, segment_info, raw_binned_f, dtOverlap)
 
     # Average binned raw data
     try:
