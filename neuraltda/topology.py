@@ -514,14 +514,18 @@ def calc_bettis_from_binned_data(binned_dataset, pfile, thresh):
     build_perseus_persistent_input(cell_groups, pfile)
     betti_file = run_perseus(pfile)
     bettis = []
-    with open(betti_file, 'r') as bf:
-        for bf_line in bf:
-            if len(bf_line) < 2:
-                continue
-            betti_data = bf_line.split()
-            filtration_time = int(betti_data[0])
-            betti_numbers = map(int, betti_data[1:])
-            bettis.append([filtration_time, betti_numbers])
+    try:
+        with open(betti_file, 'r') as bf:
+            for bf_line in bf:
+                if len(bf_line) < 2:
+                    continue
+                betti_data = bf_line.split()
+                filtration_time = int(betti_data[0])
+                betti_numbers = map(int, betti_data[1:])
+                bettis.append([filtration_time, betti_numbers])
+    except:
+        bettis.append([-1, [-1]])
+        TOPOLOGY_LOG.warn('Perseus returned invalid betti file')
     return bettis
 
 #######################################
