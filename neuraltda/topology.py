@@ -658,23 +658,22 @@ def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
             gen_seg = [gen_seg_start, gen_seg_end]
             win_size_samples = int(np.round(win_size/1000. * fs))
             overlap_samples = int(np.round(dtOverlap/1000. * fs))
-            gen_windows = create_subwindows(gen_segment, win_size_samples, overlap_samples)
+            gen_windows = create_subwindows(gen_seg, win_size_samples, overlap_samples)
             nwins = len(gen_windows)
 
             # Create Data set
             poptens_init = np.zeros((nclus, nwins, nreps))
             poptens_dset = stimgrp.create_dataset('pop_tens', data=poptens_init)
-            trialgrp.create_dataset('clusters', data=clusters_list)
-            trialgrp.create_dataset('windows', data=np.array(windows))
-            popvtens_dset.attrs['fs'] = fs
+            stimgrp.create_dataset('clusters', data=clusters_list)
+            stimgrp.create_dataset('windows', data=np.array(gen_windows))
+            poptens_dset.attrs['fs'] = fs
             poptens_dset.attrs['win_size'] = win_size
 
             for rep in range(nreps):
-                trialgrp = stimgrp.create_group(str(rep))
                 trial_start = stim_trials.iloc[rep]['time_samples']
                 trial_start_t = float(trial_start)/fs
-                for win_ind, win in enumerate(windows):
-                    win2 = [win[0] + trial_start_t, win[1]+trial_start_t]
+                for win_ind, win in enumerate(gen_windows):
+                    win2 = [win[0] + trial_start, win[1]+trial_start]
                     spikes_in_win = get_spikes_in_window(spikes, win2)
                     clus_that_spiked = spikes_in_win['cluster'].unique()
                     if len(clus_that_spiked) > 0:
