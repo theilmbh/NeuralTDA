@@ -621,13 +621,9 @@ def calcCIBettisTensor(analysis_id, binned_data_file,
         bpd_withstim = dict()
         for stim in stims:
             TOPOLOGY_LOG.info('Calculating bettis for stim: {}'.format(stim))
-            h_stem = stim + '-'
             stim_trials = bdf[stim]
-            nreps = len(stim_trials)
             TOPOLOGY_LOG.info('Number of repetitions \
                                 for stim {}: {}'.format(stim, str(nreps)))
-            stim_bettis = np.zeros([nreps, maxbetti])
-
             ###  Prepare destination file paths
             betti_savefile = analysis_id \
                              + '-stim-{}'.format(stim) \
@@ -655,6 +651,7 @@ def calcCIBettisTensor(analysis_id, binned_data_file,
         with open(bpdws_sfn, 'w') as bpdwsfile:
                 pickle.dump(bpd_withstim, bpdwsfile)
         TOPOLOGY_LOG.info('Completed All Stimuli')
+        return bpdws_sfn
 
 def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh):
 
@@ -672,7 +669,7 @@ def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh):
     return bettidict
 
 def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
-                               cluster_group, segment_info, popvec_fname, dtOverlap=0.0):
+                                      cluster_group, segment_info, popvec_fname, dtOverlap=0.0):
     '''
     Embeds binned population activity into R^n
 
@@ -747,3 +744,64 @@ def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
                             nsp_clu = float(len(spikes_in_win[clu_msk]))
                             win_s = win_size/1000.
                             poptens_dset[pvclu_msk, win_ind, rep] = nsp_clu/win_s
+
+def dbLoadData(block_path):
+
+    # Load Raw Data
+    spikes = core.load_spikes(block_path)
+    trials = events.load_trials(block_path)
+    fs = core.load_fs(block_path)
+    clusters = core.load_clusters(block_path)
+    return (spikes, trials, clusters, fs)
+
+def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, **kwargs):
+
+    (spikes, trials, clusters, fs) = dbLoadData(block_path)
+    bfdict = do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, **kwargs)
+    return bfdict
+
+def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
+               ncellsperm, nperms, nshuffs, cluster_group=['Good'], dtOverlap=0.0):
+
+    block_path = os.path.abspath(block_path)
+    # Create directories and filenames
+    analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+    raw_binned_fname = analysis_id + '-{}-{}.binned'.format(winsize, dtOverlap)
+    analysis_id_forward = analysis_id + '-{}-{}'.format(winsize, dtOverlap) 
+    
+    binned_folder = os.path.join(block_path, 'binned_data/{}/'.format(analysis_id))
+    if not os.path.exists(binned_folder):
+        os.makedirs(binned_folder)
+
+    # Bin the raw data
+    raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
+    TOPOLOGY_LOG.info('Binning data')
+    build_population_embedding_tensor(spikes, trials, clusters, winsize, fs,
+                                      cluster_group, segment_info, raw_binned_f, dtOverlap)
+
+    bfdict = {'raw': binned_folder, 'analysis_id': analysis_id_forward}
+    return bfdict 
+
+def dag_topology(block_path, thresh, bfdict, simplexWinSize=0):
+
+    aid = bfidct['analysis_id']
+    bpt = os.path.join(block_path, 'topology/')
+    analysis_dict = dict()
+
+    if 'raw' in bfdict.keys():
+        rawFolder = bfdict['raw']
+        tpid_raw = aid +'-{}-raw'.format(thresh)
+        tpf_raw = os.path.join(bpt, tpid_raw)
+        rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
+        for rdf in rawDataFiles:
+            TOPOLOGY_LOG.info('Computing topology for: %s' % rdf)
+            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh)
+        with open(resf, 'r') as f:
+            res = pickle.load(f)
+            analysis_dict['raw'] = res
+
+    master_fname = analysis_id+'-{}-masterResults.pkl'.format(thresh)
+    master_f = os.path.join(block_path, master_fname)
+    with open(master_f, 'w') as f:
+            pickle.dump(analysis_dict, f)
+    return master_f
