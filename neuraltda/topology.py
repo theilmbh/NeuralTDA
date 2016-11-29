@@ -607,6 +607,84 @@ def build_population_embedding(spikes, trials, clusters, win_size, fs,
                             win_s = win_size/1000.
                             popvec_dset[pvclu_msk, win_ind] = nsp_clu/win_s
 
+def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
+                               cluster_group, segment_info, popvec_fname, dtOverlap=0.0):
+    '''
+    Embeds binned population activity into R^n
+
+    Parameters
+    ------
+    spikes : pandas dataframe
+        Spike frame from ephys.core
+    trials : pandas dataframe
+        Trials dataframe from ephys.trials
+    clusters : Pandas DataFrame
+        Clusters frame from ephys.core
+    win_size : float
+        Window size in milliseconds
+    fs : float
+        Sampling rate in Hz
+    cluster_group : list
+        List containing cluster sort quality strings to include in embedding
+        Possible entries include 'Good', 'MUA'
+    segment_info : dict
+        Dictionary containing parameters for segment generation
+    popvec_fname : str
+        File in which to store the embedding
+    '''
+    with h5py.File(popvec_fname, "w") as popvec_f:
+
+        popvec_f.attrs['win_size'] = win_size
+        popvec_f.attrs['fs'] = fs
+        if cluster_group != None:
+            mask = np.ones(len(clusters.index)) < 0
+            for grp in cluster_group:
+                mask = np.logical_or(mask, clusters['quality'] == grp)
+        clusters_to_use = clusters[mask]
+        clusters_list = clusters_to_use['cluster'].unique()
+        spikes = spikes[spikes['cluster'].isin(clusters_list)]
+        nclus = len(clusters_to_use.index)
+        popvec_f.attrs['nclus'] = nclus
+        stims = trials['stimulus'].unique()
+
+        for stim in stims:
+            stimgrp = popvec_f.create_group(stim)
+            stim_trials = trials[trials['stimulus'] == stim]
+            nreps = len(stim_trials.index)
+
+            # Compute generic windows for this stimulus
+            trial_len = (stim_trials['stimulus_end'] - stim_trials['time_samples']).unique()[0]
+            gen_seg_start, gen_seg_end = get_segment([0, trial_len], fs, segment_info)
+            gen_seg = [gen_seg_start, gen_seg_end]
+            win_size_samples = int(np.round(win_size/1000. * fs))
+            overlap_samples = int(np.round(dtOverlap/1000. * fs))
+            gen_windows = create_subwindows(gen_segment, win_size_samples, overlap_samples)
+            nwins = len(gen_windows)
+
+            # Create Data set
+            poptens_init = np.zeros((nclus, nwins, nreps))
+            poptens_dset = stimgrp.create_dataset('pop_tens', data=poptens_init)
+            trialgrp.create_dataset('clusters', data=clusters_list)
+            trialgrp.create_dataset('windows', data=np.array(windows))
+            popvtens_dset.attrs['fs'] = fs
+            poptens_dset.attrs['win_size'] = win_size
+
+            for rep in range(nreps):
+                trialgrp = stimgrp.create_group(str(rep))
+                trial_start = stim_trials.iloc[rep]['time_samples']
+                trial_start_t = float(trial_start)/fs
+                for win_ind, win in enumerate(windows):
+                    win2 = [win[0] + trial_start_t, win[1]+trial_start_t]
+                    spikes_in_win = get_spikes_in_window(spikes, win2)
+                    clus_that_spiked = spikes_in_win['cluster'].unique()
+                    if len(clus_that_spiked) > 0:
+                        for clu in clus_that_spiked:
+                            clu_msk = (spikes_in_win['cluster'] == clu)
+                            pvclu_msk = (clusters_list == clu)
+                            nsp_clu = float(len(spikes_in_win[clu_msk]))
+                            win_s = win_size/1000.
+                            poptens_dset[pvclu_msk, win_ind, rep] = nsp_clu/win_s
+
 def prep_and_bin_data(block_path, bin_def_file, bin_id, nshuffs):
     '''
     Loads dataset using ephys and bins it
