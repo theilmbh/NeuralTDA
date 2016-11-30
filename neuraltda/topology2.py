@@ -1,3 +1,10 @@
+################################################################################
+### topology2.py                                                            ####
+### Computing Curto-Itskov topological features from neural population data ####
+### Version 2.0: 30 November 2016                                           ####
+### Brad Theilman                                                           ####
+################################################################################
+
 import os
 import sys
 import subprocess
@@ -218,10 +225,6 @@ def get_segment(trial_bounds, fs, segment_info):
                   + np.floor(segment_info['segend']*(fs/1000.))
     return [seg_start, seg_end]
 
-#############################################
-###### Binned Data Auxiliary Functions ######
-#############################################
-
 def calcCellGroups(data_mat, clusters, thresh):
     '''
     Given a matrix of firing rates, generate time sequence of cell groups
@@ -265,9 +268,9 @@ def calcBettis(data_mat, clusters, pfile, thresh):
         TOPOLOGY_LOG.warn('Perseus returned invalid betti file')
     return bettis
 
-#######################################
-###### Current Binning Functions ######
-#######################################
+############################################
+###### Topology Computation Functions ######
+############################################
 
 def calcCIBettisTensor(analysis_id, binned_data_file,
                        block_path, thresh):
@@ -357,6 +360,10 @@ def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh):
         bettis = calcBettis(data_mat, clusters, pfile, thresh)
         bettidict[str(trial)] = {'bettis': bettis}
     return bettidict
+
+###############################
+###### Binning Functions ######
+###############################
 
 def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
                                       cluster_group, segment_info, popvec_fname, dtOverlap=0.0):
@@ -472,6 +479,57 @@ def build_permuted_data_tensor(data_tens, clusters, ncellsperm, nperms):
         ptens[:, :, :, perm] = data_tens[permt, :, :]
         clumapmat[:, perm] = clusters[permt]
     return (ptens, clumapmat)
+
+def buildPermutedBinnedFile(bf, pdf, ncp, nperms):
+    '''
+    Builds a permuted Binned data file 
+
+    Parameters
+    ----------
+    bf : str 
+        Path to original binned data file
+    pdf : str 
+        path to new permuted data file 
+    ncp : int 
+        number of cells per permutation 
+    nperms : int  
+        number of permutations 
+    '''
+    with h5py.File(bf, "r") as poptens_f:
+        winsize = poptens_f.attrs['win_size']
+        fs = poptens_f.attrs['fs']
+        nclus = poptens_f.attrs['nclus']
+        stims = poptens_f.keys()
+        with h5py.File(pdf, "w") as perm_f:
+            perm_f.attrs['win_size'] = win_size
+            perm_f.attrs['fs'] = fs
+            perm_f.attrs['nclus'] = nclus
+            for stim in stims:
+                perm_stimgrp = perm_f.create_group(stim)
+                data_tens = np.array(poptens_f[stim]['pop_tens'])
+                clusters = np.array(poptens_f[stim]['clusters'])
+                windows = np.array(poptens_f[stim]['windows'])
+                (ptens, clumapmat) = build_permuted_data_tensor(data_tens, clusters, ncp, nperms)
+                perm_stimgrp.create_dataset('pop_tens', data=ptens)
+                perm_stimgrp.create_dataset('windows', data=windows)
+                perm_stimgrp.create_dataset('clusters', data=clusters)
+                perm_stimgrp.create_dataset('clumapmat', data=clumapmat)
+
+def permuteBinned(binned_file, ncellsperm, nperms):
+    ''' Takes a path to a binned file 
+        and produces a permuted version
+    '''
+    binned_file = os.path.abspath(binned_file)
+    permuted_binned_folder = os.path.join(binned_file, 'permuted_binned')
+    if not os.path.exists(permuted_binned_folder):
+        os.makedirs(permuted_binned_folder)
+    bdf_fold, bdf_full_name = os.path.split(binned_file)
+    bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
+    pbd_name = bdf_name + '-permuted.binned'
+    permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
+
+    buildPermutedBinnedFile(binned_file, permuted_data_file, ncellsperm, nperms)
+
 
 ##############################
 ###### Computation Dags ######
