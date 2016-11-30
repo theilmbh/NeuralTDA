@@ -498,7 +498,7 @@ def calcCellGroups(data_mat, clusters, thresh):
     Ncells, nwin = data_mat.shape
     mean_fr = np.mean(data_mat, axis=1, keepdims=True)
     mean_frs = np.tile(mean_fr, (1, nwin))
-    above_thresh = np.greater(acty, thresh*mean_frs)
+    above_thresh = np.greater(data_mat, thresh*mean_frs)
     for win in range(nwin):
         clus_in_group = clusters[above_thresh[:, win]]
         cell_groups.append([win, clus_in_group])
@@ -557,7 +557,7 @@ def calcBettis(data_mat, clusters, pfile, thresh):
     '''
     cell_groups = calcCellGroups(data_mat, clusters, thresh)
     build_perseus_persistent_input(cell_groups, pfile)
-    bf = run_perseus(pfile)
+    betti_file = run_perseus(pfile)
     bettis = []
     try:
         with open(betti_file, 'r') as bf:
@@ -622,8 +622,6 @@ def calcCIBettisTensor(analysis_id, binned_data_file,
         for stim in stims:
             TOPOLOGY_LOG.info('Calculating bettis for stim: {}'.format(stim))
             stim_trials = bdf[stim]
-            TOPOLOGY_LOG.info('Number of repetitions \
-                                for stim {}: {}'.format(stim, str(nreps)))
             ###  Prepare destination file paths
             betti_savefile = analysis_id \
                              + '-stim-{}'.format(stim) \
@@ -639,6 +637,7 @@ def calcCIBettisTensor(analysis_id, binned_data_file,
             bpd = dict()
             pfile_stem = analysis_id \
                          + '-stim-{}'.format(stim)
+            pfile_stem = os.path.join(analysis_path, pfile_stem)
             ### Compute Bettis
             bpd = do_compute_betti(stim_trials,
                                     pfile_stem,
@@ -784,7 +783,7 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
 
 def dag_topology(block_path, thresh, bfdict, simplexWinSize=0):
 
-    aid = bfidct['analysis_id']
+    aid = bfdict['analysis_id']
     bpt = os.path.join(block_path, 'topology/')
     analysis_dict = dict()
 
@@ -796,11 +795,11 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0):
         for rdf in rawDataFiles:
             TOPOLOGY_LOG.info('Computing topology for: %s' % rdf)
             resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh)
-        with open(resf, 'r') as f:
+        with open(resF, 'r') as f:
             res = pickle.load(f)
             analysis_dict['raw'] = res
 
-    master_fname = analysis_id+'-{}-masterResults.pkl'.format(thresh)
+    master_fname = aid+'-{}-masterResults.pkl'.format(thresh)
     master_f = os.path.join(block_path, master_fname)
     with open(master_f, 'w') as f:
             pickle.dump(analysis_dict, f)
