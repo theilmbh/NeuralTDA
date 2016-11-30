@@ -435,6 +435,44 @@ def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
                             win_s = win_size/1000.
                             poptens_dset[pvclu_msk, win_ind, rep] = nsp_clu/win_s
 
+def build_permuted_data_tensor(data_tens, clusters, ncellsperm, nperms):
+    ''' Builds a permuted data tensor 
+
+    Parameters
+    ----------
+    data_tens : numpy array 
+        NCells x nWin x nTrial array 
+    clusters : numpy array 
+        nCells x 1, giving cellID 
+        for corresponding row in data_tens
+    ncellsperm : int 
+        number of cells in a permutation
+    nperms : int 
+        number of permutations 
+
+    Returns
+    -------
+    ptens : numpy array 
+        permuted data tensor
+        nCellsPerm x nWin x nTrial x nPerms 
+    clumapmat : numpy array 
+        Cluster mapping- cluster id of each row in ptens 
+        nCellsPerm x nPerms 
+    '''
+    nCells, nWin, nTrial = data_tens.shape
+    ptens = np.zeros((ncellsperm, nWin, nTrial, nperms))
+    clumapmat = np.zeros((ncellsperm, nperms))
+
+    for perm in range(nperms):
+        permt = np.random.permutation(nCells)
+        if nCells >= ncellsperm:
+            permt = permt[0:ncellsperm].tolist()
+        else:
+            permt = permt.tolist()
+        ptens[:, :, :, perm] = data_tens[permt, :, :]
+        clumapmat[:, perm] = clusters[permt]
+    return (ptens, clumapmat)
+
 ##############################
 ###### Computation Dags ######
 ##############################
