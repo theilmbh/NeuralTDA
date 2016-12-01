@@ -361,6 +361,37 @@ def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh):
         bettidict[str(trial)] = {'bettis': bettis}
     return bettidict
 
+def do_compute_betti_multilevel(stim_trials, pfile_stem, analysis_path, thresh):
+
+    assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
+    data_tensor = np.array(stim_trials['pop_tens'])
+    clusters = np.array(stim_trials['clusters'])
+    dts = data_tensor.shape
+    levels = (dts)[2:] # First two axes are cells, windows. 
+    assert len(levels) <= 2, 'Cant handle more than two levels'
+    nlen = np.product(dts[2:])
+    reshaped_data = np.reshape(data_tensor, (dts[0], dts[1], nlen))
+    bettidict = {}
+    for trial in range(nlen):
+        ids = lin2inds(trial)
+        pfile = pfile_stem + ''.join(['-lev%d' % s for s in ids]) + '-simplex.txt'
+        data_mat = reshaped_data[:, :, trial]
+        bettis = calcBettis(data_mat, clusters, pfile, thresh)
+        bettidict[str(trial)] = {'bettis': bettis}
+    return bettidict
+
+def lin2ind(shp, t):
+
+    inds = []
+    l = t
+    for k in range(len(shp)-1):
+        a = int(np.product(shp[(1+k):]))
+        w = int(l)/a
+        l = np.mod(t, a)
+        inds.append(w)
+    inds.append(l)
+    return inds
+
 ###############################
 ###### Binning Functions ######
 ###############################
@@ -501,7 +532,7 @@ def buildPermutedBinnedFile(bf, pdf, ncp, nperms):
         nclus = poptens_f.attrs['nclus']
         stims = poptens_f.keys()
         with h5py.File(pdf, "w") as perm_f:
-            perm_f.attrs['win_size'] = win_size
+            perm_f.attrs['win_size'] = winsize
             perm_f.attrs['fs'] = fs
             perm_f.attrs['nclus'] = nclus
             for stim in stims:
@@ -520,14 +551,13 @@ def permuteBinned(binned_file, ncellsperm, nperms):
         and produces a permuted version
     '''
     binned_file = os.path.abspath(binned_file)
-    permuted_binned_folder = os.path.join(binned_file, 'permuted_binned')
-    if not os.path.exists(permuted_binned_folder):
-        os.makedirs(permuted_binned_folder)
     bdf_fold, bdf_full_name = os.path.split(binned_file)
     bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
+    permuted_binned_folder = os.path.join(bdf_fold, 'permuted_binned')
+    if not os.path.exists(permuted_binned_folder):
+        os.makedirs(permuted_binned_folder)
     pbd_name = bdf_name + '-permuted.binned'
     permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
-
     buildPermutedBinnedFile(binned_file, permuted_data_file, ncellsperm, nperms)
 
 
