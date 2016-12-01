@@ -368,16 +368,15 @@ def do_compute_betti_multilevel(stim_trials, pfile_stem, analysis_path, thresh):
     clusters = np.array(stim_trials['clusters'])
     dts = data_tensor.shape
     levels = (dts)[2:] # First two axes are cells, windows. 
-    assert len(levels) <= 2, 'Cant handle more than two levels'
     nlen = np.product(dts[2:])
     reshaped_data = np.reshape(data_tensor, (dts[0], dts[1], nlen))
     bettidict = {}
     for trial in range(nlen):
-        ids = lin2inds(trial)
+        ids = lin2inds(levels, trial) # ids is [trial, perm, perm, perm, ...]
         pfile = pfile_stem + ''.join(['-lev%d' % s for s in ids]) + '-simplex.txt'
         data_mat = reshaped_data[:, :, trial]
         bettis = calcBettis(data_mat, clusters, pfile, thresh)
-        bettidict[str(trial)] = {'bettis': bettis}
+        bettidict[str(trial)] = {'bettis': bettis, 'indices': ids}
     return bettidict
 
 def lin2ind(shp, t):
