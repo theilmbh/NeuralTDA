@@ -391,17 +391,94 @@ def lin2ind(shp, t):
     inds.append(l)
     return inds
 
-def computeTopologyAcrossAllTrials(data_tensor, clusters, pfile, thresh):
+def computeTopologyAcrossAllTrials(data_tensor, clusters, pfile_stem, thresh):
     ''' Combine all trials into one trial 
         Compute total topology
     '''
     (ncells, nwin, ntrials) = data_tensor.shape
     rs = nwin*ntrials
+    pfile = pfile_stem + '-at-simplex.txt'
     data_mat = np.reshape(data_tensor, (ncells, rs))
     # Note persistence is meaningless here... 
     pbettis = calcBettis(data_mat, clusters, pfile, thresh)
     bettis = pbettis[-1] # need last one
-    return bettis
+    bpd = {'bettis': bettis}
+    return bpd
+
+def calcCIBettisAcrossAllTrials(analysis_id, binned_data_file,
+                       block_path, thresh):
+    '''
+    Given a binned data file, compute the betti numbers of the Curto-Itskov
+    Collapses across all trials for a given stimulus
+
+    Parameters
+    ------
+    analysis_id : str
+        A string to identify this particular analysis run
+    binned_data_file : str
+        Path to the binned data file on which to compute topology
+    block_path : str
+        Path to the folder containing the data for the block
+    thresh : float
+        Threshold to use when identifying cell groups
+    '''
+    TOPOLOGY_LOG.info('Starting calcCIBettisTensor')
+    TOPOLOGY_LOG.info('analysis_id: {}'.format(analysis_id))
+    bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
+    analysis_path = os.path.join(block_path,
+                                 'topology/{}/'.format(analysis_id))
+    if not os.path.exists(analysis_path):
+        os.makedirs(analysis_path)
+
+    TOPOLOGY_LOG.info('bdf_name: {}'.format(bdf_name))
+    TOPOLOGY_LOG.info('analysis_path: {}'.format(analysis_path))
+
+    kwikfile = core.find_kwik(block_path)
+    kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
+
+    TOPOLOGY_LOG.info('Beginning Curto+Itskov \
+                        Topological Analysis of: {}'.format(kwikfile))
+    TOPOLOGY_LOG.info('Theshold: {}'.format(thresh))
+
+    with h5py.File(binned_data_file, 'r') as bdf:
+        stims = bdf.keys()
+        nstims = len(stims)
+        bpd_withstim = dict()
+        for stim in stims:
+            TOPOLOGY_LOG.info('Calculating bettis for stim: {}'.format(stim))
+            stim_trials = bdf[stim]
+            ###  Prepare destination file paths
+            betti_savefile = analysis_id \
+                             + '-stim-{}'.format(stim) \
+                             + '-betti.csv'
+            betti_savefile = os.path.join(analysis_path, betti_savefile)
+            TOPOLOGY_LOG.info('Betti savefile: {}'.format(betti_savefile))
+            bps = analysis_id \
+                  + '-stim-{}'.format(stim) \
+                  + '-ATbettiPersistence.pkl'
+            betti_persistence_savefile = os.path.join(analysis_path, bps)
+            TOPOLOGY_LOG.info('Betti persistence \
+                               savefile: {}'.format(betti_persistence_savefile))
+            bpd = dict()
+            pfile_stem = analysis_id \
+                         + '-stim-{}'.format(stim)
+            pfile_stem = os.path.join(analysis_path, pfile_stem)
+            ### Compute Bettis
+            data_tens = np.array(stim_trials['pop_tens'])
+            clusters = np.array(stim_trials['clusters'])
+            bpd = computeTopologyAcrossAllTrials(data_tens,
+                                   	         clusters,
+                                                 pfile_stem,
+                                                 thresh)
+            bpd_withstim[stim] = bpd
+            with open(betti_persistence_savefile, 'w') as bpfile:
+                pickle.dump(bpd, bpfile)
+        bpdws_sfn = os.path.join(analysis_path, analysis_id+'-AATrial-bettiResultsDict.pkl')
+        with open(bpdws_sfn, 'w') as bpdwsfile:
+                pickle.dump(bpd_withstim, bpdwsfile)
+        TOPOLOGY_LOG.info('Completed All Stimuli')
+        return bpdws_sfn
+
 
 ###############################
 ###### Binning Functions ######
@@ -622,6 +699,7 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0):
     aid = bfdict['analysis_id']
     bpt = os.path.join(block_path, 'topology/')
     analysis_dict = dict()
+
     if 'raw' in bfdict.keys():
         rawFolder = bfdict['raw']
         tpid_raw = aid +'-{}-raw'.format(thresh)
@@ -633,6 +711,18 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0):
         with open(resF, 'r') as f:
             res = pickle.load(f)
             analysis_dict['raw'] = res
+
+    if 'alltrials' in bfdict.keys():
+        atFolder = bfdict['alltrials']
+        tpid_at = aid + '-{}-at'.format(thresh)
+        tpf_raw = os.path.join(bpt, tpid_at)
+        atDataFiles = glob.glob(os.path.join(atFolder, '*.binned'))
+        for atdf in atDataFiles:
+            TOPOLOGY_LOG.info('Computing topology for %s' % atdf)
+            resF = calcCIBettisAcrossAllTrials(tpid_at, atdf, block_path, thresh)
+        with open(resF, 'r') as f:
+            res = pickle.load(f)
+            analysis_dict['at'] = res 
 
     master_fname = aid+'-{}-masterResults.pkl'.format(thresh)
     master_f = os.path.join(block_path, master_fname)
