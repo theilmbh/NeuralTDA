@@ -391,6 +391,18 @@ def lin2ind(shp, t):
     inds.append(l)
     return inds
 
+def computeTopologyAcrossAllTrials(data_tensor, clusters, pfile, thresh):
+    ''' Combine all trials into one trial 
+        Compute total topology
+    '''
+    (ncells, nwin, ntrials) = data_tensor.shape
+    rs = nwin*ntrials
+    data_mat = np.reshape(data_tensor, (ncells, rs))
+    # Note persistence is meaningless here... 
+    pbettis = calcBettis(data_mat, clusters, pfile, thresh)
+    bettis = pbettis[-1] # need last one
+    return bettis
+
 ###############################
 ###### Binning Functions ######
 ###############################
@@ -558,6 +570,7 @@ def permuteBinned(binned_file, ncellsperm, nperms):
     pbd_name = bdf_name + '-permuted.binned'
     permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
     buildPermutedBinnedFile(binned_file, permuted_data_file, ncellsperm, nperms)
+    return permuted_binned_folder
 
 
 ##############################
@@ -598,7 +611,10 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
     build_population_embedding_tensor(spikes, trials, clusters, winsize, fs,
                                       cluster_group, segment_info, raw_binned_f, dtOverlap)
 
-    bfdict = {'raw': binned_folder, 'analysis_id': analysis_id_forward}
+    # Permute the raw data
+    pbfolder = permuteBinned(raw_binned_f, ncellsperm, nperms)
+
+    bfdict = {'raw': binned_folder, 'permuted': pbfolder, 'analysis_id': analysis_id_forward}
     return bfdict 
 
 def dag_topology(block_path, thresh, bfdict, simplexWinSize=0):
