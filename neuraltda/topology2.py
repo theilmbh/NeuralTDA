@@ -677,7 +677,8 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
     analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
     raw_binned_fname = analysis_id + '-{}-{}.binned'.format(winsize, dtOverlap)
     analysis_id_forward = analysis_id + '-{}-{}'.format(winsize, dtOverlap) 
-    
+    bfdict = {'analysis_id': analysis_id_forward}
+ 
     binned_folder = os.path.join(block_path, 'binned_data/{}/'.format(analysis_id))
     if not os.path.exists(binned_folder):
         os.makedirs(binned_folder)
@@ -687,11 +688,12 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
     TOPOLOGY_LOG.info('Binning data')
     build_population_embedding_tensor(spikes, trials, clusters, winsize, fs,
                                       cluster_group, segment_info, raw_binned_f, dtOverlap)
-
+    bfdict['raw'] = binned_folder
     # Permute the raw data
-    pbfolder = permuteBinned(raw_binned_f, ncellsperm, nperms)
+    if ncellsperm > 0:
+        pbfolder = permuteBinned(raw_binned_f, ncellsperm, nperms)
+        bfdict['permuted'] = pbfolder
 
-    bfdict = {'raw': binned_folder, 'permuted': pbfolder, 'analysis_id': analysis_id_forward}
     return bfdict 
 
 def dag_topology(block_path, thresh, bfdict, simplexWinSize=0):
