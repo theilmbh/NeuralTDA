@@ -1,5 +1,8 @@
 import neuraltda.topology2 as tp2
 import os
+import glob
+import pickle
+
 
 blockPath='./'
 winSize = 25.0
@@ -24,20 +27,19 @@ for thresh in threshs:
             tp2.setup_logging('B%d_%s_%fms_%fx_%fover' % (birdid, site, winSize, thresh, tover))
             bfdict = tp2.dag_bin(blockPath, winSize, segmentInfo, ncellsperm, nperms, nshuff, dtOverlap=tover)
             aid = bfdict['analysis_id']
-            bpt = os.path.join(block_path, 'topology/')
+            bpt = os.path.join(blockPath, 'topology/')
             analysis_dict = dict()
             rawFolder = bfdict['raw']
             tpid_raw = aid +'-{}-raw'.format(thresh)
             tpf_raw = os.path.join(bpt, tpid_raw)
             rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
             for rdf in rawDataFiles:
-                TOPOLOGY_LOG.info('Computing topology for: %s' % rdf)
-                resF = tp2.computeTotalTopology(tpid_raw, rdf, block_path, thresh)
+                resF = tp2.computeTotalTopology(tpid_raw, rdf, blockPath, thresh)
             with open(resF, 'r') as f:
                 res = pickle.load(f)
                 analysis_dict['raw'] = res
 
-            master_fname = aid+'-{}-masterResults.pkl'.format(thresh)
-            master_f = os.path.join(block_path, master_fname)
+            master_fname = aid+'-{}-totalTopology.pkl'.format(thresh)
+            master_f = os.path.join(blockPath, master_fname)
             with open(master_f, 'w') as f:
                 pickle.dump(analysis_dict, f)
