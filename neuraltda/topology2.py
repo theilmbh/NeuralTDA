@@ -391,7 +391,7 @@ def lin2ind(shp, t):
     inds.append(l)
     return inds
 
-def computeTopologyAcrossAllTrials(data_tensor, clusters, pfile_stem, thresh):
+def computeTopologyAcrossAllTrials(data_tensor, clusters, pfile_stem, thresh, rDup=False):
     ''' Combine all trials into one trial 
         Compute total topology
     '''
@@ -399,6 +399,13 @@ def computeTopologyAcrossAllTrials(data_tensor, clusters, pfile_stem, thresh):
     rs = nwin*ntrials
     pfile = pfile_stem + '-at-simplex.txt'
     data_mat = np.reshape(data_tensor, (ncells, rs))
+    if rDup:
+        lexInd = np.lexsort(data_mat)
+        data_mat = data_mat[:, lexInd]
+        diff = np.diff(data_mat, axis=1)
+        ui = np.ones(len(data_mat.T), 'bool')
+        ui[1:] = (diff != 0).any(axis=0)
+        data_mat = data_mat[:, ui]
     # Note persistence is meaningless here... 
     pbettis = calcBettis(data_mat, clusters, pfile, thresh)
     bettis = pbettis[-1] # need last one
@@ -540,7 +547,8 @@ def computeTotalTopology(analysis_id, binned_data_file,
         stimtens = np.zeros((ncell, nwin, nstims))
         for ind, stim_mat in enumerate(stim_mat_list):
             stimtens[:, :, ind] = stim_mat 
-        bpd = computeTopologyAcrossAllTrials(stimtens, clusters, pfile_stem, thresh)
+
+        bpd = computeTopologyAcrossAllTrials(stimtens, clusters, pfile_stem, thresh, rDup=True)
 
         bpdws_sfn = os.path.join(analysis_path, analysis_id+'-TotalTopology-bettiResultsDict.pkl')
         with open(bpdws_sfn, 'w') as bpdwsfile:
