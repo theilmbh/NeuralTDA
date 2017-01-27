@@ -486,6 +486,13 @@ def calcCIBettisAcrossAllTrials(analysis_id, binned_data_file,
         TOPOLOGY_LOG.info('Completed All Stimuli')
         return bpdws_sfn
 
+def concatenateTrials(data_tensor):
+    
+    (ncells, nwin, ntrials) = data_tensor.shape
+    rs = nwin*ntrials
+    data_mat = np.reshape(data_tensor, (ncells, rs)) 
+    return data_mat   
+
 def computeTotalTopology(analysis_id, binned_data_file,
                          block_path, thresh):
     '''
