@@ -1,4 +1,5 @@
 import neuraltda.topology2 as tp2
+import os
 
 blockPath='./'
 winSize = 25.0
@@ -20,7 +21,7 @@ for thresh in threshs:
         for pover in povers:
             tover = winSize*pover
             print((thresh, winSize, tover))
-            tp2.setup_logging('B%d_%s_%fms_%fx_%fover', (birdid, site, winSize, thresh, tover))
+            tp2.setup_logging('B%d_%s_%fms_%fx_%fover' % (birdid, site, winSize, thresh, tover))
             bfdict = tp2.dag_bin(blockPath, winSize, segmentInfo, ncellsperm, nperms, nshuff, dtOverlap=tover)
             aid = bfdict['analysis_id']
             bpt = os.path.join(block_path, 'topology/')

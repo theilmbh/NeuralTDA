@@ -502,9 +502,6 @@ def computeTotalTopology(analysis_id, binned_data_file,
 
     TOPOLOGY_LOG.info('bdf_name: {}'.format(bdf_name))
     TOPOLOGY_LOG.info('analysis_path: {}'.format(analysis_path))
-
-    TOPOLOGY_LOG.info('Beginning Curto+Itskov \
-                        Topological Analysis of: {}'.format(kwikfile))
     TOPOLOGY_LOG.info('Theshold: {}'.format(thresh))
 
     bpd = dict()
