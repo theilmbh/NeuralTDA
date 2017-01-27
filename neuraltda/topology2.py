@@ -479,6 +479,75 @@ def calcCIBettisAcrossAllTrials(analysis_id, binned_data_file,
         TOPOLOGY_LOG.info('Completed All Stimuli')
         return bpdws_sfn
 
+def computeTotalTopology(analysis_id, binned_data_file,
+                         block_path, thresh):
+    '''
+    Concatenates all trials across all stimuli and computes topology 
+    removes redundant cell group columns
+    '''
+    TOPOLOGY_LOG.info('Starting calcCIBettisTensor')
+    TOPOLOGY_LOG.info('analysis_id: {}'.format(analysis_id))
+    bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
+    analysis_path = os.path.join(block_path,
+                                 'topology/{}/'.format(analysis_id))
+    if not os.path.exists(analysis_path):
+        os.makedirs(analysis_path)
+
+    TOPOLOGY_LOG.info('bdf_name: {}'.format(bdf_name))
+    TOPOLOGY_LOG.info('analysis_path: {}'.format(analysis_path))
+
+    kwikfile = core.find_kwik(block_path)
+    kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
+
+    TOPOLOGY_LOG.info('Beginning Curto+Itskov \
+                        Topological Analysis of: {}'.format(kwikfile))
+    TOPOLOGY_LOG.info('Theshold: {}'.format(thresh))
+
+    ###  Prepare destination file paths
+    betti_savefile = analysis_id \
+                     + '-stim-{}'.format(stim) \
+                     + '-betti.csv'
+    betti_savefile = os.path.join(analysis_path, betti_savefile)
+    TOPOLOGY_LOG.info('Betti savefile: {}'.format(betti_savefile))
+    bps = analysis_id \
+          + '-stim-{}'.format(stim) \
+          + '-ATbettiPersistence.pkl'
+    betti_persistence_savefile = os.path.join(analysis_path, bps)
+    TOPOLOGY_LOG.info('Betti persistence \
+                       savefile: {}'.format(betti_persistence_savefile))
+    bpd = dict()
+    pfile_stem = analysis_id \
+                 + '-TotalTopology'
+    pfile_stem = os.path.join(analysis_path, pfile_stem)
+
+    with h5py.File(binned_data_file, 'r') as bdf:
+        stims = bdf.keys()
+        nstims = len(stims)
+        bpd_withstim = dict()
+        stim_mat_list = []
+        for stim in stims:
+            TOPOLOGY_LOG.info('Calculating bettis for stim: {}'.format(stim))
+            stim_trials = bdf[stim]
+
+
+            ### Compute Bettis
+            data_tens = np.array(stim_trials['pop_tens'])
+            clusters = np.array(stim_trials['clusters'])
+            stim_mat = concatenateTrials(data_tens)
+            stim_mat_list.append(stim_mat)
+
+        (ncell, nwin) = stim_mat_list[0].shape
+        stimtens = np.zeros((ncell, nwin, nstims))
+        for ind, stim_mat in enumerate(stim_mat_list):
+            stimtens[:, :, ind] = stim_mat 
+        bpd = computeTopologyAcrossAllTrials(stimtens, clusters, pfile_stem, thresh)
+
+        bpdws_sfn = os.path.join(analysis_path, analysis_id+'-TotalTopology-bettiResultsDict.pkl')
+        with open(bpdws_sfn, 'w') as bpdwsfile:
+                pickle.dump(bpd, bpdwsfile)
+        TOPOLOGY_LOG.info('Completed All Stimuli')
+        return bpdws_sfn
+
 
 ###############################
 ###### Binning Functions ######
