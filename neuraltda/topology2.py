@@ -492,7 +492,7 @@ def computeTotalTopology(analysis_id, binned_data_file,
     Concatenates all trials across all stimuli and computes topology 
     removes redundant cell group columns
     '''
-    TOPOLOGY_LOG.info('Starting calcCIBettisTensor')
+    TOPOLOGY_LOG.info('Starting computeTotalTopology')
     TOPOLOGY_LOG.info('analysis_id: {}'.format(analysis_id))
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path,
@@ -503,25 +503,10 @@ def computeTotalTopology(analysis_id, binned_data_file,
     TOPOLOGY_LOG.info('bdf_name: {}'.format(bdf_name))
     TOPOLOGY_LOG.info('analysis_path: {}'.format(analysis_path))
 
-    kwikfile = core.find_kwik(block_path)
-    kwikname, ext = os.path.splitext(os.path.basename(kwikfile))
-
     TOPOLOGY_LOG.info('Beginning Curto+Itskov \
                         Topological Analysis of: {}'.format(kwikfile))
     TOPOLOGY_LOG.info('Theshold: {}'.format(thresh))
 
-    ###  Prepare destination file paths
-    betti_savefile = analysis_id \
-                     + '-stim-{}'.format(stim) \
-                     + '-betti.csv'
-    betti_savefile = os.path.join(analysis_path, betti_savefile)
-    TOPOLOGY_LOG.info('Betti savefile: {}'.format(betti_savefile))
-    bps = analysis_id \
-          + '-stim-{}'.format(stim) \
-          + '-ATbettiPersistence.pkl'
-    betti_persistence_savefile = os.path.join(analysis_path, bps)
-    TOPOLOGY_LOG.info('Betti persistence \
-                       savefile: {}'.format(betti_persistence_savefile))
     bpd = dict()
     pfile_stem = analysis_id \
                  + '-TotalTopology'
