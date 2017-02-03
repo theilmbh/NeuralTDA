@@ -64,6 +64,18 @@ def boundaryOperatorMatrix(E):
             D[k-1] = mat
     return D
 
+def expandBasis(mat, oldK, newK, oldKm1, newKm1):
+    
+    basSource = sorted(union(oldK, newK))
+    basTarget = sorted(union(oldKm1, newKm1))
+    for ind, b in enumerate(basSource):
+        if b not in oldK:
+            mat = np.insert(mat, ind, 0, axis=1)
+    for ind, b in enumerate(basTarget):
+        if b not in oldKm1:
+            mat = np.insert(mat, ind, 0, axis=0)
+    return mat
+
 def laplacian(D, dim):
     
     Di = D[dim]
