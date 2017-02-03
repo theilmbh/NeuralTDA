@@ -104,3 +104,26 @@ def spectralEntropies(rhos):
         ent = -np.dot(v.T, ve)
         ents.append(ent)
     return ents
+
+def stimSpaceGraph(E, D):
+    ''' Takes a set of generators for the chain groups 
+    and produces generators for the graph of the space
+    '''
+    E[0] = []
+    Ec = [v for sl in E for v in sl]
+    adj = np.zeros((len(Ec), len(Ec)))
+    for k in range(1, len(E)-1):
+        mat = np.array(D[k])
+        lm1 = sum([len(E[i]) for i in range(k)])
+        lm2 = lm1 + len(E[k])
+        lm3 = sum([len(E[i]) for i in range(k+1)])
+        lm4 = lm2 + len(E[k+1])
+        adj[lm1:lm2, lm3:lm4] = np.abs(mat)
+    adj = (adj + adj.T)
+    return adj
+
+def graphLaplacian(adj):
+    
+    D = np.diag(np.sum(adj, axis=0))
+    L = D - adj
+    return L
