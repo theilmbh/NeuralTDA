@@ -28,8 +28,10 @@ def simplicialChainGroups(maxsimps, maxdim):
         L = primaryFaces(Q)
         k = len(Q)-1
         K = union(K, L)
-        E[k] = sorted(union(E[k], L))
-        E[k+1] = sorted(union(E[k+1], {Q}))
+        E[k] = union(E[k], L))
+        E[k+1] = union(E[k+1], {Q}))
+    for k in range(len(E)):
+        E[k] = sorted(E[k])
     return E
 
 def boundaryOperator(Q):
