@@ -6,6 +6,7 @@
 #########################################################################################
 
 import numpy as np 
+import scipy.linalg as spla
 
 def union(a, b):
     return list(set(a) | set(b))
@@ -83,3 +84,23 @@ def laplacian(D, dim):
     Di = D[dim]
     Di1 = D[dim+1]
     return np.dot(Di.T, Di) + np.dot(Di1, Di1.T)
+
+def densityMatrices(D, beta_list):
+
+    rhos = []
+    for ind in range(len(D)-3):
+        L = laplacian(D, ind)
+        M = spla.expm(beta_list[ind]*L)
+        M = M / np.trace(M)
+        rhos.append(M)
+    return rhos
+
+def spectralEntropies(rhos):
+
+    ents = []
+    for ind in range(len(rhos)):
+        v, w = np.linalg.eig(rhos[ind])
+        ve = np.log(v)
+        ent = -np.dot(v.T, ve)
+        ents.append(ent)
+    return ents
