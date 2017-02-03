@@ -351,7 +351,7 @@ def binnedtobinary(popvec, thresh):
     activeUnits = np.greater(popvec, meanthr).astype(int)
     return activeUnits
     
-def BinaryToMaxSimplex(binMat):
+def BinaryToMaxSimplex(binMat, rDup=False):
     ''' 
     Takes a binary matrix and computes maximal simplices according to CI 2008 
 
@@ -361,13 +361,21 @@ def BinaryToMaxSimplex(binMat):
         An Ncells x Nwindows array 
     '''
 
+
+    if rDup:
+        lexInd = np.lexsort(binMat)
+        binMat = binMat[:, lexInd]
+        diff = np.diff(binMat, axis=1)
+        ui = np.ones(len(binMat.T), 'bool')
+        ui[1:] = (diff != 0).any(axis=0)
+        binMat = binMat[:, ui]
     Ncells, Nwin = np.shape(binMat)
     MaxSimps = []
-    for cell in range(Ncells):
-        if binMat[cell, :].any():
-            verts = np.arange(Nwin)[binMat[cell, :] == 1]
+    for win in range(Nwin):
+        if binMat[:, win].any():
+            verts = np.arange(Ncells)[binMat[:, win] == 1]
             verts = np.sort(verts)
-            MaxSimps.append(list(verts))
+            MaxSimps.append(tuple(verts))
     return MaxSimps
         
 def ShuffleBinary(binMat):
