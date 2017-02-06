@@ -46,3 +46,34 @@ def computeChainGroups(blockPath, binned_datafile, thresh):
     scgGenFile = os.path.join(scgFold, scgGenFile)
     with open(scgGenFile, 'w') as scggf:
         pickle.dump(stimGenSave, scggf)
+
+def computeSimplicialLaplacians(scgf):
+    ''' Takes a path to a Simplicial Complex Generator File
+        Computes Laplacians 
+        Stores the matrcies
+    '''
+
+    # create output file
+    (scgFold, scgFile) = os.path.split(scgf)
+    (scgFileName, scgExt) = os.path.splitext(scgFile)
+    LapFile = scgFileName + '.laplacians'
+
+    # Load the SCGs 
+    with open(scgf, 'r') as scgff:
+        E = pickle.load(scgff)
+    LapDict = dict()
+
+    for stim in E.keys():
+        stimSCGs = E[stim]
+        trialDict = dict()
+        for trial in stimSCGs.keys():
+            print('Stim: {}  Trial: {}'.format(stim, trial))
+            scg = stimSCGs[trial]
+            trialDict[trial] = sc.laplacians(scg)
+        LapDict[stim] = trialDict
+
+    LapFile = os.path.join(scgFold, LapFile)
+    with open(LapFile, 'w') as lpf:
+        pickle.dump(LapDict, lpf)
+        
+

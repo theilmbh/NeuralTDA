@@ -86,6 +86,14 @@ def laplacian(D, dim):
     Di1 = D[dim+1]
     return np.dot(Di.T, Di) + np.dot(Di1, Di1.T)
 
+def laplacians(D):
+
+    l = len(D)
+    laps = []
+    for dim in range(1, len(D)-1):
+        laps.append(laplacian(D, dim))
+    return laps 
+
 def densityMatrices(D, beta_list):
 
     rhos = []
