@@ -127,3 +127,49 @@ def graphLaplacian(adj):
     D = np.diag(np.sum(adj, axis=0))
     L = D - adj
     return L
+
+def binnedtobinary(popvec, thresh):
+    '''
+    Takes a popvec array from a binned data file and converts to a binary matrix according to thresh
+
+    Parameters
+    ----------
+    popvec : array 
+        An NCells by Nwindow array containing firing rates in that window.  
+    Thresh : float 
+        Multiple of average firing rate to use for thresholding
+    '''
+
+    popvec = np.array(popvec)
+    Ncells, Nwin = np.shape(popvec)
+    means = popvec.sum(1)/Nwin
+    means = np.tile(means, (Nwin, 1)).T
+    meanthr = thresh*means
+    
+    activeUnits = np.greater(popvec, meanthr).astype(int)
+    return activeUnits
+
+def binarytomaxsimplex(binMat, rDup=False):
+    ''' 
+    Takes a binary matrix and computes maximal simplices according to CI 2008 
+
+    Parameters
+    ----------
+    binMat : numpy array 
+        An Ncells x Nwindows array 
+    '''
+    if rDup:
+        lexInd = np.lexsort(binMat)
+        binMat = binMat[:, lexInd]
+        diff = np.diff(binMat, axis=1)
+        ui = np.ones(len(binMat.T), 'bool')
+        ui[1:] = (diff != 0).any(axis=0)
+        binMat = binMat[:, ui]
+    Ncells, Nwin = np.shape(binMat)
+    MaxSimps = []
+    for win in range(Nwin):
+        if binMat[:, win].any():
+            verts = np.arange(Ncells)[binMat[:, win] == 1]
+            verts = np.sort(verts)
+            MaxSimps.append(tuple(verts))
+    return MaxSimps
