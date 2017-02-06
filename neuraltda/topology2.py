@@ -554,6 +554,7 @@ def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
                                       cluster_group, segment_info, popvec_fname, dtOverlap=0.0):
     '''
     Embeds binned population activity into R^n
+    resulting Tensor is Ncell x Nwin x NTrials
 
     Parameters
     ------

@@ -21,7 +21,8 @@ def primaryFaces(Q):
         L.append(tuple(sorted(s)))
     return L
 
-def simplicialChainGroups(maxsimps, maxdim):
+def simplicialChainGroups(maxsimps):
+    maxdim = max([len(s) for s in maxsimps])
     E=[[] for ind in range(maxdim+2)]
     K = list(maxsimps)
     while(len(K) > 0):
@@ -29,8 +30,8 @@ def simplicialChainGroups(maxsimps, maxdim):
         L = primaryFaces(Q)
         k = len(Q)-1
         K = union(K, L)
-        E[k] = union(E[k], L))
-        E[k+1] = union(E[k+1], {Q}))
+        E[k] = union(E[k], L)
+        E[k+1] = union(E[k+1], {Q})
     for k in range(len(E)):
         E[k] = sorted(E[k])
     return E
