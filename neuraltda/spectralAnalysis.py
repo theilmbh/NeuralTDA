@@ -1,3 +1,10 @@
+#########################################################################################
+## Routines for computing simplicla complex structures on neural data                  ##
+## Notes: .scg means "Simplicial Complex Generators"                                   ##
+##                                                                                     ##
+## Bradley Theilman 6 February 2017                                                    ##
+#########################################################################################
+
 import simpComp as sc
 import topology2 as tp2
 import h5py
