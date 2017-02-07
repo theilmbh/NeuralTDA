@@ -82,8 +82,8 @@ def expandBasis(mat, oldK, newK, oldKm1, newKm1):
 
 def laplacian(D, dim):
     
-    Di = D[dim]
-    Di1 = D[dim+1]
+    Di = np.array(D[dim])
+    Di1 = np.array(D[dim+1])
     return np.dot(Di.T, Di) + np.dot(Di1, Di1.T)
 
 def laplacians(D):

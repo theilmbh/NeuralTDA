@@ -14,6 +14,7 @@ import numpy as np
 
 def computeChainGroups(blockPath, binned_datafile, thresh):
     ''' Takes a binned data file and computes the chain group generators and saves them
+        Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg
     '''
 
     with h5py.File(binned_datafile, 'r') as bdf:
@@ -35,7 +36,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh):
     # Create output filename
     (binFold, binFile) = os.path.split(binned_datafile)
     (binFileName, binExt) = os.path.splitext(binFile)
-    scgGenFile = binFileName + '.scg'
+    scgGenFile = binFileName + '-{}.scg'.format(thresh)
 
     # Create scg Folder
     scgFold = os.path.join(blockPath, 'scg/')
@@ -69,11 +70,12 @@ def computeSimplicialLaplacians(scgf):
         for trial in stimSCGs.keys():
             print('Stim: {}  Trial: {}'.format(stim, trial))
             scg = stimSCGs[trial]
-            trialDict[trial] = sc.laplacians(scg)
+            D = sc.boundaryOperatorMatrix(scg)
+            trialDict[trial] = sc.laplacians(D)
         LapDict[stim] = trialDict
 
     LapFile = os.path.join(scgFold, LapFile)
     with open(LapFile, 'w') as lpf:
         pickle.dump(LapDict, lpf)
-        
+
 
