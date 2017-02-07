@@ -733,7 +733,7 @@ def dbLoadData(block_path):
 def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, **kwargs):
 
     (spikes, trials, clusters, fs) = dbLoadData(block_path)
-    bfdict = do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, **kwargs)
+    bfdict = do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, **kwargs)
     return bfdict
 
 def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
@@ -755,6 +755,42 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
     TOPOLOGY_LOG.info('Binning data')
     build_population_embedding_tensor(spikes, trials, clusters, winsize, fs,
                                       cluster_group, segment_info, raw_binned_f, dtOverlap)
+    bfdict['raw'] = binned_folder
+    # Permute the raw data
+    if ncellsperm > 0:
+        pbfolder = permuteBinned(raw_binned_f, ncellsperm, nperms)
+        bfdict['permuted'] = pbfolder
+
+    return bfdict
+
+def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segment_info,
+                         ncellsperm, nperms, nshuffs, cluster_group=['Good'], dtOverlap=0.0):
+    ''' Check to see if already binned to avoid duplicating work!
+    '''
+
+    block_path = os.path.abspath(block_path)
+    # Create directories and filenames
+    analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+    raw_binned_fname = analysis_id + '-{}-{}.binned'.format(winsize, dtOverlap)
+    analysis_id_forward = analysis_id + '-{}-{}'.format(winsize, dtOverlap) 
+    bfdict = {'analysis_id': analysis_id_forward}
+ 
+    binned_folder = os.path.join(block_path, 'binned_data/win-{}_dtovr-{}/'.format(winsize, dtOverlap))
+    if not os.path.exists(binned_folder):
+        os.makedirs(binned_folder)
+    existingBinned = glob.glob(os.path.join(binned_folder, '*.binned'))
+    
+    if len(existingBinned) == 0:
+        # not already binned!
+        # Bin the raw data
+        TOPOLOGY_LOG.info('Data not already binned.')
+        raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
+        TOPOLOGY_LOG.info('Binning data')
+        build_population_embedding_tensor(spikes, trials, clusters, winsize, fs,
+                                          cluster_group, segment_info, raw_binned_f, dtOverlap)
+    else:
+        raw_binned_f = existingBinned[0]
+
     bfdict['raw'] = binned_folder
     # Permute the raw data
     if ncellsperm > 0:
