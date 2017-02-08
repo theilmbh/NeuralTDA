@@ -157,6 +157,27 @@ def densityMatrices(D, beta_list):
         rhos.append(M)
     return rhos
 
+def KLdivergence(rho, sigma):
+    r, w = np.linalg.eig(rho)
+    s, w = np.linalg.eig(sigma)
+    r = np.real(r)
+    s = np.real(s)
+    div = np.sum(np.multiply(r, (np.log(r) - np.log(s))/np.log(2.0)))
+    return div
+
+def JSdivergence(rho, sigma):
+    
+    M = (rho+sigma)/2.0
+    return (KLdivergence(rho, M) + KLdivergence(sigma, M))/2.0
+
+def JSdivergences(rho, sigma):
+    
+    assert (len(rho) == len(sigma))
+    div = []
+    for r, s in zip(rho, sigma):
+        div.append(JSdivergence(r, s))
+    return div
+
 def spectralEntropies(rhos):
 
     ents = []
