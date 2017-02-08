@@ -11,6 +11,19 @@ import scipy.linalg as spla
 def union(a, b):
     return list(set(a) | set(b))
 
+def simplexUnion(E1, E2):
+    ''' Calculate the union of two simplicial complexes represented as lists of generators
+    '''
+    sortedE = sorted([E1, E2], key=len)
+    maxlen = len(sortedE[1])
+    minlen = len(sortedE[0])
+    for i in range(maxlen-minlen):
+        sortedE[0].append([])
+    newE = []
+    for ind in range(maxlen):
+        newE.append(sorted(union(sortedE[0][ind], sortedE[1][ind])))
+    return newE
+
 def primaryFaces(Q):
     L = []
     d = len(Q)
@@ -68,17 +81,57 @@ def boundaryOperatorMatrix(E):
             D[k-1] = mat
     return D
 
+def maskedBoundaryOperatorMatrix(E, Emask):
+    ''' Emask is the simplicial Chain groups you want to mask in
+        It is the chain groups of the subsimplex
+    '''
+    nmat = len(E)-1
+    D = [[] for i in range(nmat)]
+    difflen = len(E) - len(Emask)
+    for ind in range(difflen):
+        Emask.append([])
+    for k in range(1, nmat):
+        m = len(E[k-1])
+        n = len(E[k])
+        mat = np.zeros((m, n))
+        for j in range(n):
+            if E[k][j] in Emask[k]:
+                c = boundaryOperator(E[k][j])
+                mat[:, j] = canonicalCoordinates(c, E[k-1])
+        D[k-1] = mat
+    return D
+
 def expandBasis(mat, oldK, newK, oldKm1, newKm1):
-    
+    ''' oldK: source basis 1
+        newK: source basis 2
+        oldKm1: target basis 1
+        newKm1: target basis 2
+    '''
     basSource = sorted(union(oldK, newK))
     basTarget = sorted(union(oldKm1, newKm1))
-    for ind, b in enumerate(basSource):
-        if b not in oldK:
-            mat = np.insert(mat, ind, 0, axis=1)
-    for ind, b in enumerate(basTarget):
-        if b not in oldKm1:
-            mat = np.insert(mat, ind, 0, axis=0)
+    if mat == []:
+        mat = np.zeros((len(basTarget), len(basSource)))
+    else:    
+        for ind, b in enumerate(basSource):
+            if b not in oldK:
+                mat = np.insert(mat, ind, 0, axis=1)
+        for ind, b in enumerate(basTarget):
+            if b not in oldKm1:
+                mat = np.insert(mat, ind, 0, axis=0)
     return mat
+
+def expandBases(D1, D2, E1, E2):
+    newD1 = []
+    newD2 = []
+    minlen = min([len(D1), len(D2)])
+    for ind in range(minlen-1):
+        print(ind)
+        print(D1[ind], D2[ind])
+        newMat1 = expandBasis(D1[ind], E1[ind+1], E2[ind+1], E1[ind], E2[ind])
+        newMat2 = expandBasis(D2[ind], E2[ind+1], E1[ind+1], E2[ind], E1[ind])
+        newD1.append(newMat1)
+        newD2.append(newMat2)
+    return (newD1, newD2)
 
 def laplacian(D, dim):
     
