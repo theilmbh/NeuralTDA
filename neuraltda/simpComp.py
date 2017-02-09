@@ -55,7 +55,10 @@ def boundaryOperator(Q):
     Ql = list(Q)
     for ind in range(len(Ql)):
         n = Ql.pop(ind)
-        c[tuple(Ql)] = sgn
+        if len(Ql) == 0:
+            c[tuple(Ql)] = 0
+        else:
+            c[tuple(Ql)] = sgn
         Ql.insert(ind, n)
         sgn = -1*sgn
     return c
@@ -152,10 +155,24 @@ def densityMatrices(D, beta_list):
     rhos = []
     for ind in range(len(D)-3):
         L = laplacian(D, ind)
-        M = spla.expm(beta_list[ind]*L)
+        try:
+            M = spla.expm(beta_list[ind]*L)
+        except ValueError:
+            print('ValueError')
+            print(L)
         M = M / np.trace(M)
         rhos.append(M)
     return rhos
+
+def densityMatrix(L, beta):
+    try: 
+        M = spla.expm(beta*L)
+        M = M /np.trace(M)
+    except ValueError:
+        print('ValueError')
+        print(L)
+        M = 0
+    return M
 
 def KLdivergence(rho, sigma):
     r, w = np.linalg.eig(rho)
@@ -164,6 +181,11 @@ def KLdivergence(rho, sigma):
     s = np.real(s)
     div = np.sum(np.multiply(r, (np.log(r) - np.log(s))/np.log(2.0)))
     return div
+
+def KLdivergence_matrixlog(rho, sigma):
+
+    divMat = np.dot(rho, (spla.logm(rho) - spla.logm(sigma))/ 2.0)
+    return np.trace(divMat)
 
 def JSdivergence(rho, sigma):
     
@@ -190,7 +212,7 @@ def spectralEntropies(rhos):
 
 def stimSpaceGraph(E, D):
     ''' Takes a set of generators for the chain groups 
-    and produces generators for the graph of the space
+    and produces adjacency matrixfor the graph of the space
     '''
     E[0] = []
     Ec = [v for sl in E for v in sl]
@@ -203,7 +225,7 @@ def stimSpaceGraph(E, D):
         lm4 = lm2 + len(E[k+1])
         adj[lm1:lm2, lm3:lm4] = np.abs(mat)
     adj = (adj + adj.T)
-    return adj
+    return (adj, Ec)
 
 def graphLaplacian(adj):
     
@@ -256,3 +278,16 @@ def binarytomaxsimplex(binMat, rDup=False):
             verts = np.sort(verts)
             MaxSimps.append(tuple(verts))
     return MaxSimps
+
+def adjacency2maxsimp(adjmat, basis):
+    '''
+    Converts an adjacency matrix to a list of maximum 1-simplices (edges),
+    allowing SimplicialComplex to handle graphs
+    '''
+    maxsimps = []
+    uptr = np.triu(adjmat)
+    for ind, row in enumerate(uptr):
+        for targ, val in enumerate(row):
+            if val >0:
+                maxsimps.append(tuple(sorted((basis[ind], basis[targ]))))
+    return maxsimps 
