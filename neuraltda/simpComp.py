@@ -286,6 +286,8 @@ def adjacency2maxsimp(adjmat, basis):
     '''
     maxsimps = []
     uptr = np.triu(adjmat)
+    for b in basis:
+        maxsimps.append((b,))
     for ind, row in enumerate(uptr):
         for targ, val in enumerate(row):
             if val >0:
