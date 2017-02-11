@@ -174,6 +174,13 @@ def densityMatrix(L, beta):
         M = 0
     return M
 
+def Entropy(rho, beta):
+
+    r, w = np.linalg.eig(rho)
+    np.real(r)
+    ent = np.real(np.sum(np.multiply(r, np.log(r)/np.log(2.0))))
+    return ent
+
 def KLdivergence(rho, sigma):
     r, w = np.linalg.eig(rho)
     s, w = np.linalg.eig(sigma)
