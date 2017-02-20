@@ -843,10 +843,6 @@ def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segm
         raw_binned_f = existingBinned[0]
 
     bfdict['raw'] = binned_folder
-    # Permute the raw data
-    if ncellsperm > 0:
-        pbfolder = permuteBinned(raw_binned_f, ncellsperm, nperms)
-        bfdict['permuted'] = pbfolder
 
     return bfdict 
 
