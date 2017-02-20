@@ -273,7 +273,7 @@ def calcBettis(data_mat, clusters, pfile, thresh):
 ############################################
 
 def calcCIBettisTensor(analysis_id, binned_data_file,
-                       block_path, thresh):
+                       block_path, thresh, shuffle=False, nperms=0, ncellsperm=1):
     '''
     Given a binned data file, compute the betti numbers of the Curto-Itskov
     Takes in a binned data file with arbitrary depth of permutations.
@@ -309,6 +309,11 @@ def calcCIBettisTensor(analysis_id, binned_data_file,
                         Topological Analysis of: {}'.format(kwikfile))
     TOPOLOGY_LOG.info('Theshold: {}'.format(thresh))
 
+    if shuffle:
+        analysis_id = analysis_id +'-shuffle-'
+    if nperms:
+        analysis_id = analysis_id + '-permuted{}-'.format(nperms)
+
     with h5py.File(binned_data_file, 'r') as bdf:
         stims = bdf.keys()
         nstims = len(stims)
@@ -336,7 +341,7 @@ def calcCIBettisTensor(analysis_id, binned_data_file,
             bpd = do_compute_betti(stim_trials,
                                     pfile_stem,
                                     analysis_path,
-                                    thresh)
+                                    thresh, shuffle, nperms, ncellsperm)
             bpd_withstim[stim] = bpd
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(bpd, bpfile)
@@ -346,7 +351,55 @@ def calcCIBettisTensor(analysis_id, binned_data_file,
         TOPOLOGY_LOG.info('Completed All Stimuli')
         return bpdws_sfn
 
-def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh):
+def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh, shuffle, nperms, ncellsperm):
+
+    assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
+    data_tensor = np.array(stim_trials['pop_tens'])
+    clusters = np.array(stim_trials['clusters'])
+    levels = (data_tensor.shape)[2:] # First two axes are cells, windows. 
+    assert len(levels) == 1, 'Cant handle more than one level yet' 
+    ntrials = levels[0]
+    bettidict = {}
+    for trial in range(ntrials):
+        pfile = pfile_stem + '-rep%d-simplex.txt' % trial
+        data_mat = data_tensor[:, :, trial]
+        if nperms:
+            bettipermdict = {}
+            newTens = getPerms(data_mat, nperms, ncellsperm)
+            for n in nperms:
+                pfile = pfile_stem + '-rep%d-perm%d-simplex.txt' % (trial, n)
+                nmat = newTens[:, :, n]
+                if shuffle:
+                    data_mat = getShuffle(data_mat)
+                bettis = calcBettis(data_mat, clusters, pfile, thresh)
+                bettipermdict[str(n)] = {'bettis': bettis}
+            bettidict[str(trial)] = bettipermdict
+        else:
+            if shuffle:
+                data_mat = getShuffle(data_mat)
+                pfile = pfile_stem + '-rep%d-shuffled-simplex.txt' % trial
+            bettis = calcBettis(data_mat, clusters, pfile, thresh)
+            bettidict[str(trial)] = {'bettis': bettis}
+    return bettidict
+
+def getShuffle(data_mat):
+
+    (cells, wins) = data_mat.shape
+    for c in range(cells):
+        np.random.shuffle(data_mat[c, :])
+    return data_mat
+
+def getPerms(data_mat, nperms, ncellsperm):
+
+    (cells, wins) = data_mat.shape
+    newTens = np.zeros((ncellsperm, wins, nperms))
+    for n in range(nperms):
+        celllist = np.random.permutation(cells)[:ncellsperm]
+        newTens[:, :, n] = data_mat[celllist, :]
+    return newTens
+
+
+def do_compute_betti_shuffle(stim_trials, pfile_stem, analysis_path, thresh, nshuffs=1):
 
     assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
     data_tensor = np.array(stim_trials['pop_tens'])
@@ -355,8 +408,9 @@ def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh):
     assert len(levels) == 1, 'Cant handle more than one level yet' 
     bettidict = {}
     for trial in range(levels[0]):
-        pfile = pfile_stem + '-rep%d-simplex.txt' % trial
-        data_mat = data_tensor[:, :, trial]
+        pfile = pfile_stem + '-rep%d-shuffle-simplex.txt' % trial
+        data_mat = data_tensor[:, :, trial] # cell, window
+        data_mat = (np.random.permute(data_mat.T)).T
         bettis = calcBettis(data_mat, clusters, pfile, thresh)
         bettidict[str(trial)] = {'bettis': bettis}
     return bettidict
