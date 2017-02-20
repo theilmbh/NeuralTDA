@@ -366,7 +366,7 @@ def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh, shuffle, np
         if nperms:
             bettipermdict = {}
             newTens = getPerms(data_mat, nperms, ncellsperm)
-            for n in nperms:
+            for n in range(nperms):
                 pfile = pfile_stem + '-rep%d-perm%d-simplex.txt' % (trial, n)
                 nmat = newTens[:, :, n]
                 if shuffle:
@@ -397,7 +397,6 @@ def getPerms(data_mat, nperms, ncellsperm):
         celllist = np.random.permutation(cells)[:ncellsperm]
         newTens[:, :, n] = data_mat[celllist, :]
     return newTens
-
 
 def do_compute_betti_shuffle(stim_trials, pfile_stem, analysis_path, thresh, nshuffs=1):
 
