@@ -852,13 +852,13 @@ def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segm
 
     return bfdict 
 
-def dag_topology(block_path, thresh, bfdict, simplexWinSize=0):
+def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle=False, shuffleperm=False, nperms=0, ncellsperm=1):
 
     aid = bfdict['analysis_id']
     bpt = os.path.join(block_path, 'topology/')
     analysis_dict = dict()
 
-    if 'raw' in bfdict.keys():
+    if 'raw' in bfdict.keys() and raw:
         rawFolder = bfdict['raw']
         tpid_raw = aid +'-{}-raw'.format(thresh)
         tpf_raw = os.path.join(bpt, tpid_raw)
@@ -869,6 +869,42 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0):
         with open(resF, 'r') as f:
             res = pickle.load(f)
             analysis_dict['raw'] = res
+
+    if shuffle:
+        rawFolder = bfdict['raw']
+        tpid_raw = aid +'-{}-raw-shuffled'.format(thresh)
+        tpf_raw = os.path.join(bpt, tpid_raw)
+        rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
+        for rdf in rawDataFiles:
+            TOPOLOGY_LOG.info('Computing shuffled topology for: %s' % rdf)
+            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, shuffle=True)
+        with open(resF, 'r') as f:
+            res = pickle.load(f)
+            analysis_dict['rawshuffled'] = res
+
+    if nperms:
+        rawFolder = bfdict['raw']
+        tpid_raw = aid +'-{}-permuted-{}-{}'.format(thresh, nperms, ncellsperm)
+        tpf_raw = os.path.join(bpt, tpid_raw)
+        rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
+        for rdf in rawDataFiles:
+            TOPOLOGY_LOG.info('Computing topology for: %s' % rdf)
+            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, nperms=nperms, ncellsperm=ncellsperm)
+        with open(resF, 'r') as f:
+            res = pickle.load(f)
+            analysis_dict['permuted'] = res
+
+    if shuffleperm:
+        rawFolder = bfdict['raw']
+        tpid_raw = aid +'-{}-shuffled-permuted-{}-{}'.format(thresh, nperms, ncellsperm)
+        tpf_raw = os.path.join(bpt, tpid_raw)
+        rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
+        for rdf in rawDataFiles:
+            TOPOLOGY_LOG.info('Computing topology for: %s' % rdf)
+            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, shuffle=True, nperms=nperms, ncellsperm=ncellsperm)
+        with open(resF, 'r') as f:
+            res = pickle.load(f)
+            analysis_dict['shuffledpermuted'] = res
 
     if 'alltrials' in bfdict.keys():
         atFolder = bfdict['alltrials']
