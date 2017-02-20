@@ -783,14 +783,13 @@ def dbLoadData(block_path):
     clusters = core.load_clusters(block_path)
     return (spikes, trials, clusters, fs)
 
-def dag_bin(block_path, winsize, segment_info, ncellsperm, nperms, nshuffs, **kwargs):
+def dag_bin(block_path, winsize, segment_info, **kwargs):
 
     (spikes, trials, clusters, fs) = dbLoadData(block_path)
-    bfdict = do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segment_info, ncellsperm, nperms, nshuffs, **kwargs)
+    bfdict = do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segment_info, **kwargs)
     return bfdict
 
-def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
-               ncellsperm, nperms, nshuffs, cluster_group=['Good'], dtOverlap=0.0):
+def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, cluster_group=['Good'], dtOverlap=0.0):
 
     block_path = os.path.abspath(block_path)
     # Create directories and filenames
@@ -816,8 +815,7 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
 
     return bfdict
 
-def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segment_info,
-                         ncellsperm, nperms, nshuffs, cluster_group=['Good'], dtOverlap=0.0):
+def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segment_info, cluster_group=['Good'], dtOverlap=0.0):
     ''' Check to see if already binned to avoid duplicating work!
     '''
 
