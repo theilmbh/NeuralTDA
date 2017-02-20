@@ -1,4 +1,4 @@
-import neuraltda.topology2 as tp2:
+import neuraltda.topology2 as tp2
 from joblib import Parallel, delayed
 winSizes = [5.0, 10.0, 25.0, 50.0]
 segmentInfo = {'period':1}
