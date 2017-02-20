@@ -7,6 +7,8 @@ ncellsperm = 30
 nperms = 20
 nshuff = 1
 thresh = 5.0
+overlap = 0.5 # percent overlap
+dtovr = winSize*overlap
 
 tp2.setup_logging('B1083_P03S05_25ms_4x')
 bfdict = tp2.dag_bin(blockPath, winSize, segmentInfo, dtOverlap=dtovr)
