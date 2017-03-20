@@ -8,6 +8,12 @@
 import numpy as np 
 import scipy.linalg as spla
 
+def maxEnt(scg, dim):
+    '''
+    Return maximum possible entropy of a simplicial complex in dimension dim
+    '''
+    return np.log(len(scg[dim]))/np.log(2)
+
 def union(a, b):
     return list(set(a) | set(b))
 
@@ -174,7 +180,7 @@ def densityMatrix(L, beta):
         M = 0
     return M
 
-def Entropy(rho, beta):
+def Entropy(rho):
 
     r, w = np.linalg.eig(rho)
     np.real(r)

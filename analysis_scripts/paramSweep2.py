@@ -2,15 +2,16 @@ import neuraltda.topology2 as tp2
 
 blockPath='./'
 winSize = 25.0
-segmentInfo = {'period':1}
+segmentInfo = [0,0]
+clusterGroup = ['Good', 'MUA']
 ncellsperm = 30
 nperms = 20
 nshuff = 1
-thresh=4.0
 
-threshs = [3.0, 4.0, 6.0]
+
+threshs = [13.0, 4.0, 6.0]
 winSizes = [5.0, 10.0, 25.0, 50.0]
-povers = [0.0, 0.5]
+povers = [0.5]
 
 birdid = 1083
 site = 'P01S03'

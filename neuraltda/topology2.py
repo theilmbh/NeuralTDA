@@ -194,7 +194,7 @@ def run_perseus(pfile):
     TOPOLOGY_LOG.info('Betti file from run_perseus: %s' % betti_file)
     return betti_file
 
-def get_segment(trial_bounds, fs, segment_info):
+def old_get_segment(trial_bounds, fs, segment_info):
     '''
     Convert a segment info specifier into a segment.
 
@@ -208,7 +208,7 @@ def get_segment(trial_bounds, fs, segment_info):
         Dictionary containing:
         'period' (1 for stim, 0 for other)
         'segstart' : time in ms of segment start relative to trial start
-        'segend' : time in ms of segment end relative to trial start
+        'segend' : time in ms of segment end relative to trial end
 
     Returns
     ------
@@ -221,9 +221,36 @@ def get_segment(trial_bounds, fs, segment_info):
     else:
         seg_start = trial_bounds[0] \
                     + np.floor(segment_info['segstart']*(fs/1000.))
-        seg_end = trial_bounds[0] \
+        seg_end = trial_bounds[1] \
                   + np.floor(segment_info['segend']*(fs/1000.))
     return [seg_start, seg_end]
+
+def get_segment(trial_bounds, fs, segment_info):
+    '''
+    Convert a segment info specifier into a segment.
+
+    Parameters
+    ------
+    trial_bounds : list
+        List containing trial start and trial end in samples
+    fs : int
+        The sampling rate
+    segment_info : list
+        'segstart' : time in ms of segment start relative to trial start
+        'segend' : time in ms of segment end relative to trial end
+
+    Returns
+    ------
+    segment : list
+        bounds for the segment for which to compute topology, in samples.
+
+    '''
+    assert type(segment_info) == list 
+    seg_start = trial_bounds[0] \
+                + np.floor(segment_info[0]*(fs/1000.))
+    seg_end = trial_bounds[1] \
+              + np.floor(segment_info[1]*(fs/1000.))
+    return [seg_start, seg_end]    
 
 def calcCellGroups(data_mat, clusters, thresh):
     '''
@@ -826,7 +853,9 @@ def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segm
     analysis_id_forward = analysis_id + '-{}-{}'.format(winsize, dtOverlap) 
     bfdict = {'analysis_id': analysis_id_forward}
  
-    binned_folder = os.path.join(block_path, 'binned_data/win-{}_dtovr-{}/'.format(winsize, dtOverlap))
+    cg_string = '-'.join(cluster_group)
+    seg_string = '-'.join(map(str, segment_info))
+    binned_folder = os.path.join(block_path, 'binned_data/win-{}_dtovr-{}_cg-{}_seg-{}-{}/'.format(winsize, dtOverlap, cg_string))
     if not os.path.exists(binned_folder):
         os.makedirs(binned_folder)
     existingBinned = glob.glob(os.path.join(binned_folder, '*.binned'))
