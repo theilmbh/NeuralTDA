@@ -81,7 +81,7 @@ def setup_logging(func_name):
     # Log initialization
     logger.info('Starting {}.'.format(func_name))
 
-def get_spikes_in_window(spikes, window):
+def get_spikes_in_window(spikes, window, rec):
     '''
     Returns a spike DataFrame containing all spikes within a time window.
     The time window is specified by sample number.
@@ -93,6 +93,8 @@ def get_spikes_in_window(spikes, window):
     window : tuple
         The lower and upper bounds, in samples,
         of the time window for extracting spikes
+    rec : int 
+        Recording ID of spikes that you'd like to extract
 
     Returns
     -------
@@ -101,7 +103,8 @@ def get_spikes_in_window(spikes, window):
         but containing only spikes within window
     '''
     mask = ((spikes['time_samples'] <= window[1]) &
-            (spikes['time_samples'] >= window[0]))
+            (spikes['time_samples'] >= window[0]) &
+            (spikes['recording'] == rec))
     return spikes[mask]
 
 def create_subwindows(segment, subwin_len, noverlap=0):
@@ -675,8 +678,10 @@ def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
             stimgrp = popvec_f.create_group(stim)
             stim_trials = trials[trials['stimulus'] == stim]
             nreps = len(stim_trials.index)
+            stim_recs = stim_trials['recording'].values
 
-            # Compute generic windows for this stimulus
+            # Compute generic windows for this stimulus. This assumes stimulus for all trials is same length
+            # In order to avoid recomputing windows for each trial
             trial_len = (stim_trials['stimulus_end'] - stim_trials['time_samples']).unique()[0]
             gen_seg_start, gen_seg_end = get_segment([0, trial_len], fs, segment_info)
             gen_seg = [gen_seg_start, gen_seg_end]
@@ -696,9 +701,10 @@ def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
             for rep in range(nreps):
                 trial_start = stim_trials.iloc[rep]['time_samples']
                 trial_start_t = float(trial_start)/fs
+                rec = stim_recs[rep]
                 for win_ind, win in enumerate(gen_windows):
                     win2 = [win[0] + trial_start, win[1]+trial_start]
-                    spikes_in_win = get_spikes_in_window(spikes, win2)
+                    spikes_in_win = get_spikes_in_window(spikes, win2, rec)
                     clus_that_spiked = spikes_in_win['cluster'].unique()
                     if len(clus_that_spiked) > 0:
                         for clu in clus_that_spiked:
