@@ -675,6 +675,8 @@ def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
         stims = trials['stimulus'].unique()
 
         for stim in stims:
+            if str(stim) == 'nan':
+                continue
             stimgrp = popvec_f.create_group(stim)
             stim_trials = trials[trials['stimulus'] == stim]
             nreps = len(stim_trials.index)
