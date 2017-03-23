@@ -864,7 +864,7 @@ def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segm
     cg_string = '-'.join(cluster_group)
     seg_string = '-'.join(map(str, segment_info))
     if comment:
-        seg_string = seg_string.join('-'+comment)
+        seg_string = seg_string+ '-'+comment
     binned_folder = os.path.join(block_path, 'binned_data/win-{}_dtovr-{}_cg-{}_seg-{}/'.format(winsize, dtOverlap, cg_string, seg_string))
     if not os.path.exists(binned_folder):
         os.makedirs(binned_folder)
