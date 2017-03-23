@@ -850,7 +850,7 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, 
 
     return bfdict
 
-def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segment_info, cluster_group=['Good'], dtOverlap=0.0):
+def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segment_info, cluster_group=['Good'], dtOverlap=0.0, comment=''):
     ''' Check to see if already binned to avoid duplicating work!
     '''
 
@@ -863,6 +863,8 @@ def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segm
  
     cg_string = '-'.join(cluster_group)
     seg_string = '-'.join(map(str, segment_info))
+    if comment:
+        seg_string = seg_string.join('-'+comment)
     binned_folder = os.path.join(block_path, 'binned_data/win-{}_dtovr-{}_cg-{}_seg-{}/'.format(winsize, dtOverlap, cg_string, seg_string))
     if not os.path.exists(binned_folder):
         os.makedirs(binned_folder)
