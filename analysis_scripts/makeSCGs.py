@@ -13,7 +13,7 @@ bp1 = './'
 bps = [bp1]
 
 winSize = 10.0 #ms
-segmentInfo = {'period': 1}
+segmentInfo = [0, 0]
 ncellsperm = 0
 nperms = 0
 nshuffs = 0
@@ -22,6 +22,6 @@ propOverlap = 0.5
 dtovr = propOverlap*winSize
 
 for blockPath in bps:
-    bfdict = tp2.dag_bin(blockPath, winSize, segmentInfo, ncellsperm, nperms, nshuffs, dtOverlap=dtovr)
+    bfdict = tp2.dag_bin(blockPath, winSize, segmentInfo, dtOverlap=dtovr)
     bdf = glob.glob(os.path.join(bfdict['raw'], '*.binned'))[0]
     sa.computeChainGroups(blockPath, bdf, thresh)
