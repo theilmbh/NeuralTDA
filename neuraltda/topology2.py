@@ -303,7 +303,7 @@ def calcBettis(data_mat, clusters, pfile, thresh):
 ############################################
 
 def calcCIBettisTensor(analysis_id, binned_data_file,
-                       block_path, thresh, shuffle=False, nperms=0, ncellsperm=1, sliding_window_length=None):
+                       block_path, thresh, shuffle=False, nperms=0, ncellsperm=1, swl=None):
     '''
     Given a binned data file, compute the betti numbers of the Curto-Itskov
     Takes in a binned data file with arbitrary depth of permutations.
@@ -368,11 +368,11 @@ def calcCIBettisTensor(analysis_id, binned_data_file,
                          + '-stim-{}'.format(stim)
             pfile_stem = os.path.join(analysis_path, pfile_stem)
             ### Compute Bettis
-            if sliding_window_length:
+            if swl:
                 bpd = do_compute_betti_sliding_window(stim_trials,
                                     pfile_stem,
                                     analysis_path,
-                                    thresh, shuffle, nperms, ncellsperm, sliding_window_length=sliding_window_length)
+                                    thresh, shuffle, nperms, ncellsperm, sliding_window_length=swl)
             else:
                 bpd = do_compute_betti(stim_trials,
                                     pfile_stem,
@@ -997,6 +997,9 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
             res = pickle.load(f)
             analysis_dict['at'] = res 
 
+    master_fname = aid 
+    for a, val in kwargs.iteritems():
+        master_fname = master_fname+'-{}_{}'.format(a, val)
     master_fname = aid+'-{}-masterResults.pkl'.format(thresh)
     master_f = os.path.join(block_path, master_fname)
     with open(master_f, 'w') as f:
