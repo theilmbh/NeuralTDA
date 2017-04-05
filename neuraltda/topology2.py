@@ -956,7 +956,7 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
         rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
         for rdf in rawDataFiles:
             TOPOLOGY_LOG.info('Computing shuffled topology for: %s' % rdf)
-            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, shuffle=True, kwargs)
+            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, shuffle=True, **kwargs)
         with open(resF, 'r') as f:
             res = pickle.load(f)
             analysis_dict['rawshuffled'] = res
