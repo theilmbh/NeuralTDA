@@ -303,7 +303,7 @@ def calcBettis(data_mat, clusters, pfile, thresh):
 ############################################
 
 def calcCIBettisTensor(analysis_id, binned_data_file,
-                       block_path, thresh, shuffle=False, nperms=0, ncellsperm=1):
+                       block_path, thresh, shuffle=False, nperms=0, ncellsperm=1, sliding_window_length=None):
     '''
     Given a binned data file, compute the betti numbers of the Curto-Itskov
     Takes in a binned data file with arbitrary depth of permutations.
@@ -368,7 +368,13 @@ def calcCIBettisTensor(analysis_id, binned_data_file,
                          + '-stim-{}'.format(stim)
             pfile_stem = os.path.join(analysis_path, pfile_stem)
             ### Compute Bettis
-            bpd = do_compute_betti(stim_trials,
+            if sliding_window_length:
+                bpd = do_compute_betti_sliding_window(stim_trials,
+                                    pfile_stem,
+                                    analysis_path,
+                                    thresh, shuffle, nperms, ncellsperm, sliding_window_length=sliding_window_length)
+            else:
+                bpd = do_compute_betti(stim_trials,
                                     pfile_stem,
                                     analysis_path,
                                     thresh, shuffle, nperms, ncellsperm)
@@ -411,6 +417,46 @@ def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh, shuffle, np
             bettis = calcBettis(data_mat, clusters, pfile, thresh)
             bettidict[str(trial)] = {'bettis': bettis}
     return bettidict
+
+def do_compute_betti_sliding_window(stim_trials, pfile_stem, analysis_path, thresh, shuffle, nperms, ncellsperm, sliding_window_length=10):
+    ''' sliding window length is given in # of bins. '''
+
+    assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
+    data_tensor = np.array(stim_trials['pop_tens'])
+    clusters = np.array(stim_trials['clusters'])
+    (ncells, nwin, levels) = (data_tensor.shape) # First two axes are cells, windows. 
+    assert len(levels) == 1, 'Cant handle more than one level yet' 
+    ntrials = levels[0]
+    bettidict = {}
+
+    # Compute number of sliding windows
+    nslide = nwin - sliding_window_length
+    for trial in range(ntrials):
+        bettitrial = {}
+        for slide in range(nslide):
+            pfile_stem2 = pfile_stem + '-rep%d-slide%d' % (trial, slide)
+            pfile = pfile_stem2 +'-simplex.txt'
+            data_mat = data_tensor[:, slide:slide+sliding_window_length, trial]
+            if nperms:
+                bettipermdict = {}
+                newTens = getPerms(data_mat, nperms, ncellsperm)
+                for n in range(nperms):
+                    pfile = pfile_stem2 + '-perm%d-simplex.txt' % (trial, n)
+                    nmat = newTens[:, :, n]
+                    if shuffle:
+                        data_mat = getShuffle(data_mat)
+                    bettis = calcBettis(data_mat, clusters, pfile, thresh)
+                    bettipermdict[str(n)] = {'bettis': bettis}
+                bettitrial[str(slide)] = bettipermdict
+            else:
+                if shuffle:
+                    data_mat = getShuffle(data_mat)
+                    pfile = pfile_stem2 + '-shuffled-simplex.txt' % trial
+                bettis = calcBettis(data_mat, clusters, pfile, thresh)
+                bettitrial[str(slide)] = {'bettis': bettis}
+        bettidict[str(trial)] = bettitrial
+    return bettidict
+
 
 def getShuffle(data_mat):
 
@@ -885,7 +931,7 @@ def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segm
 
     return bfdict 
 
-def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle=False, shuffleperm=False, nperms=0, ncellsperm=1):
+def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle=False, shuffleperm=False, nperms=0, ncellsperm=1, **kwargs):
 
     aid = bfdict['analysis_id']
     bpt = os.path.join(block_path, 'topology/')
@@ -898,7 +944,7 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
         rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
         for rdf in rawDataFiles:
             TOPOLOGY_LOG.info('Computing topology for: %s' % rdf)
-            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh)
+            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, **kwargs)
         with open(resF, 'r') as f:
             res = pickle.load(f)
             analysis_dict['raw'] = res
@@ -910,7 +956,7 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
         rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
         for rdf in rawDataFiles:
             TOPOLOGY_LOG.info('Computing shuffled topology for: %s' % rdf)
-            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, shuffle=True)
+            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, shuffle=True, kwargs)
         with open(resF, 'r') as f:
             res = pickle.load(f)
             analysis_dict['rawshuffled'] = res
@@ -922,7 +968,7 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
         rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
         for rdf in rawDataFiles:
             TOPOLOGY_LOG.info('Computing topology for: %s' % rdf)
-            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, nperms=nperms, ncellsperm=ncellsperm)
+            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, nperms=nperms, ncellsperm=ncellsperm, **kwargs)
         with open(resF, 'r') as f:
             res = pickle.load(f)
             analysis_dict['permuted'] = res
@@ -934,7 +980,7 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
         rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
         for rdf in rawDataFiles:
             TOPOLOGY_LOG.info('Computing topology for: %s' % rdf)
-            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, shuffle=True, nperms=nperms, ncellsperm=ncellsperm)
+            resF = calcCIBettisTensor(tpid_raw, rdf, block_path, thresh, shuffle=True, nperms=nperms, ncellsperm=ncellsperm, **kwargs)
         with open(resF, 'r') as f:
             res = pickle.load(f)
             analysis_dict['shuffledpermuted'] = res
