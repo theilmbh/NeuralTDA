@@ -424,9 +424,8 @@ def do_compute_betti_sliding_window(stim_trials, pfile_stem, analysis_path, thre
     assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
     data_tensor = np.array(stim_trials['pop_tens'])
     clusters = np.array(stim_trials['clusters'])
-    (ncells, nwin, levels) = (data_tensor.shape) # First two axes are cells, windows. 
+    (ncells, nwin, ntrials) = (data_tensor.shape) # First two axes are cells, windows. 
     #assert len(levels) == 1, 'Cant handle more than one level yet' 
-    ntrials = levels[0]
     bettidict = {}
 
     # Compute number of sliding windows
