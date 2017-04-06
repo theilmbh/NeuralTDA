@@ -398,12 +398,13 @@ def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh, shuffle, np
     bettidict = {}
     for trial in range(ntrials):
         pfile = pfile_stem + '-rep%d-simplex.txt' % trial
+        pfile = get_pfile_name(pfile_stem, rep=trial)
         data_mat = data_tensor[:, :, trial]
         if nperms:
             bettipermdict = {}
             newTens = getPerms(data_mat, nperms, ncellsperm)
             for n in range(nperms):
-                pfile = pfile_stem + '-rep%d-perm%d-simplex.txt' % (trial, n)
+                pfile = get_pfile_name(pfile_stem, rep=trial, perm=n)
                 nmat = newTens[:, :, n]
                 if shuffle:
                     data_mat = getShuffle(data_mat)
@@ -413,10 +414,17 @@ def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh, shuffle, np
         else:
             if shuffle:
                 data_mat = getShuffle(data_mat)
-                pfile = pfile_stem + '-rep%d-shuffled-simplex.txt' % trial
+                pfile = get_pfile_name(pfile_stem, rep=trial, shuffled=1)
             bettis = calcBettis(data_mat, clusters, pfile, thresh)
             bettidict[str(trial)] = {'bettis': bettis}
     return bettidict
+
+def get_pfile_name(pfile_stem, **kwargs):
+
+    for a, val in kwargs.iteritems():
+        pfile_stem = pfile_stem + '-%s%d' % (str(a), int(val))
+    pfile = pfile_stem +'-simplex.txt'
+    return pfile
 
 def do_compute_betti_sliding_window(stim_trials, pfile_stem, analysis_path, thresh, shuffle, nperms, ncellsperm, sliding_window_length=10):
     ''' sliding window length is given in # of bins. '''
@@ -433,14 +441,13 @@ def do_compute_betti_sliding_window(stim_trials, pfile_stem, analysis_path, thre
     for trial in range(ntrials):
         bettitrial = {}
         for slide in range(nslide):
-            pfile_stem2 = pfile_stem + '-rep%d-slide%d' % (trial, slide)
-            pfile = pfile_stem2 +'-simplex.txt'
+            pfile = get_pfile_name(pfile_stem, rep=trial, slide=slide)
             data_mat = data_tensor[:, slide:slide+sliding_window_length, trial]
             if nperms:
                 bettipermdict = {}
                 newTens = getPerms(data_mat, nperms, ncellsperm)
                 for n in range(nperms):
-                    pfile = pfile_stem2 + '-perm%d-simplex.txt' % (trial, n)
+                    pfile = get_pfile_name(pfile_stem, rep=trial, slide=slide, perm=perm)
                     nmat = newTens[:, :, n]
                     if shuffle:
                         data_mat = getShuffle(data_mat)
@@ -450,7 +457,7 @@ def do_compute_betti_sliding_window(stim_trials, pfile_stem, analysis_path, thre
             else:
                 if shuffle:
                     data_mat = getShuffle(data_mat)
-                    pfile = pfile_stem2 + '-shuffled-simplex.txt' % trial
+                    pfile = get_pfile_name(pfile_stem, rep=trial, slide=slide, shuffled=1)
                 bettis = calcBettis(data_mat, clusters, pfile, thresh)
                 bettitrial[str(slide)] = {'bettis': bettis}
         bettidict[str(trial)] = bettitrial
