@@ -999,7 +999,7 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
     master_fname = aid 
     for a, val in kwargs.iteritems():
         master_fname = master_fname+'-{}_{}'.format(a, val)
-    master_fname = aid+'-{}-masterResults.pkl'.format(thresh)
+    master_fname = master_fname+'-{}-masterResults.pkl'.format(thresh)
     master_f = os.path.join(block_path, master_fname)
     with open(master_f, 'w') as f:
             pickle.dump(analysis_dict, f)
