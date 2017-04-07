@@ -93,7 +93,7 @@ def get_spikes_in_window(spikes, window, rec):
     window : tuple
         The lower and upper bounds, in samples,
         of the time window for extracting spikes
-    rec : int 
+    rec : int
         Recording ID of spikes that you'd like to extract
 
     Returns
@@ -248,12 +248,12 @@ def get_segment(trial_bounds, fs, segment_info):
         bounds for the segment for which to compute topology, in samples.
 
     '''
-    assert type(segment_info) == list 
+    assert type(segment_info) == list
     seg_start = trial_bounds[0] \
                 + np.floor(segment_info[0]*(fs/1000.))
     seg_end = trial_bounds[1] \
               + np.floor(segment_info[1]*(fs/1000.))
-    return [seg_start, seg_end]    
+    return [seg_start, seg_end]
 
 def calcCellGroups(data_mat, clusters, thresh):
     '''
@@ -262,9 +262,9 @@ def calcCellGroups(data_mat, clusters, thresh):
     Parameters
     ----------
     data_mat : numpy array
-        Ncells x Nwindows of firing rates 
-    clusters : numpy array 
-        array of length NCells specifying cluster id for each row of data_mat 
+        Ncells x Nwindows of firing rates
+    clusters : numpy array
+        array of length NCells specifying cluster id for each row of data_mat
     '''
     cell_groups = []
     Ncells, nwin = data_mat.shape
@@ -274,7 +274,7 @@ def calcCellGroups(data_mat, clusters, thresh):
     for win in range(nwin):
         clus_in_group = clusters[above_thresh[:, win]]
         cell_groups.append([win, clus_in_group])
-    return cell_groups 
+    return cell_groups
 
 def calcBettis(data_mat, clusters, pfile, thresh):
     '''
@@ -315,11 +315,11 @@ def get_pfile_stem(aid, apath, stim):
 
 def get_analysis_paths(aid, apath, stim):
     ###  Prepare destination file paths
-    bs = get_betti_savefile(analysis_id, analysis_path, stim)
-    
-    bps = get_bps(analysis_id, analysis_path, stim)
+    bs = get_betti_savefile(aid, apath, stim)
 
-    pfs = get_pfile_stem(analysis_id, analysis_path, stim)
+    bps = get_bps(aid, apath, stim)
+
+    pfs = get_pfile_stem(aid, apath, stim)
     return (bs, bps, pfs)
 
 def get_pfile_name(pfile_stem, **kwargs):
@@ -343,7 +343,8 @@ def lin2ind(shp, t):
 ############################################
 
 def calcCIBettisTensor(analysis_id, binned_data_file,
-                       block_path, thresh, shuffle=False, nperms=0, ncellsperm=1, swl=None):
+                       block_path, thresh, shuffle=False, nperms=0,
+                       ncellsperm=1, swl=None):
     '''
     Given a binned data file, compute the betti numbers of the Curto-Itskov
     Takes in a binned data file with arbitrary depth of permutations.
@@ -399,31 +400,34 @@ def calcCIBettisTensor(analysis_id, binned_data_file,
             ### Compute Bettis
             if swl:
                 bpd = do_compute_betti_sliding_window(stim_trials,
-                                    pfs,
-                                    analysis_path,
-                                    thresh, shuffle, nperms, ncellsperm, 
-                                    sliding_window_length=swl)
+                                                      pfs,
+                                                      analysis_path,
+                                                      thresh, shuffle, nperms,
+                                                      ncellsperm,
+                                                      sliding_window_length=swl)
             else:
                 bpd = do_compute_betti(stim_trials,
-                                    pfs,
-                                    analysis_path,
-                                    thresh, shuffle, nperms, ncellsperm)
+                                       pfs,
+                                       analysis_path,
+                                       thresh, shuffle, nperms, ncellsperm)
             bpd_withstim[stim] = bpd
             with open(bps, 'w') as bpfile:
                 pickle.dump(bpd, bpfile)
-        bpdws_sfn = os.path.join(analysis_path, analysis_id+'-bettiResultsDict.pkl')
+        bpdws_sfn = os.path.join(analysis_path,
+                                 analysis_id+'-bettiResultsDict.pkl')
         with open(bpdws_sfn, 'w') as bpdwsfile:
-                pickle.dump(bpd_withstim, bpdwsfile)
+            pickle.dump(bpd_withstim, bpdwsfile)
         TOPOLOGY_LOG.info('Completed All Stimuli')
         return bpdws_sfn
 
-def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh, shuffle, nperms, ncellsperm):
+def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh,
+                     shuffle, nperms, ncellsperm):
 
     assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
     data_tensor = np.array(stim_trials['pop_tens'])
     clusters = np.array(stim_trials['clusters'])
-    levels = (data_tensor.shape)[2:] # First two axes are cells, windows. 
-    assert len(levels) == 1, 'Cant handle more than one level yet' 
+    levels = (data_tensor.shape)[2:] # First two axes are cells, windows.
+    assert len(levels) == 1, 'Cant handle more than one level yet'
     ntrials = levels[0]
     bettidict = {}
     for trial in range(ntrials):
@@ -449,15 +453,15 @@ def do_compute_betti(stim_trials, pfile_stem, analysis_path, thresh, shuffle, np
             bettidict[str(trial)] = {'bettis': bettis}
     return bettidict
 
-def do_compute_betti_sliding_window(stim_trials, pfile_stem, analysis_path, 
-                                    thresh, shuffle, nperms, ncellsperm, 
+def do_compute_betti_sliding_window(stim_trials, pfile_stem, analysis_path,
+                                    thresh, shuffle, nperms, ncellsperm,
                                     sliding_window_length=10):
     ''' sliding window length is given in # of bins. '''
 
     assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
     data_tensor = np.array(stim_trials['pop_tens'])
     clusters = np.array(stim_trials['clusters'])
-    (ncells, nwin, ntrials) = (data_tensor.shape) # First two axes are cells, windows. 
+    (ncells, nwin, ntrials) = (data_tensor.shape)
     bettidict = {}
 
     # Compute number of sliding windows
@@ -470,18 +474,20 @@ def do_compute_betti_sliding_window(stim_trials, pfile_stem, analysis_path,
             if nperms:
                 bettipermdict = {}
                 newTens = getPerms(data_mat, nperms, ncellsperm)
-                for n in range(nperms):
-                    pfile = get_pfile_name(pfile_stem, rep=trial, slide=slide, perm=perm)
-                    nmat = newTens[:, :, n]
+                for perm in range(nperms):
+                    pfile = get_pfile_name(pfile_stem, rep=trial,
+                                           slide=slide, perm=perm)
+                    nmat = newTens[:, :, perm]
                     if shuffle:
                         data_mat = getShuffle(data_mat)
                     bettis = calcBettis(data_mat, clusters, pfile, thresh)
-                    bettipermdict[str(n)] = {'bettis': bettis}
+                    bettipermdict[str(perm)] = {'bettis': bettis}
                 bettitrial[str(slide)] = bettipermdict
             else:
                 if shuffle:
                     data_mat = getShuffle(data_mat)
-                    pfile = get_pfile_name(pfile_stem, rep=trial, slide=slide, shuffled=1)
+                    pfile = get_pfile_name(pfile_stem, rep=trial,
+                                           slide=slide, shuffled=1)
                 bettis = calcBettis(data_mat, clusters, pfile, thresh)
                 bettitrial[str(slide)] = {'bettis': bettis}
         bettidict[str(trial)] = bettitrial
@@ -503,13 +509,14 @@ def getPerms(data_mat, nperms, ncellsperm):
         newTens[:, :, n] = data_mat[celllist, :]
     return newTens
 
-def do_compute_betti_shuffle(stim_trials, pfile_stem, analysis_path, thresh, nshuffs=1):
+def do_compute_betti_shuffle(stim_trials, pfile_stem, analysis_path,
+                             thresh, nshuffs=1):
 
     assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
     data_tensor = np.array(stim_trials['pop_tens'])
     clusters = np.array(stim_trials['clusters'])
-    levels = (data_tensor.shape)[2:] # First two axes are cells, windows. 
-    assert len(levels) == 1, 'Cant handle more than one level yet' 
+    levels = (data_tensor.shape)[2:] # First two axes are cells, windows.
+    assert len(levels) == 1, 'Cant handle more than one level yet'
     bettidict = {}
     for trial in range(levels[0]):
         pfile = pfile_stem + '-rep%d-shuffle-simplex.txt' % trial
@@ -525,20 +532,22 @@ def do_compute_betti_multilevel(stim_trials, pfile_stem, analysis_path, thresh):
     data_tensor = np.array(stim_trials['pop_tens'])
     clusters = np.array(stim_trials['clusters'])
     dts = data_tensor.shape
-    levels = (dts)[2:] # First two axes are cells, windows. 
+    levels = (dts)[2:] # First two axes are cells, windows.
     nlen = np.product(dts[2:])
     reshaped_data = np.reshape(data_tensor, (dts[0], dts[1], nlen))
     bettidict = {}
     for trial in range(nlen):
         ids = lin2inds(levels, trial) # ids is [trial, perm, perm, perm, ...]
-        pfile = pfile_stem + ''.join(['-lev%d' % s for s in ids]) + '-simplex.txt'
+        pfile = pfile_stem + ''.join(['-lev%d' % s for s in ids]) \
+                + '-simplex.txt'
         data_mat = reshaped_data[:, :, trial]
         bettis = calcBettis(data_mat, clusters, pfile, thresh)
         bettidict[str(trial)] = {'bettis': bettis, 'indices': ids}
     return bettidict
 
-def computeTopologyAcrossAllTrials(data_tensor, clusters, pfile_stem, thresh, rDup=False):
-    ''' Combine all trials into one trial 
+def computeTopologyAcrossAllTrials(data_tensor, clusters, pfile_stem,
+                                   thresh, rDup=False):
+    ''' Combine all trials into one trial
         Compute total topology
     '''
     (ncells, nwin, ntrials) = data_tensor.shape
@@ -552,14 +561,14 @@ def computeTopologyAcrossAllTrials(data_tensor, clusters, pfile_stem, thresh, rD
         ui = np.ones(len(data_mat.T), 'bool')
         ui[1:] = (diff != 0).any(axis=0)
         data_mat = data_mat[:, ui]
-    # Note persistence is meaningless here... 
+    # Note persistence is meaningless here...
     pbettis = calcBettis(data_mat, clusters, pfile, thresh)
     bettis = pbettis[-1] # need last one
     bpd = {'bettis': bettis}
     return bpd
 
 def calcCIBettisAcrossAllTrials(analysis_id, binned_data_file,
-                       block_path, thresh):
+                                block_path, thresh):
     '''
     Given a binned data file, compute the betti numbers of the Curto-Itskov
     Collapses across all trials for a given stimulus
@@ -626,23 +635,24 @@ def calcCIBettisAcrossAllTrials(analysis_id, binned_data_file,
             bpd_withstim[stim] = bpd
             with open(betti_persistence_savefile, 'w') as bpfile:
                 pickle.dump(bpd, bpfile)
-        bpdws_sfn = os.path.join(analysis_path, analysis_id+'-AATrial-bettiResultsDict.pkl')
+        bpdws_sfn = os.path.join(analysis_path,
+                                 analysis_id+'-AATrial-bettiResultsDict.pkl')
         with open(bpdws_sfn, 'w') as bpdwsfile:
-                pickle.dump(bpd_withstim, bpdwsfile)
+            pickle.dump(bpd_withstim, bpdwsfile)
         TOPOLOGY_LOG.info('Completed All Stimuli')
         return bpdws_sfn
 
 def concatenateTrials(data_tensor):
-    
+
     (ncells, nwin, ntrials) = data_tensor.shape
     rs = nwin*ntrials
-    data_mat = np.reshape(data_tensor, (ncells, rs)) 
-    return data_mat   
+    data_mat = np.reshape(data_tensor, (ncells, rs))
+    return data_mat
 
 def computeTotalTopology(analysis_id, binned_data_file,
                          block_path, thresh):
     '''
-    Concatenates all trials across all stimuli and computes topology 
+    Concatenates all trials across all stimuli and computes topology
     removes redundant cell group columns
     '''
     TOPOLOGY_LOG.info('Starting computeTotalTopology')
@@ -681,13 +691,15 @@ def computeTotalTopology(analysis_id, binned_data_file,
         (ncell, nwin) = stim_mat_list[0].shape
         stimtens = np.zeros((ncell, nwin, nstims))
         for ind, stim_mat in enumerate(stim_mat_list):
-            stimtens[:, :, ind] = stim_mat 
+            stimtens[:, :, ind] = stim_mat
 
-        bpd = computeTopologyAcrossAllTrials(stimtens, clusters, pfile_stem, thresh, rDup=True)
+        bpd = computeTopologyAcrossAllTrials(stimtens, clusters, pfile_stem,
+                                             thresh, rDup=True)
 
-        bpdws_sfn = os.path.join(analysis_path, analysis_id+'-TotalTopology-bettiResultsDict.pkl')
+        bpdws_sfn = os.path.join(analysis_path,
+                            analysis_id+'-TotalTopology-bettiResultsDict.pkl')
         with open(bpdws_sfn, 'w') as bpdwsfile:
-                pickle.dump(bpd, bpdwsfile)
+            pickle.dump(bpd, bpdwsfile)
         TOPOLOGY_LOG.info('Completed All Stimuli')
         return bpdws_sfn
 
@@ -696,7 +708,8 @@ def computeTotalTopology(analysis_id, binned_data_file,
 ###############################
 
 def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
-                                      cluster_group, segment_info, popvec_fname, dtOverlap=0.0):
+                                      cluster_group, segment_info,
+                                      popvec_fname, dtOverlap=0.0):
     '''
     Embeds binned population activity into R^n
     resulting Tensor is Ncell x Nwin x NTrials
@@ -744,7 +757,8 @@ def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
             nreps = len(stim_trials.index)
             stim_recs = stim_trials['recording'].values
 
-            # Compute generic windows for this stimulus. This assumes stimulus for all trials is same length
+            # Compute generic windows for this stimulus.
+            #This assumes stimulus for all trials is same length
             # In order to avoid recomputing windows for each trial
             trial_len = (stim_trials['stimulus_end'] - stim_trials['time_samples']).unique()[0]
             gen_seg_start, gen_seg_end = get_segment([0, trial_len], fs, segment_info)
@@ -779,28 +793,28 @@ def build_population_embedding_tensor(spikes, trials, clusters, win_size, fs,
                             poptens_dset[pvclu_msk, win_ind, rep] = nsp_clu/win_s
 
 def build_permuted_data_tensor(data_tens, clusters, ncellsperm, nperms):
-    ''' Builds a permuted data tensor 
+    ''' Builds a permuted data tensor
 
     Parameters
     ----------
-    data_tens : numpy array 
-        NCells x nWin x nTrial array 
-    clusters : numpy array 
-        nCells x 1, giving cellID 
+    data_tens : numpy array
+        NCells x nWin x nTrial array
+    clusters : numpy array
+        nCells x 1, giving cellID
         for corresponding row in data_tens
-    ncellsperm : int 
+    ncellsperm : int
         number of cells in a permutation
-    nperms : int 
-        number of permutations 
+    nperms : int
+        number of permutations
 
     Returns
     -------
-    ptens : numpy array 
+    ptens : numpy array
         permuted data tensor
-        nCellsPerm x nWin x nTrial x nPerms 
-    clumapmat : numpy array 
-        Cluster mapping- cluster id of each row in ptens 
-        nCellsPerm x nPerms 
+        nCellsPerm x nWin x nTrial x nPerms
+    clumapmat : numpy array
+        Cluster mapping- cluster id of each row in ptens
+        nCellsPerm x nPerms
     '''
     nCells, nWin, nTrial = data_tens.shape
     ptens = np.zeros((ncellsperm, nWin, nTrial, nperms))
@@ -818,18 +832,18 @@ def build_permuted_data_tensor(data_tens, clusters, ncellsperm, nperms):
 
 def buildPermutedBinnedFile(bf, pdf, ncp, nperms):
     '''
-    Builds a permuted Binned data file 
+    Builds a permuted Binned data file
 
     Parameters
     ----------
-    bf : str 
+    bf : str
         Path to original binned data file
-    pdf : str 
-        path to new permuted data file 
-    ncp : int 
-        number of cells per permutation 
-    nperms : int  
-        number of permutations 
+    pdf : str
+        path to new permuted data file
+    ncp : int
+        number of cells per permutation
+    nperms : int
+        number of permutations
     '''
     with h5py.File(bf, "r") as poptens_f:
         winsize = poptens_f.attrs['win_size']
@@ -852,7 +866,7 @@ def buildPermutedBinnedFile(bf, pdf, ncp, nperms):
                 perm_stimgrp.create_dataset('clumapmat', data=clumapmat)
 
 def permuteBinned(binned_file, ncellsperm, nperms):
-    ''' Takes a path to a binned file 
+    ''' Takes a path to a binned file
         and produces a permuted version
     '''
     binned_file = os.path.abspath(binned_file)
@@ -891,9 +905,9 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info, 
     # Create directories and filenames
     analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
     raw_binned_fname = analysis_id + '-{}-{}.binned'.format(winsize, dtOverlap)
-    analysis_id_forward = analysis_id + '-{}-{}'.format(winsize, dtOverlap) 
+    analysis_id_forward = analysis_id + '-{}-{}'.format(winsize, dtOverlap)
     bfdict = {'analysis_id': analysis_id_forward}
- 
+
     binned_folder = os.path.join(block_path, 'binned_data/{}/'.format(analysis_id))
     if not os.path.exists(binned_folder):
         os.makedirs(binned_folder)
@@ -919,9 +933,9 @@ def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segm
     # Create directories and filenames
     analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
     raw_binned_fname = analysis_id + '-{}-{}.binned'.format(winsize, dtOverlap)
-    analysis_id_forward = analysis_id + '-{}-{}'.format(winsize, dtOverlap) 
+    analysis_id_forward = analysis_id + '-{}-{}'.format(winsize, dtOverlap)
     bfdict = {'analysis_id': analysis_id_forward}
- 
+
     cg_string = '-'.join(cluster_group)
     seg_string = '-'.join(map(str, segment_info))
     if comment:
@@ -930,7 +944,7 @@ def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segm
     if not os.path.exists(binned_folder):
         os.makedirs(binned_folder)
     existingBinned = glob.glob(os.path.join(binned_folder, '*.binned'))
-    
+
     if len(existingBinned) == 0:
         # not already binned!
         # Bin the raw data
@@ -944,7 +958,7 @@ def do_dag_bin_newFolder(block_path, spikes, trials, clusters, fs, winsize, segm
 
     bfdict['raw'] = binned_folder
 
-    return bfdict 
+    return bfdict
 
 def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle=False, shuffleperm=False, nperms=0, ncellsperm=1, **kwargs):
 
@@ -1010,13 +1024,13 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
             resF = calcCIBettisAcrossAllTrials(tpid_at, atdf, block_path, thresh)
         with open(resF, 'r') as f:
             res = pickle.load(f)
-            analysis_dict['at'] = res 
+            analysis_dict['at'] = res
 
-    master_fname = aid 
+    master_fname = aid
     for a, val in kwargs.iteritems():
         master_fname = master_fname+'-{}_{}'.format(a, val)
     master_fname = master_fname+'-{}-masterResults.pkl'.format(thresh)
     master_f = os.path.join(block_path, master_fname)
     with open(master_f, 'w') as f:
-            pickle.dump(analysis_dict, f)
+        pickle.dump(analysis_dict, f)
     return master_f

@@ -1,9 +1,10 @@
-#########################################################################################
-## Routines for manipulating simplicial complexes                                      ##
-## and computing the boundary operators.                                               ##
-## Follows algorithms in "Computational Homology" by Kaczynski, Mischaikow, and Mrozek ##
-## Bradley Theilman 2 February 2017                                                    ##
-#########################################################################################
+################################################################################
+## Routines for manipulating simplicial complexes                             ## 
+## and computing the boundary operators.                                      ## 
+## Follows algorithms in "Computational Homology"                             ##
+## by Kaczynski, Mischaikow, and Mrozek                                       ##          
+## Bradley Theilman 2 February 2017                                           ## 
+################################################################################
 
 import numpy as np 
 import scipy.linalg as spla
@@ -18,7 +19,8 @@ def union(a, b):
     return list(set(a) | set(b))
 
 def simplexUnion(E1, E2):
-    ''' Calculate the union of two simplicial complexes represented as lists of generators
+    ''' Calculate the union of two simplicial complexes 
+        represented as lists of generators
     '''
     sortedE = sorted([E1, E2], key=len)
     maxlen = len(sortedE[1])
@@ -248,7 +250,8 @@ def graphLaplacian(adj):
 
 def binnedtobinary(popvec, thresh):
     '''
-    Takes a popvec array from a binned data file and converts to a binary matrix according to thresh
+    Takes a popvec array from a binned data file and converts 
+    to a binary matrix according to thresh
 
     Parameters
     ----------
