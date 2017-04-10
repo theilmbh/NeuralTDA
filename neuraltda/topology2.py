@@ -965,9 +965,10 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
     aid = bfdict['analysis_id']
     bpt = os.path.join(block_path, 'topology/')
     analysis_dict = dict()
+    rawFolder = bfdict['raw']
 
     if 'raw' in bfdict.keys() and raw:
-        rawFolder = bfdict['raw']
+        
         tpid_raw = aid +'-{}-raw'.format(thresh)
         tpf_raw = os.path.join(bpt, tpid_raw)
         rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
@@ -979,7 +980,6 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
             analysis_dict['raw'] = res
 
     if shuffle:
-        rawFolder = bfdict['raw']
         tpid_raw = aid +'-{}-raw-shuffled'.format(thresh)
         tpf_raw = os.path.join(bpt, tpid_raw)
         rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
@@ -991,7 +991,6 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
             analysis_dict['rawshuffled'] = res
 
     if nperms:
-        rawFolder = bfdict['raw']
         tpid_raw = aid +'-{}-permuted-{}-{}'.format(thresh, nperms, ncellsperm)
         tpf_raw = os.path.join(bpt, tpid_raw)
         rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
@@ -1003,7 +1002,6 @@ def dag_topology(block_path, thresh, bfdict, simplexWinSize=0, raw=True, shuffle
             analysis_dict['permuted'] = res
 
     if shuffleperm:
-        rawFolder = bfdict['raw']
         tpid_raw = aid +'-{}-shuffled-permuted-{}-{}'.format(thresh, nperms, ncellsperm)
         tpf_raw = os.path.join(bpt, tpid_raw)
         rawDataFiles = glob.glob(os.path.join(rawFolder, '*.binned'))
