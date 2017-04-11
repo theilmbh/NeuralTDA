@@ -11,6 +11,15 @@ import h5py
 import os
 import pickle
 import numpy as np
+from joblib import Parallel, delayed
+
+def computeChainGroup(poptens, trial):
+
+    popmat = poptens[:, :, trial]
+    popmatbinary = sc.binnedtobinary(popmat, thresh)
+    maxsimps = sc.binarytomaxsimplex(popmatbinary, rDup=True)
+    scgGens = sc.simplicialChainGroups(maxsimps)
+    return scgGens 
 
 def computeChainGroups(blockPath, binned_datafile, thresh):
     ''' Takes a binned data file and computes the chain group generators and saves them
@@ -24,13 +33,15 @@ def computeChainGroups(blockPath, binned_datafile, thresh):
             poptens = np.array(bdf[stim]['pop_tens'])
             (ncell, nwin, ntrial) = np.shape(poptens)
             scgGenSave = dict()
-            for trial in range(ntrial):
-                print('Stim: {} Trial: {}').format(stim, trial)
-                popmat = poptens[:, :, trial]
-                popmatbinary = sc.binnedtobinary(popmat, thresh)
-                maxsimps = sc.binarytomaxsimplex(popmatbinary, rDup=True)
-                scgGens = sc.simplicialChainGroups(maxsimps)
-                scgGenSave[trial] = scgGens
+            scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup(poptens, trial)) for trial in range(ntrial))
+
+#            for trial in range(ntrial):
+#                print('Stim: {} Trial: {}').format(stim, trial)
+#                popmat = poptens[:, :, trial]
+#                popmatbinary = sc.binnedtobinary(popmat, thresh)
+#                maxsimps = sc.binarytomaxsimplex(popmatbinary, rDup=True)
+#                scgGens = sc.simplicialChainGroups(maxsimps)
+#                scgGenSave[trial] = scgGens
             stimGenSave[stim] = scgGenSave
 
     # Create output filename
