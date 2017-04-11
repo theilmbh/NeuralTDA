@@ -13,7 +13,7 @@ import pickle
 import numpy as np
 from joblib import Parallel, delayed
 
-def computeChainGroup(poptens, trial):
+def computeChainGroup(poptens, thresh, trial):
 
     popmat = poptens[:, :, trial]
     popmatbinary = sc.binnedtobinary(popmat, thresh)
@@ -33,7 +33,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh):
             poptens = np.array(bdf[stim]['pop_tens'])
             (ncell, nwin, ntrial) = np.shape(poptens)
             scgGenSave = dict()
-            scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup(poptens, trial)) for trial in range(ntrial))
+            scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup(poptens, thresh, trial)) for trial in range(ntrial))
 
 #            for trial in range(ntrial):
 #                print('Stim: {} Trial: {}').format(stim, trial)
