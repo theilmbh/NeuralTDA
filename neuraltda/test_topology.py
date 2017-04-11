@@ -63,7 +63,7 @@ def test_ring_dataset(N_neurons, fs, max_fr):
 	spikes2 = generate_poisson_ring_dataset(N_neurons, times2, fr_fact)
 	spikes = spikes1.append(spikes2)
 	trials = pd.DataFrame({'time_samples': [times[0], times2[0]], 
-						   'stimulus': ['test_ring_dataset', 'test_ring_dataset'])
+						   'stimulus': ['test_ring_dataset', 'test_ring_dataset'],
 						   'stimulus_end': [times[-1], times2[-1]]
 						   })
 	clusterIDs = range(N_neurons)
