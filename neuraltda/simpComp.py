@@ -22,27 +22,58 @@ def simplexUnion(E1, E2):
     ''' Calculate the union of two simplicial complexes
         represented as lists of generators
     '''
-    sortedE = sorted([E1, E2], key=len)
-    maxlen = len(sortedE[1])
-    minlen = len(sortedE[0])
+    sorted_E = sorted([E1, E2], key=len)
+    maxlen = len(sorted_E[1])
+    minlen = len(sorted_E[0])
     for i in range(maxlen-minlen):
-        sortedE[0].append([])
-    newE = []
+        sorted_E[0].append([])
+    new_E = []
     for ind in range(maxlen):
-        newE.append(sorted(union(sortedE[0][ind], sortedE[1][ind])))
-    return newE
+        new_E.append(sorted(union(sorted_E[0][ind], sorted_E[1][ind])))
+    return new_E
 
 def primaryFaces(Q):
+    '''
+    Take a simplex and return its primary faces
+    These are the faces of one dimension less. 
+
+    Parameters
+    ----------
+    Q : tuple
+        tuple of vertices defining a simplex 
+
+    Returns
+    -------
+    L : list 
+        list of simplices for the primary faces of Q 
+    '''
+
     L = []
-    d = len(Q)
+    dim = len(Q)
     Q = list(Q)
-    Q.extend(Q[:d-2])
-    for ind in range(d):
-        s = (Q[ind:ind+(d-1)])
-        L.append(tuple(sorted(s)))
+    Q.extend(Q[:dim-2])
+    for ind in range(dim):
+        face = (Q[ind:ind+(dim-1)])
+        L.append(tuple(sorted(face)))
     return L
 
 def simplicialChainGroups(maxsimps):
+    '''
+    Take a list of maximal simplices and 
+    successively add faces until all generators 
+    of the chain groups are present
+
+    Parameters
+    ----------
+    maxsimps : list of tuples 
+        list of the maximal simplices in the complex 
+
+    Returns
+    -------
+    E : list of lists 
+        simplicial complex generators in each dimension 
+    '''
+
     maxdim = max([len(s) for s in maxsimps])
     E = [[] for ind in range(maxdim+2)]
     K = list(maxsimps)
@@ -58,6 +89,11 @@ def simplicialChainGroups(maxsimps):
     return E
 
 def boundaryOperator(Q):
+    ''' 
+    Given a simplex, return its boundary operator
+    in a dictionary
+    '''
+
     sgn = 1
     c = dict()
     Ql = list(Q)
@@ -72,6 +108,12 @@ def boundaryOperator(Q):
     return c
 
 def canonicalCoordinates(c, K):
+    '''
+    given a boundary operator dictionary, 
+    convert it into canonicalCoordinates using the basis K 
+    
+    '''
+
     v = np.zeros(len(K))
     for ind in range(len(K)):
         if c.has_key(K[ind]):
