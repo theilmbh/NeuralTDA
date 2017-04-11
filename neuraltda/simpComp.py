@@ -1,12 +1,12 @@
 ################################################################################
-## Routines for manipulating simplicial complexes                             ## 
-## and computing the boundary operators.                                      ## 
+## Routines for manipulating simplicial complexes                             ##
+## and computing the boundary operators.                                      ##
 ## Follows algorithms in "Computational Homology"                             ##
-## by Kaczynski, Mischaikow, and Mrozek                                       ##          
-## Bradley Theilman 2 February 2017                                           ## 
+## by Kaczynski, Mischaikow, and Mrozek                                       ##
+## Bradley Theilman 2 February 2017                                           ##
 ################################################################################
 
-import numpy as np 
+import numpy as np
 import scipy.linalg as spla
 
 def maxEnt(scg, dim):
@@ -19,7 +19,7 @@ def union(a, b):
     return list(set(a) | set(b))
 
 def simplexUnion(E1, E2):
-    ''' Calculate the union of two simplicial complexes 
+    ''' Calculate the union of two simplicial complexes
         represented as lists of generators
     '''
     sortedE = sorted([E1, E2], key=len)
@@ -44,7 +44,7 @@ def primaryFaces(Q):
 
 def simplicialChainGroups(maxsimps):
     maxdim = max([len(s) for s in maxsimps])
-    E=[[] for ind in range(maxdim+2)]
+    E = [[] for ind in range(maxdim+2)]
     K = list(maxsimps)
     while(len(K) > 0):
         Q = K.pop(0)
@@ -79,7 +79,7 @@ def canonicalCoordinates(c, K):
     return v
 
 def boundaryOperatorMatrix(E):
-    
+
     nmat = len(E)
     D = [[] for i in range(nmat)]
     for k in range(1, nmat):
@@ -122,7 +122,7 @@ def expandBasis(mat, oldK, newK, oldKm1, newKm1):
     basTarget = sorted(union(oldKm1, newKm1))
     if mat == []:
         mat = np.zeros((len(basTarget), len(basSource)))
-    else:    
+    else:
         for ind, b in enumerate(basSource):
             if b not in oldK:
                 mat = np.insert(mat, ind, 0, axis=1)
@@ -145,7 +145,7 @@ def expandBases(D1, D2, E1, E2):
     return (newD1, newD2)
 
 def laplacian(D, dim):
-    
+
     Di = np.array(D[dim])
     Di1 = np.array(D[dim+1])
     return np.dot(Di.T, Di) + np.dot(Di1, Di1.T)
@@ -156,7 +156,7 @@ def laplacians(D):
     laps = []
     for dim in range(1, len(D)-1):
         laps.append(laplacian(D, dim))
-    return laps 
+    return laps
 
 def densityMatrices(D, beta_list):
 
@@ -173,7 +173,7 @@ def densityMatrices(D, beta_list):
     return rhos
 
 def densityMatrix(L, beta):
-    try: 
+    try:
         M = spla.expm(beta*L)
         M = M /np.trace(M)
     except ValueError:
@@ -203,12 +203,12 @@ def KLdivergence_matrixlog(rho, sigma):
     return np.trace(divMat)
 
 def JSdivergence(rho, sigma):
-    
+
     M = (rho+sigma)/2.0
     return (KLdivergence(rho, M) + KLdivergence(sigma, M))/2.0
 
 def JSdivergences(rho, sigma):
-    
+
     assert (len(rho) == len(sigma))
     div = []
     for r, s in zip(rho, sigma):
@@ -226,7 +226,7 @@ def spectralEntropies(rhos):
     return ents
 
 def stimSpaceGraph(E, D):
-    ''' Takes a set of generators for the chain groups 
+    ''' Takes a set of generators for the chain groups
     and produces adjacency matrixfor the graph of the space
     '''
     E[0] = []
@@ -243,21 +243,21 @@ def stimSpaceGraph(E, D):
     return (adj, Ec)
 
 def graphLaplacian(adj):
-    
+
     D = np.diag(np.sum(adj, axis=0))
     L = D - adj
     return L
 
 def binnedtobinary(popvec, thresh):
     '''
-    Takes a popvec array from a binned data file and converts 
+    Takes a popvec array from a binned data file and converts
     to a binary matrix according to thresh
 
     Parameters
     ----------
-    popvec : array 
-        An NCells by Nwindow array containing firing rates in that window.  
-    Thresh : float 
+    popvec : array
+        An NCells by Nwindow array containing firing rates in that window.
+    Thresh : float
         Multiple of average firing rate to use for thresholding
     '''
 
@@ -266,18 +266,18 @@ def binnedtobinary(popvec, thresh):
     means = popvec.sum(1)/Nwin
     means = np.tile(means, (Nwin, 1)).T
     meanthr = thresh*means
-    
+
     activeUnits = np.greater(popvec, meanthr).astype(int)
     return activeUnits
 
 def binarytomaxsimplex(binMat, rDup=False):
-    ''' 
-    Takes a binary matrix and computes maximal simplices according to CI 2008 
+    '''
+    Takes a binary matrix and computes maximal simplices according to CI 2008
 
     Parameters
     ----------
-    binMat : numpy array 
-        An Ncells x Nwindows array 
+    binMat : numpy array
+        An Ncells x Nwindows array
     '''
     if rDup:
         lexInd = np.lexsort(binMat)
@@ -306,6 +306,6 @@ def adjacency2maxsimp(adjmat, basis):
         maxsimps.append((b,))
     for ind, row in enumerate(uptr):
         for targ, val in enumerate(row):
-            if val >0:
+            if val > 0:
                 maxsimps.append(tuple(sorted((basis[ind], basis[targ]))))
-    return maxsimps 
+    return maxsimps
