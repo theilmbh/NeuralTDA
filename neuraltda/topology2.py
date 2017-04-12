@@ -781,7 +781,7 @@ def build_activity_tensor(stim_trials, spikes, clusters_list, gen_windows):
                 for clu in spiking_clusters:
                     cluster_mask = (spikes_in_win['cluster'] == clu)
                     pvclu_msk = (clusters_list == clu)
-                    nsp_clu = float(len(spikes_in_win[clu_msk]))
+                    nsp_clu = float(len(spikes_in_win[cluster_mask]))
                     nsp_clu2 = 1000.*nsp_clu/win_size
                     poptens[pvclu_msk, win_ind, rep] = nsp_clu2 
     return poptens 
