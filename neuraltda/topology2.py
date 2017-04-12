@@ -761,6 +761,7 @@ def compute_gen_windows(trial_len, fs, segment_info, win_size, dt_overlap):
         gen_windows = create_subwindows(gen_seg,
                                         win_size_samples,
                                         overlap_samples)
+        return gen_windows
 
 def build_activity_tensor(stim_trials, spikes, clusters_list, gen_windows):
 
