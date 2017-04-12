@@ -778,7 +778,7 @@ def build_activity_tensor(stim_trials, spikes, clusters_list,
             win2 = win2 = [win[0] + trial_start, win[1] + trial_start]
             spikes_in_win = get_spikes_in_window(spikes, win2, rec)
             spiking_clusters = spikes_in_win['cluster'].unique()
-            if spiking_clusters:
+            if len(spiking_clusters) > 0:
                 for clu in spiking_clusters:
                     cluster_mask = (spikes_in_win['cluster'] == clu)
                     pvclu_msk = (clusters_list == clu)
