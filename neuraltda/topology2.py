@@ -737,10 +737,10 @@ def build_binned_file(spikes, trials, clusters, win_size, fs,
             trial_len = (stim_trials['stimulus_end'] \
                          - stim_trials['time_samples']).unique()[0]
             gen_windows = compute_gen_windows(trial_len, fs, segment_info,
-                                              win_size, dt_overlap, win_size)
+                                              win_size, dt_overlap)
             # Create Data set
             poptens = build_activity_tensor(stim_trials, spikes, clusters_list,
-                                            gen_windows)
+                                            gen_windows, win_size)
             poptens_dset = stimgrp.create_dataset('pop_tens', data=poptens)
             stimgrp.create_dataset('clusters', data=clusters_list)
             stimgrp.create_dataset('windows', data=np.array(gen_windows))
