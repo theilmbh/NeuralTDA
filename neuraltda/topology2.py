@@ -685,9 +685,9 @@ def compute_total_topology(analysis_id, binned_data_file,
 ###### Binning Functions ######
 ###############################
 
-def build_activity_tensor(spikes, trials, clusters, win_size, fs,
-                          cluster_group, segment_info,
-                          popvec_fname, dt_overlap=0.0):
+def build_binned_file(spikes, trials, clusters, win_size, fs,
+                      cluster_group, segment_info,
+                      popvec_fname, dt_overlap=0.0):
     '''
     Embeds binned population activity into R^n
     resulting Tensor is Ncell x Nwin x NTrials
@@ -734,45 +734,56 @@ def build_activity_tensor(spikes, trials, clusters, win_size, fs,
             stim_trials = trials[trials['stimulus'] == stim]
             nreps = len(stim_trials.index)
             stim_recs = stim_trials['recording'].values
-
-            # Compute generic windows for this stimulus.
-            #This assumes stimulus for all trials is same length
-            # In order to avoid recomputing windows for each trial
             trial_len = (stim_trials['stimulus_end'] \
                          - stim_trials['time_samples']).unique()[0]
-            gen_seg_start, gen_seg_end = get_segment([0, trial_len],
-                                                     fs,
-                                                     segment_info)
-            gen_seg = [gen_seg_start, gen_seg_end]
-            win_size_samples = int(np.round(win_size/1000. * fs))
-            overlap_samples = int(np.round(dt_overlap/1000. * fs))
-            gen_windows = create_subwindows(gen_seg,
-                                            win_size_samples,
-                                            overlap_samples)
-            nwins = len(gen_windows)
-
+            gen_windows = compute_gen_windows(trial_len, fs, segment_info,
+                                              win_size, dt_overlap)
             # Create Data set
-            poptens_init = np.zeros((nclus, nwins, nreps))
-            poptens_dset = stimgrp.create_dataset('pop_tens', data=poptens_init)
+            poptens = build_activity_tensor(stim_trials, spikes,
+                                            clusters_list, gen_windows)
+            poptens_dset = stimgrp.create_dataset('pop_tens', data=poptens)
             stimgrp.create_dataset('clusters', data=clusters_list)
             stimgrp.create_dataset('windows', data=np.array(gen_windows))
             poptens_dset.attrs['fs'] = fs
             poptens_dset.attrs['win_size'] = win_size
 
-            for rep in range(nreps):
-                trial_start = stim_trials.iloc[rep]['time_samples']
-                rec = stim_recs[rep]
-                for win_ind, win in enumerate(gen_windows):
-                    win2 = [win[0] + trial_start, win[1]+trial_start]
-                    spikes_in_win = get_spikes_in_window(spikes, win2, rec)
-                    clus_that_spiked = spikes_in_win['cluster'].unique()
-                    if len(clus_that_spiked) > 0:
-                        for clu in clus_that_spiked:
-                            clu_msk = (spikes_in_win['cluster'] == clu)
-                            pvclu_msk = (clusters_list == clu)
-                            nsp_clu = float(len(spikes_in_win[clu_msk]))
-                            nsp_clu2 = 1000.*nsp_clu/win_size
-                            poptens_dset[pvclu_msk, win_ind, rep] = nsp_clu2
+def compute_gen_windows(trial_len, fs, segment_info, win_size, dt_overlap):
+        # Compute generic windows for this stimulus.
+        #This assumes stimulus for all trials is same length
+        # In order to avoid recomputing windows for each trial
+        # trial_len is in samples 
+        gen_seg_start, gen_seg_end = get_segment([0, trial_len],
+                                                 fs,
+                                                 segment_info)
+        gen_seg = [gen_seg_start, gen_seg_end]
+        win_size_samples = int(np.round(win_size/1000. * fs))
+        overlap_samples = int(np.round(dt_overlap/1000. * fs))
+        gen_windows = create_subwindows(gen_seg,
+                                        win_size_samples,
+                                        overlap_samples)
+
+def build_activity_tensor(stim_trials, spikes, clusters_list, gen_windows):
+
+    nreps = len(stim_trials.index)
+    stim_recs = stim_trials['recording'].values
+    nwins = len(gen_windows)
+    nclus = len(clusters_list)
+    poptens = np.zeros((nclus, nwins, nreps))
+    for rep in range(nreps):
+        trial_start = stim_trials.iloc[rep]['time_samples']
+        rec = stim_recs[rep]
+        for win_ind, win in enumerate(gen_windows):
+            win2 = win2 = [win[0] + trial_start, win[1] + trial_start]
+            spikes_in_win = get_spikes_in_window(spikes, win2, rec)
+            spiking_clusters = spikes_in_win['cluster'].unique()
+            if spiking_clusters:
+                for clu in spiking_clusters:
+                    cluster_mask = (spikes_in_win['cluster'] == clu)
+                    pvclu_msk = (clusters_list == clu)
+                    nsp_clu = float(len(spikes_in_win[clu_msk]))
+                    nsp_clu2 = 1000.*nsp_clu/win_size
+                    poptens[pvclu_msk, win_ind, rep] = nsp_clu2 
+    return poptens 
 
 def build_permuted_data_tensor(data_tens, clusters, ncellsperm, nperms):
     ''' Builds a permuted data tensor
@@ -882,7 +893,7 @@ def dag_bin(block_path, winsize, segment_info, **kwargs):
 
     (spikes, trials, clusters, fs) = db_load_data(block_path)
     bfdict = do_dag_bin_lazy(block_path, spikes, trials, clusters,
-                                  fs, winsize, segment_info, **kwargs)
+                             fs, winsize, segment_info, **kwargs)
     return bfdict
 
 def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
@@ -903,16 +914,51 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
     # Bin the raw data
     raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
     TOPOLOGY_LOG.info('Binning data')
-    build_activity_tensor(spikes, trials, clusters, winsize, fs,
+    build_binned_file(spikes, trials, clusters, winsize, fs,
                                       cluster_group, segment_info, raw_binned_f,
                                       dt_overlap)
     bfdict['raw'] = binned_folder
     return bfdict
 
 def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
-                         segment_info, cluster_group=['Good'], dt_overlap=0.0,
-                         comment=''):
-    ''' Check to see if already binned to avoid duplicating work!
+                    segment_info, cluster_group=['Good'], dt_overlap=0.0,
+                    comment=''):
+    ''' 
+    Take data structures from ephys_analysis and bin them into 
+    population tensors.
+    This version checks to see if a binning with the same parameters already
+    exists and returns the path to that file if so. 
+
+    Parameters
+    ----------
+    block_path : str 
+        Path to the directory containing the kwik file of the data to process.
+    spikes : DataFrame 
+        Spike dataframe containing all the spikes for the dataset 
+    trials : DataFrame 
+        Trial DataFrame containing all the trials you'd like to bin. 
+    clusters : DataFrame 
+        cluster dataframe containing information for all the clusters 
+    fs : int 
+        sampling rate 
+    winsize :  float 
+        window size in milliseconds.
+    segment_info : list 
+        List containing time in milliseconds relative to trial start for the 
+        beginning of the segment and time in ms relative to trial end for the
+        end of the segment 
+    cluster_group : list 
+        List of strings of cluster groups to include in binning. 
+    dt_overlap : float 
+        time in milliseconds for windows to overlap 
+    comment : str 
+        string identifying anything special about this binning. 
+
+    Returns
+    -------
+    bfdict : dict 
+        dictionary containing paths to binned folders.
+
     '''
 
     block_path = os.path.abspath(block_path)
@@ -941,9 +987,9 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
         TOPOLOGY_LOG.info('Data not already binned.')
         raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
         TOPOLOGY_LOG.info('Binning data')
-        build_activity_tensor(spikes, trials, clusters, winsize, fs,
-                                          cluster_group, segment_info,
-                                          raw_binned_f, dt_overlap)
+        build_binned_file(spikes, trials, clusters, winsize, fs,
+                              cluster_group, segment_info,
+                              raw_binned_f, dt_overlap)
     else:
         raw_binned_f = existing_binned[0]
 
