@@ -32,7 +32,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
         for stim in stims:
             poptens = np.array(bdf[stim]['pop_tens'])
             (ncell, nwin, ntrial) = np.shape(poptens)
-            if  poptens == []:
+            if  nwin == 0:
                 continue
             scgGenSave = dict()
             scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
