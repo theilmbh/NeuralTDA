@@ -21,7 +21,7 @@ def computeChainGroup(poptens, thresh, trial):
     scgGens = sc.simplicialChainGroups(maxsimps)
     return scgGens 
 
-def computeChainGroups(blockPath, binned_datafile, thresh):
+def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
     ''' Takes a binned data file and computes the chain group generators and saves them
         Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg
     '''
@@ -47,7 +47,10 @@ def computeChainGroups(blockPath, binned_datafile, thresh):
     # Create output filename
     (binFold, binFile) = os.path.split(binned_datafile)
     (binFileName, binExt) = os.path.splitext(binFile)
-    scgGenFile = binFileName + '-{}.scg'.format(thresh)
+    scg_prefix = '-{}'.format(thresh)
+    if comment:
+        scgPrefix = scg_prefix + '-{}'.format(comment)
+    scgGenFile = binFileName + scg_prefix + '.scg'
 
     # Create scg Folder
     scgFold = os.path.join(blockPath, 'scg/')
