@@ -114,7 +114,7 @@ def get_windows_for_spike(t, subwin_len, noverlap, segment):
     wins.append(i0)
     wins = i0 - np.array(range(J+1))
     wins = wins[wins >=0]
-    wins = wins[wins <= max_k]
+    wins = wins[wins < max_k]
     return wins
 
 def create_subwindows(segment, subwin_len, noverlap=0):
