@@ -101,6 +101,22 @@ def get_spikes_in_window(spikes, window, rec):
             (spikes['recording'] == rec))
     return spikes[mask]
 
+def get_windows_for_spike(t, subwin_len, noverlap, segment):
+
+    skip = subwin_len - noverlap
+    dur = segment[1] - segment[0]
+    A = (int(t) - int(segment[0])) / int(skip)
+    J = int(subwin_len-1) / int(skip)
+    max_k = int(np.floor(float(dur)/float(skip)))
+
+    wins = []
+    i0 = A
+    wins.append(i0)
+    wins = i0 - np.array(range(J+1))
+    wins = wins[wins >=0]
+    wins = wins[wins <= max_k]
+    return wins
+
 def create_subwindows(segment, subwin_len, noverlap=0):
     '''
     Create list of subwindows for cell group identification.
@@ -747,6 +763,71 @@ def build_binned_file(spikes, trials, clusters, win_size, fs,
             poptens_dset.attrs['fs'] = fs
             poptens_dset.attrs['win_size'] = win_size
 
+def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
+                      cluster_group, segment_info,
+                      popvec_fname, dt_overlap=0.0):
+    '''
+    Embeds binned population activity into R^n
+    resulting Tensor is Ncell x Nwin x NTrials
+
+    Parameters
+    ------
+    spikes : pandas dataframe
+        Spike frame from ephys.core
+    trials : pandas dataframe
+        Trials dataframe from ephys.trials
+    clusters : Pandas DataFrame
+        Clusters frame from ephys.core
+    win_size : float
+        Window size in milliseconds
+    fs : float
+        Sampling rate in Hz
+    cluster_group : list
+        List containing cluster sort quality strings to include in embedding
+        Possible entries include 'Good', 'MUA'
+    segment_info : dict
+        Dictionary containing parameters for segment generation
+    popvec_fname : str
+        File in which to store the embedding
+    '''
+    with h5py.File(popvec_fname, "w") as popvec_f:
+
+        popvec_f.attrs['win_size'] = win_size
+        popvec_f.attrs['fs'] = fs
+        if cluster_group != None:
+            mask = np.ones(len(clusters.index)) < 0
+            for grp in cluster_group:
+                mask = np.logical_or(mask, clusters['quality'] == grp)
+        clusters_to_use = clusters[mask]
+        clusters_list = clusters_to_use['cluster'].unique()
+        spikes = spikes[spikes['cluster'].isin(clusters_list)]
+        nclus = len(clusters_to_use.index)
+        popvec_f.attrs['nclus'] = nclus
+        stims = trials['stimulus'].unique()
+
+        for stim in stims:
+            if str(stim) == 'nan':
+                continue
+            stimgrp = popvec_f.create_group(stim)
+            stim_trials = trials[trials['stimulus'] == stim]
+            nreps = len(stim_trials.index)
+            stim_recs = stim_trials['recording'].values
+            trial_len = (stim_trials['stimulus_end'] \
+                         - stim_trials['time_samples']).unique()[0]
+
+            # compute subwin len and noverlap in samples
+            subwin_len = int(np.round(win_size/1000. * fs))
+            noverlap = int(np.round(dt_overlap/1000. * fs))
+            segment = get_segment([0, trial_len], fs, segment_info)
+            # Create Data set
+            poptens = build_activity_tensor_quick(stim_trials, spikes, nclus,
+                                win_size, subwin_len, noverlap, segment)
+            poptens_dset = stimgrp.create_dataset('pop_tens', data=poptens)
+            stimgrp.create_dataset('clusters', data=clusters_list)
+            #stimgrp.create_dataset('windows', data=np.array(gen_windows))
+            poptens_dset.attrs['fs'] = fs
+            poptens_dset.attrs['win_size'] = win_size
+
 def compute_gen_windows(trial_len, fs, segment_info, win_size, dt_overlap):
         # Compute generic windows for this stimulus.
         #This assumes stimulus for all trials is same length
@@ -785,7 +866,32 @@ def build_activity_tensor(stim_trials, spikes, clusters_list,
                     nsp_clu = float(len(spikes_in_win[cluster_mask]))
                     nsp_clu2 = 1000.*nsp_clu/win_size
                     poptens[pvclu_msk, win_ind, rep] = nsp_clu2 
+    return poptens
+
+def build_activity_tensor_quick(stim_trials, spikes, nclus,
+                                win_size, subwin_len, noverlap, segment):
+
+    nreps = len(stim_trials.index)
+    stim_recs = stim_trials['recording'].values
+    
+    skip = subwin_len - noverlap
+    dur = segment[1] - segment[0]
+    nwins = int(np.floor(float(dur)/float(skip)))
+    poptens = np.zeros((nclus, nwins, nreps))
+    for rep in range(nreps):
+        trial_start = stim_trials.iloc[rep]['time_samples']
+        trial_end = stim_trials.iloc[rep]['stimulus_end']
+        samp_period = (trial_start + segment[0], trial_start + segment[1])
+        rec = stim_recs[rep]
+        stim_rec_spikes = spikes[spikes['recording'] == rec]
+        sptimes = stim_rec_spikes['time_samples'].values
+        clusters = stim_rec_spikes['cluster'].values
+        for sp, clu in zip(sptimes, clusters):
+            wins = get_windows_for_spike(sp, subwin_len, noverlap, samp_period)
+            poptens[clu, wins, rep] += 1
+    poptens /= (win_size/1000.0)
     return poptens 
+
 
 def build_permuted_data_tensor(data_tens, clusters, ncellsperm, nperms):
     ''' Builds a permuted data tensor
@@ -989,7 +1095,7 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
         TOPOLOGY_LOG.info('Data not already binned.')
         raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
         TOPOLOGY_LOG.info('Binning data')
-        build_binned_file(spikes, trials, clusters, winsize, fs,
+        build_binned_file_quick(spikes, trials, clusters, winsize, fs,
                               cluster_group, segment_info,
                               raw_binned_f, dt_overlap)
     else:
