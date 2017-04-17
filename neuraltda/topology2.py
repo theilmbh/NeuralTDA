@@ -820,7 +820,7 @@ def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
             noverlap = int(np.round(dt_overlap/1000. * fs))
             segment = get_segment([0, trial_len], fs, segment_info)
             # Create Data set
-            poptens = build_activity_tensor_quick(stim_trials, spikes, clusters_lists, nclus,
+            poptens = build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
                                 win_size, subwin_len, noverlap, segment)
             poptens_dset = stimgrp.create_dataset('pop_tens', data=poptens)
             stimgrp.create_dataset('clusters', data=clusters_list)
