@@ -820,7 +820,7 @@ def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
             noverlap = int(np.round(dt_overlap/1000. * fs))
             segment = get_segment([0, trial_len], fs, segment_info)
             # Create Data set
-            poptens = build_activity_tensor_quick(stim_trials, spikes, nclus,
+            poptens = build_activity_tensor_quick(stim_trials, spikes, clusters_lists, nclus,
                                 win_size, subwin_len, noverlap, segment)
             poptens_dset = stimgrp.create_dataset('pop_tens', data=poptens)
             stimgrp.create_dataset('clusters', data=clusters_list)
@@ -868,7 +868,7 @@ def build_activity_tensor(stim_trials, spikes, clusters_list,
                     poptens[pvclu_msk, win_ind, rep] = nsp_clu2 
     return poptens
 
-def build_activity_tensor_quick(stim_trials, spikes, nclus,
+def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
                                 win_size, subwin_len, noverlap, segment):
 
     nreps = len(stim_trials.index)
@@ -888,7 +888,7 @@ def build_activity_tensor_quick(stim_trials, spikes, nclus,
         clusters = stim_rec_spikes['cluster'].values
         for sp, clu in zip(sptimes, clusters):
             wins = get_windows_for_spike(sp, subwin_len, noverlap, samp_period)
-            poptens[clu, wins, rep] += 1
+            poptens[clusters_list==clu, wins, rep] += 1
     poptens /= (win_size/1000.0)
     return poptens 
 
