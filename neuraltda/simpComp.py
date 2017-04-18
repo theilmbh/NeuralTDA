@@ -75,18 +75,19 @@ def simplicialChainGroups(maxsimps):
     '''
 
     maxdim = max([len(s) for s in maxsimps])
-    E = [[] for ind in range(maxdim+2)]
+    Elen = maxdim+2
+    E = [[] for ind in xrange(Elen)]
     K = list(maxsimps)
     while(len(K) > 0):
         Q = K.pop(0)
-        if len(Q) == 0:
+        k = len(Q)-1
+        if k < 0:
             continue
         L = primaryFaces(Q)
-        k = len(Q)-1
         K = union(K, L)
         E[k] = union(E[k], L)
         E[k+1] = union(E[k+1], {Q})
-    for k in range(len(E)):
+    for k in xrange(Elen):
         E[k] = sorted(E[k])
     return E
 

@@ -18,7 +18,14 @@ def computeChainGroup(poptens, thresh, trial):
     popmat = poptens[:, :, trial]
     popmatbinary = sc.binnedtobinary(popmat, thresh)
     maxsimps = sc.binarytomaxsimplex(popmatbinary, rDup=True)
-    scgGens = sc.simplicialChainGroups(maxsimps)
+    # filter max simplices
+    maxsimps = sorted(maxsimps, key=len)
+    newms = maxsimps
+    r = 1
+    while(r < len(newms)):
+        newms = [t for t in newms if not set(t) < set(newms[-r])]
+        r+=1
+    scgGens = sc.simplicialChainGroups(newms)
     return scgGens 
 
 def parallel_compute_chain_group(poptens, thresh):
