@@ -31,11 +31,11 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
         stimGenSave = dict()
         for stim in stims:
             poptens = np.array(bdf[stim]['pop_tens'])
-            if poptens == []:
-                print('Empty poptens')
+            try:
+                (ncell, nwin, ntrial) = np.shape(poptens)
+            except ValueError:
+                print('Empty Poptens')
                 continue
-            print((stim, np.shape(poptens)))
-            (ncell, nwin, ntrial) = np.shape(poptens)
             if  nwin == 0:
                 continue
             scgGenSave = dict()
