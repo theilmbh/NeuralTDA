@@ -31,6 +31,9 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
         stimGenSave = dict()
         for stim in stims:
             poptens = np.array(bdf[stim]['pop_tens'])
+            if poptens == []:
+                print('Empty poptens')
+                continue
             (ncell, nwin, ntrial) = np.shape(poptens)
             if  nwin == 0:
                 continue
