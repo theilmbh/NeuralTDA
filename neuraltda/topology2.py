@@ -872,8 +872,7 @@ def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
                                 win_size, subwin_len, noverlap, segment):
 
     nreps = len(stim_trials.index)
-    stim_recs = stim_trials['recording'].values
-    
+    stim_recs = stim_trials['recording'].values   
     skip = subwin_len - noverlap
     dur = segment[1] - segment[0]
     nwins = int(np.floor(float(dur)/float(skip)))
@@ -883,7 +882,7 @@ def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
         trial_end = stim_trials.iloc[rep]['stimulus_end']
         samp_period = (trial_start + segment[0], trial_start + segment[1])
         rec = stim_recs[rep]
-        stim_rec_spikes = spikes[spikes['recording'] == rec]
+        stim_rec_spikes = get_spikes_in_window(spikes, samp_period, rec)
         sptimes = stim_rec_spikes['time_samples'].values
         clusters = stim_rec_spikes['cluster'].values
         for sp, clu in zip(sptimes, clusters):
@@ -891,7 +890,6 @@ def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
             poptens[clusters_list==clu, wins, rep] += 1
     poptens /= (win_size/1000.0)
     return poptens 
-
 
 def build_permuted_data_tensor(data_tens, clusters, ncellsperm, nperms):
     ''' Builds a permuted data tensor
