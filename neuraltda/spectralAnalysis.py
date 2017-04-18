@@ -76,8 +76,8 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
     (binFold, binFile) = os.path.split(binned_datafile)
     (binFileName, binExt) = os.path.splitext(binFile)
     scg_prefix = '-{}'.format(thresh)
-    if comment:
-        scgPrefix = scg_prefix + '-{}'.format(comment)
+    if not (comment == ''):
+        scg_prefix = scg_prefix + '-{}'.format(comment)
     scgGenFile = binFileName + scg_prefix + '.scg'
 
     # Create scg Folder
