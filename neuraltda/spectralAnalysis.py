@@ -14,7 +14,7 @@ import numpy as np
 from joblib import Parallel, delayed
 
 def computeChainGroup(poptens, thresh, trial):
-
+    print(trial)
     popmat = poptens[:, :, trial]
     popmatbinary = sc.binnedtobinary(popmat, thresh)
     maxsimps = sc.binarytomaxsimplex(popmatbinary, rDup=True)
