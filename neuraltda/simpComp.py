@@ -79,6 +79,8 @@ def simplicialChainGroups(maxsimps):
     K = list(maxsimps)
     while(len(K) > 0):
         Q = K.pop(0)
+        if len(Q) == 0:
+            continue
         L = primaryFaces(Q)
         k = len(Q)-1
         K = union(K, L)
@@ -312,7 +314,7 @@ def binnedtobinary(popvec, thresh):
     activeUnits = np.greater(popvec, meanthr).astype(int)
     return activeUnits
 
-def binarytomaxsimplex(binMat, rDup=False):
+def binarytomaxsimplex(binMat, rDup=False, clus=None):
     '''
     Takes a binary matrix and computes maximal simplices according to CI 2008
 
@@ -328,13 +330,17 @@ def binarytomaxsimplex(binMat, rDup=False):
         ui = np.ones(len(binMat.T), 'bool')
         ui[1:] = (diff != 0).any(axis=0)
         binMat = binMat[:, ui]
+
     Ncells, Nwin = np.shape(binMat)
+    if not clus:
+        clus = np.arange(Ncells)
     MaxSimps = []
-    for win in range(Nwin):
-        if binMat[:, win].any():
-            verts = np.arange(Ncells)[binMat[:, win] == 1]
-            verts = np.sort(verts)
-            MaxSimps.append(tuple(verts))
+    MaxSimps = [tuple(clus[list(np.nonzero(t)[0])]) for t in binMat.T]
+    #for win in range(Nwin):
+    #    if binMat[:, win].any():
+    #        verts = np.arange(Ncells)[binMat[:, win] == 1]
+    #        verts = np.sort(verts)
+    #        MaxSimps.append(tuple(verts))
     return MaxSimps
 
 def adjacency2maxsimp(adjmat, basis):

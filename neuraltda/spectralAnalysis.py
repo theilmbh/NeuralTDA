@@ -21,6 +21,18 @@ def computeChainGroup(poptens, thresh, trial):
     scgGens = sc.simplicialChainGroups(maxsimps)
     return scgGens 
 
+def parallel_compute_chain_group(poptens, thresh):
+    try:
+        (ncell, nwin, ntrial) = np.shape(poptens)
+    except ValueError:
+        print('Empty Poptens')
+        return 
+    if  nwin == 0:
+        return 
+    scgGenSave = dict()
+    scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
+
+
 def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
     ''' Takes a binned data file and computes the chain group generators and saves them
         Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg
@@ -29,6 +41,8 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
     with h5py.File(binned_datafile, 'r') as bdf:
         stims = bdf.keys()
         stimGenSave = dict()
+        poptens_list = [np.array(bdf[stim]['pop_tens']) for stim in stims]
+
         for stim in stims:
             poptens = np.array(bdf[stim]['pop_tens'])
             try:
