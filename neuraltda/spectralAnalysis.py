@@ -28,7 +28,8 @@ def computeChainGroup(poptens, thresh, trial):
     scgGens = sc.simplicialChainGroups(newms)
     return scgGens 
 
-def parallel_compute_chain_group(poptens, thresh):
+def parallel_compute_chain_group(bdf, stim, thresh):
+    poptens = np.array(bdf[stim]['pop_tens'])
     try:
         (ncell, nwin, ntrial) = np.shape(poptens)
     except ValueError:
@@ -49,18 +50,18 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
         stims = bdf.keys()
         stimGenSave = dict()
         poptens_list = [np.array(bdf[stim]['pop_tens']) for stim in stims]
-
-        for stim in stims:
-            poptens = np.array(bdf[stim]['pop_tens'])
-            try:
-                (ncell, nwin, ntrial) = np.shape(poptens)
-            except ValueError:
-                print('Empty Poptens')
-                continue
-            if  nwin == 0:
-                continue
-            scgGenSave = dict()
-            scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
+        scgs = Parallel(n_jobs=14)(delayed(parallel_compute_chain_group)(bdf, stim, thresh) for stim in stims)
+        for ind, stim in enumerate(stims):
+            #poptens = np.array(bdf[stim]['pop_tens'])
+            #try:
+            #    (ncell, nwin, ntrial) = np.shape(poptens)
+            #except ValueError:
+            #    print('Empty Poptens')
+            #    continue
+            #if  nwin == 0:
+            #    continue
+            #scgGenSave = dict()
+            #scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
 
 #            for trial in range(ntrial):
 #                print('Stim: {} Trial: {}').format(stim, trial)
@@ -69,7 +70,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
 #                maxsimps = sc.binarytomaxsimplex(popmatbinary, rDup=True)
 #                scgGens = sc.simplicialChainGroups(maxsimps)
 #                scgGenSave[trial] = scgGens
-            stimGenSave[stim] = scgGenSave
+            stimGenSave[stim] = scgs[ind]
 
     # Create output filename
     (binFold, binFile) = os.path.split(binned_datafile)
