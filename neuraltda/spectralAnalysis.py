@@ -34,6 +34,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
             if poptens == []:
                 print('Empty poptens')
                 continue
+            print((stim, np.shape(poptens))
             (ncell, nwin, ntrial) = np.shape(poptens)
             if  nwin == 0:
                 continue
