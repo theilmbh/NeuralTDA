@@ -947,7 +947,7 @@ def build_shuffled_data_tensor(data_tens, nshuffs):
     ncells, nwin, ntrial = data_tens.shape
     shuff_tens = np.zeros((ncells, nwin, ntrial, nshuffs))
     for shuff in range(nshuffs):
-        for trial in range(ntrials):
+        for trial in range(ntrial):
             shuff_tens[:, :, trial, shuff] = scramble(data_tens[:, :, trial, shuff])
     return shuff_tens
 
