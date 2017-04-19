@@ -195,6 +195,16 @@ def laplacian(D, dim):
     Di1 = np.array(D[dim+1])
     return np.dot(Di.T, Di) + np.dot(Di1, Di1.T)
 
+def reconcile_laplacians(L1, L2):
+    laps = sorted([L1, L2], key=np.size)
+    L1 = laps[0]
+    L2 = laps[1]
+    L_new = np.zeros(L2.shape)
+    (a,b) = L1.shap
+    L_new[0:a, 0:b] = L1
+    return (L_new, L2)
+
+
 def laplacians(D):
 
     l = len(D)
