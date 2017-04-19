@@ -41,7 +41,7 @@ def parallel_compute_chain_group(bdf, stim, thresh):
     scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
 
 
-def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
+def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=False):
     ''' Takes a binned data file and computes the chain group generators and saves them
         Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg
     '''
@@ -53,6 +53,9 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment=''):
         #scgs = Parallel(n_jobs=14)(delayed(parallel_compute_chain_group)(bdf, stim, thresh) for stim in stims)
         for ind, stim in enumerate(stims):
             poptens = np.array(bdf[stim]['pop_tens'])
+            if shuffle:
+                poptens = tp2.build_shuffled_data_tensor(poptens, 1)
+                poptens = poptens[:, :, :, 0]
             try:
                 (ncell, nwin, ntrial) = np.shape(poptens)
             except ValueError:

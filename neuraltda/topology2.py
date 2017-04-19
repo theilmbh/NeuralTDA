@@ -934,6 +934,23 @@ def build_permuted_data_tensor(data_tens, clusters, ncellsperm, nperms):
         clumapmat[:, perm] = clusters[permt]
     return (ptens, clumapmat)
 
+def scramble(a, axis=-1):
+    b = np.random.random(a.shape)
+    idx = np.argsort(b, axis=axis)
+    shuffled = a[np.arange(a.shape[0])[:, None], idx]
+    return shuffled
+
+def build_shuffled_data_tensor(data_tens, nshuffs):
+    '''
+    Shuffles a data tensor
+    '''
+    ncells, nwin, ntrial = data_tens.shape
+    shuff_tens = np.zeros((ncells, nwin, ntrial, nshuffs))
+    for shuff in range(nshuffs):
+        for trial in range(ntrials):
+            shuff_tens[:, :, trial, shuff] = scramble(data_tens[:, :, trial, shuff])
+    return shuff_tens
+
 def build_permuted_binned_file(bf, pdf, ncp, nperms):
     '''
     Builds a permuted Binned data file
