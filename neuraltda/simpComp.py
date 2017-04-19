@@ -200,7 +200,7 @@ def reconcile_laplacians(L1, L2):
     L1 = laps[0]
     L2 = laps[1]
     L_new = np.zeros(L2.shape)
-    (a,b) = L1.shap
+    (a,b) = L1.shape
     L_new[0:a, 0:b] = L1
     return (L_new, L2)
 
