@@ -204,7 +204,6 @@ def reconcile_laplacians(L1, L2):
     L_new[0:a, 0:b] = L1
     return (L_new, L2)
 
-
 def laplacians(D):
 
     l = len(D)
