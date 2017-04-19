@@ -118,3 +118,46 @@ incorrectTrials = trials[trials['correct']==False]
 Parallel(n_jobs=njobs)(delayed(tp2.do_dag_bin_lazy)(blockPath, spikes, correctTrials, clusters, fs, winSize, segmentInfo, cluster_group=['Good', 'MUA'], dt_overlap=povers*winSize, comment='correct') for winSize in winSizes)
 Parallel(n_jobs=njobs)(delayed(tp2.do_dag_bin_lazy)(blockPath, spikes, incorrectTrials, clusters, fs, winSize, segmentInfo, cluster_group=['Good', 'MUA'], dt_overlap=povers*winSize, comment='incorrect') for winSize in winSizes)
 
+print('Binning Active Listening Trials SD...')
+segmentInfo = [2500, 0] 
+spikes = core.load_spikes(blockPath)
+trials = events.load_trials(blockPath)
+fs = core.load_fs(blockPath)
+clusters = core.load_clusters(blockPath)
+
+activeTrials = trials[pd.notnull(trials['response'])]
+
+Parallel(n_jobs=njobs)(delayed(tp2.do_dag_bin_lazy)(blockPath, spikes, activeTrials, clusters, fs, winSize, segmentInfo, cluster_group=['Good', 'MUA'], dt_overlap=povers*winSize, comment='ActiveListening-SD') for winSize in winSizes)
+
+print('Binning Active Listening Trials SD...')
+segmentInfo = [0, -2500] 
+spikes = core.load_spikes(blockPath)
+trials = events.load_trials(blockPath)
+fs = core.load_fs(blockPath)
+clusters = core.load_clusters(blockPath)
+
+activeTrials = trials[pd.notnull(trials['response'])]
+
+Parallel(n_jobs=njobs)(delayed(tp2.do_dag_bin_lazy)(blockPath, spikes, activeTrials, clusters, fs, winSize, segmentInfo, cluster_group=['Good', 'MUA'], dt_overlap=povers*winSize, comment='ActiveListening-Targ') for winSize in winSizes)
+
+print('Binning Passive Listening Trials SD...')
+segmentInfo = [2500, 0] 
+spikes = core.load_spikes(blockPath)
+trials = events.load_trials(blockPath)
+fs = core.load_fs(blockPath)
+clusters = core.load_clusters(blockPath)
+
+activeTrials = trials[pd.isnull(trials['response'])]
+
+Parallel(n_jobs=njobs)(delayed(tp2.do_dag_bin_lazy)(blockPath, spikes, activeTrials, clusters, fs, winSize, segmentInfo, cluster_group=['Good', 'MUA'], dt_overlap=povers*winSize, comment='PassiveListening-SD') for winSize in winSizes)
+
+print('Binning Passive Listening Trials Targ...')
+segmentInfo = [0, -2500] 
+spikes = core.load_spikes(blockPath)
+trials = events.load_trials(blockPath)
+fs = core.load_fs(blockPath)
+clusters = core.load_clusters(blockPath)
+
+activeTrials = trials[pd.isnull(trials['response'])]
+
+Parallel(n_jobs=njobs)(delayed(tp2.do_dag_bin_lazy)(blockPath, spikes, activeTrials, clusters, fs, winSize, segmentInfo, cluster_group=['Good', 'MUA'], dt_overlap=povers*winSize, comment='PassiveListening-Targ') for winSize in winSizes)
