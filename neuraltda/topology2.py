@@ -948,7 +948,7 @@ def build_shuffled_data_tensor(data_tens, nshuffs):
     shuff_tens = np.zeros((ncells, nwin, ntrial, nshuffs))
     for shuff in range(nshuffs):
         for trial in range(ntrial):
-            shuff_tens[:, :, trial, shuff] = scramble(data_tens[:, :, trial, shuff])
+            shuff_tens[:, :, trial, shuff] = scramble(data_tens[:, :, trial])
     return shuff_tens
 
 def build_permuted_binned_file(bf, pdf, ncp, nperms):
