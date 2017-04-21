@@ -41,7 +41,7 @@ def parallel_compute_chain_group(bdf, stim, thresh):
     scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
 
 
-def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=False):
+def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=False, clusters=None):
     ''' Takes a binned data file and computes the chain group generators and saves them
         Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg
     '''
@@ -52,7 +52,10 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
         #poptens_list = [np.array(bdf[stim]['pop_tens']) for stim in stims]
         #scgs = Parallel(n_jobs=14)(delayed(parallel_compute_chain_group)(bdf, stim, thresh) for stim in stims)
         for ind, stim in enumerate(stims):
+            binned_clusters = np.array(bdf[stim]['clusters'])
             poptens = np.array(bdf[stim]['pop_tens'])
+            if clusters is not None:
+                poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
             if shuffle:
                 poptens = tp2.build_shuffled_data_tensor(poptens, 1)
                 poptens = poptens[:, :, :, 0]
@@ -123,4 +126,17 @@ def computeSimplicialLaplacians(scgf):
     with open(LapFile, 'w') as lpf:
         pickle.dump(LapDict, lpf)
 
+def compute_JS_expanded(scgA, scgB, d, beta):
+  
+    DA = sc.boundaryOperatorMatrix(scgA)
+    DB = sc.boundaryOperatorMatrix(scgB)
+    LA = sc.laplacian(DA, d)
+    LB = sc.laplacian(DB, d)
+         
+    (LA, LB) = sc.reconcile_laplacians(LA, LB)
+        
+    rho1 = sc.densityMatrix(LA, beta)
+    rho2 = sc.densityMatrix(LB, beta)
 
+    div = sc.JSdivergence(rho1, rho2)
+    return div
