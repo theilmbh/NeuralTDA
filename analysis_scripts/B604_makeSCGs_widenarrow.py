@@ -16,7 +16,7 @@ cluster_group = ['Good', 'MUA']
 widenarrow_threshold = 0.000540 # sw threshold in seconds
 
 clusters = core.load_clusters(blockPath)
-clusters = clusters[clusters.quality.isin(cluster_group)].unique()
+clusters = clusters[clusters.quality.isin(cluster_group)]['clusters'].unique()
 
 (wide, narrow) = clust.get_wide_narrow(blockPath, clusters, widenarrow_threshold)
 
