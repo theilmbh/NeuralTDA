@@ -14,7 +14,7 @@ public:
 	bool operator==(Simplex simplexB) const;
 	bool operator!=(Simplex simplexB) const;
 	bool operator<(Simplex simplexB) const;
-	void print_vertices();
+	void print_vertices() const;
 };
 
 Simplex::Simplex()
@@ -52,9 +52,9 @@ bool Simplex::operator<(Simplex simplexB) const
 	return this->vertices < simplexB.vertices;
 }
 
-void Simplex::print_vertices()
+void Simplex::print_vertices() const
 {
-	std::vector<int>::iterator it;
+	std::vector<int>::const_iterator it;
 	it = this->vertices.begin();
 	for(; it != this->vertices.end(); ++it)
 	{
@@ -71,7 +71,7 @@ class SimplicialComplex
 
 	SimplicialComplex::scg simplicial_chain_groups;
 public:
-	SimplicialComplex(std::vector<Simplex> K, int max_dim);
+	SimplicialComplex(std::vector<Simplex> K);
 	~SimplicialComplex();
 	void add_max_simplex(std::vector<Simplex> K);
 	void print_scgs();
@@ -79,14 +79,18 @@ private:
 	std::vector<Simplex> primary_faces(Simplex Q);
 };
 
-SimplicialComplex::SimplicialComplex(std::vector<Simplex> K, int max_dim)
+SimplicialComplex::SimplicialComplex(std::vector<Simplex> K)
 {
+	int max_dim = 0;
+	for(int i=0; i<K.size(); i++)
+	{
+		max_dim = std::max(max_dim, K[i].dim);
+	}
 
 	for(int i=0; i<max_dim+1; i++)
 	{
 		this->simplicial_chain_groups.push_back(std::set<Simplex>());
 	}
-	//this->simplicial_chain_groups.reserve(max_dim+1);
 	add_max_simplex(K);
 }	
 
@@ -171,8 +175,8 @@ int main()
 
   // set some initial values:
   	for (int i=1; i<=5; ++i) mylist.push_back(i); // 1 2 3 4 5
-  	for (int i=6; i<=12; ++i) mylist2.push_back(i); // 1 2 3 4 5
-  	for (int i=1; i<=5; ++i) mylist3.push_back(i); // 1 2 3 4 5
+  	for (int i=1; i<=8; ++i) mylist2.push_back(i); // 1 2 3 4 5
+  	for (int i=22; i<=40; ++i) mylist3.push_back(i); // 1 2 3 4 5
 	Simplex simplex1 =  Simplex(mylist);
 	Simplex simplex2 = Simplex(mylist2);
 	Simplex simplex3 = Simplex(mylist3);
@@ -199,7 +203,8 @@ int main()
 	std::vector<Simplex> mysc;
 	mysc.push_back(simplex1);
 	mysc.push_back(simplex2);
-	SimplicialComplex mysc2 (mysc, 6);
+	//mysc.push_back(simplex3);
+	SimplicialComplex mysc2 (mysc);
 	mysc2.print_scgs();
 	return 0;
 }
