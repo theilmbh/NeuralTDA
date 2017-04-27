@@ -49,8 +49,6 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
     with h5py.File(binned_datafile, 'r') as bdf:
         stims = bdf.keys()
         stimGenSave = dict()
-        #poptens_list = [np.array(bdf[stim]['pop_tens']) for stim in stims]
-        #scgs = Parallel(n_jobs=14)(delayed(parallel_compute_chain_group)(bdf, stim, thresh) for stim in stims)
         for ind, stim in enumerate(stims):
             binned_clusters = np.array(bdf[stim]['clusters'])
             poptens = np.array(bdf[stim]['pop_tens'])
