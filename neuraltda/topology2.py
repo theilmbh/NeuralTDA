@@ -355,7 +355,7 @@ def lin2ind(shp, t):
 
 def calc_CI_bettis_tensor(analysis_id, binned_data_file,
                           block_path, thresh, shuffle=False, nperms=0,
-                          ncellsperm=1, swl=None):
+                          ncellsperm=1, swl=None, clusters=None):
     '''
     Given a binned data file, compute the betti numbers of the Curto-Itskov
     Takes in a binned data file with arbitrary depth of permutations.
@@ -392,8 +392,10 @@ def calc_CI_bettis_tensor(analysis_id, binned_data_file,
     with h5py.File(binned_data_file, 'r') as bdf:
         stims = bdf.keys()
         bpd_withstim = dict()
+
         for stim in stims:
             TOPOLOGY_LOG.info('Calculating bettis for stim: {}'.format(stim))
+            binned_clusters = np.array(bdf[stim]['clusters'])
             stim_trials = bdf[stim]
             (bs, bps, pfs) = get_analysis_paths(analysis_id,
                                                 analysis_path,
@@ -701,68 +703,6 @@ def compute_total_topology(analysis_id, binned_data_file,
 ###### Binning Functions ######
 ###############################
 
-def build_binned_file(spikes, trials, clusters, win_size, fs,
-                      cluster_group, segment_info,
-                      popvec_fname, dt_overlap=0.0):
-    '''
-    Embeds binned population activity into R^n
-    resulting Tensor is Ncell x Nwin x NTrials
-
-    Parameters
-    ------
-    spikes : pandas dataframe
-        Spike frame from ephys.core
-    trials : pandas dataframe
-        Trials dataframe from ephys.trials
-    clusters : Pandas DataFrame
-        Clusters frame from ephys.core
-    win_size : float
-        Window size in milliseconds
-    fs : float
-        Sampling rate in Hz
-    cluster_group : list
-        List containing cluster sort quality strings to include in embedding
-        Possible entries include 'Good', 'MUA'
-    segment_info : dict
-        Dictionary containing parameters for segment generation
-    popvec_fname : str
-        File in which to store the embedding
-    '''
-    with h5py.File(popvec_fname, "w") as popvec_f:
-
-        popvec_f.attrs['win_size'] = win_size
-        popvec_f.attrs['fs'] = fs
-        if cluster_group != None:
-            mask = np.ones(len(clusters.index)) < 0
-            for grp in cluster_group:
-                mask = np.logical_or(mask, clusters['quality'] == grp)
-        clusters_to_use = clusters[mask]
-        clusters_list = clusters_to_use['cluster'].unique()
-        spikes = spikes[spikes['cluster'].isin(clusters_list)]
-        nclus = len(clusters_to_use.index)
-        popvec_f.attrs['nclus'] = nclus
-        stims = trials['stimulus'].unique()
-
-        for stim in stims:
-            if str(stim) == 'nan':
-                continue
-            stimgrp = popvec_f.create_group(stim)
-            stim_trials = trials[trials['stimulus'] == stim]
-            nreps = len(stim_trials.index)
-            stim_recs = stim_trials['recording'].values
-            trial_len = (stim_trials['stimulus_end'] \
-                         - stim_trials['time_samples']).unique()[0]
-            gen_windows = compute_gen_windows(trial_len, fs, segment_info,
-                                              win_size, dt_overlap)
-            # Create Data set
-            poptens = build_activity_tensor(stim_trials, spikes, clusters_list,
-                                            gen_windows, win_size)
-            poptens_dset = stimgrp.create_dataset('pop_tens', data=poptens)
-            stimgrp.create_dataset('clusters', data=clusters_list)
-            stimgrp.create_dataset('windows', data=np.array(gen_windows))
-            poptens_dset.attrs['fs'] = fs
-            poptens_dset.attrs['win_size'] = win_size
-
 def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
                       cluster_group, segment_info,
                       popvec_fname, dt_overlap=0.0):
@@ -804,6 +744,7 @@ def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
         nclus = len(clusters_to_use.index)
         popvec_f.attrs['nclus'] = nclus
         stims = trials['stimulus'].unique()
+        popvec_f.create_dataset('clusters', data=clusters_list)
 
         for stim in stims:
             if str(stim) == 'nan':
@@ -824,7 +765,6 @@ def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
                                 win_size, subwin_len, noverlap, segment)
             poptens_dset = stimgrp.create_dataset('pop_tens', data=poptens)
             stimgrp.create_dataset('clusters', data=clusters_list)
-            #stimgrp.create_dataset('windows', data=np.array(gen_windows))
             poptens_dset.attrs['fs'] = fs
             poptens_dset.attrs['win_size'] = win_size
 
@@ -844,30 +784,6 @@ def compute_gen_windows(trial_len, fs, segment_info, win_size, dt_overlap):
                                         overlap_samples)
         return gen_windows
 
-def build_activity_tensor(stim_trials, spikes, clusters_list,
-                          gen_windows, win_size):
-
-    nreps = len(stim_trials.index)
-    stim_recs = stim_trials['recording'].values
-    nwins = len(gen_windows)
-    nclus = len(clusters_list)
-    poptens = np.zeros((nclus, nwins, nreps))
-    for rep in range(nreps):
-        trial_start = stim_trials.iloc[rep]['time_samples']
-        rec = stim_recs[rep]
-        for win_ind, win in enumerate(gen_windows):
-            win2 = win2 = [win[0] + trial_start, win[1] + trial_start]
-            spikes_in_win = get_spikes_in_window(spikes, win2, rec)
-            spiking_clusters = spikes_in_win['cluster'].unique()
-            if len(spiking_clusters) > 0:
-                for clu in spiking_clusters:
-                    cluster_mask = (spikes_in_win['cluster'] == clu)
-                    pvclu_msk = (clusters_list == clu)
-                    nsp_clu = float(len(spikes_in_win[cluster_mask]))
-                    nsp_clu2 = 1000.*nsp_clu/win_size
-                    poptens[pvclu_msk, win_ind, rep] = nsp_clu2 
-    return poptens
-
 def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
                                 win_size, subwin_len, noverlap, segment):
 
@@ -878,7 +794,7 @@ def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
     if dur <= 0:
         # segment does not match with trial length
         # return nothing
-        print('Duration <= 0')
+        print('Activity Tensor: Duration <= 0')
         return []
     nwins = int(np.floor(float(dur)/float(skip)))
     poptens = np.zeros((nclus, nwins, nreps))
@@ -896,44 +812,6 @@ def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
     poptens /= (win_size/1000.0)
     return poptens 
 
-def build_permuted_data_tensor(data_tens, clusters, ncellsperm, nperms):
-    ''' Builds a permuted data tensor
-
-    Parameters
-    ----------
-    data_tens : numpy array
-        NCells x nWin x nTrial array
-    clusters : numpy array
-        nCells x 1, giving cellID
-        for corresponding row in data_tens
-    ncellsperm : int
-        number of cells in a permutation
-    nperms : int
-        number of permutations
-
-    Returns
-    -------
-    ptens : numpy array
-        permuted data tensor
-        nCellsPerm x nWin x nTrial x nPerms
-    clumapmat : numpy array
-        Cluster mapping- cluster id of each row in ptens
-        nCellsPerm x nPerms
-    '''
-    ncells, nwin, ntrial = data_tens.shape
-    ptens = np.zeros((ncellsperm, nwin, ntrial, nperms))
-    clumapmat = np.zeros((ncellsperm, nperms))
-
-    for perm in range(nperms):
-        permt = np.random.permutation(ncells)
-        if ncells >= ncellsperm:
-            permt = permt[0:ncellsperm].tolist()
-        else:
-            permt = permt.tolist()
-        ptens[:, :, :, perm] = data_tens[permt, :, :]
-        clumapmat[:, perm] = clusters[permt]
-    return (ptens, clumapmat)
-
 def scramble(a, axis=-1):
     b = np.random.random(a.shape)
     idx = np.argsort(b, axis=axis)
@@ -950,59 +828,6 @@ def build_shuffled_data_tensor(data_tens, nshuffs):
         for trial in range(ntrial):
             shuff_tens[:, :, trial, shuff] = scramble(data_tens[:, :, trial])
     return shuff_tens
-
-def build_permuted_binned_file(bf, pdf, ncp, nperms):
-    '''
-    Builds a permuted Binned data file
-
-    Parameters
-    ----------
-    bf : str
-        Path to original binned data file
-    pdf : str
-        path to new permuted data file
-    ncp : int
-        number of cells per permutation
-    nperms : int
-        number of permutations
-    '''
-    with h5py.File(bf, "r") as poptens_f:
-        winsize = poptens_f.attrs['win_size']
-        fs = poptens_f.attrs['fs']
-        nclus = poptens_f.attrs['nclus']
-        stims = poptens_f.keys()
-        with h5py.File(pdf, "w") as perm_f:
-            perm_f.attrs['win_size'] = winsize
-            perm_f.attrs['fs'] = fs
-            perm_f.attrs['nclus'] = nclus
-            for stim in stims:
-                perm_stimgrp = perm_f.create_group(stim)
-                data_tens = np.array(poptens_f[stim]['pop_tens'])
-                clusters = np.array(poptens_f[stim]['clusters'])
-                windows = np.array(poptens_f[stim]['windows'])
-                (ptens, clumapmat) = build_permuted_data_tensor(data_tens,
-                                                                clusters,
-                                                                ncp, nperms)
-                perm_stimgrp.create_dataset('pop_tens', data=ptens)
-                perm_stimgrp.create_dataset('windows', data=windows)
-                perm_stimgrp.create_dataset('clusters', data=clusters)
-                perm_stimgrp.create_dataset('clumapmat', data=clumapmat)
-
-def permute_binned(binned_file, ncellsperm, nperms):
-    ''' Takes a path to a binned file
-        and produces a permuted version
-    '''
-    binned_file = os.path.abspath(binned_file)
-    bdf_fold, bdf_full_name = os.path.split(binned_file)
-    bdf_name, bdf_ext = os.path.splitext(bdf_full_name)
-    permuted_binned_folder = os.path.join(bdf_fold, 'permuted_binned')
-    if not os.path.exists(permuted_binned_folder):
-        os.makedirs(permuted_binned_folder)
-    pbd_name = bdf_name + '-permuted.binned'
-    permuted_data_file = os.path.join(permuted_binned_folder, pbd_name)
-    build_permuted_binned_file(binned_file, permuted_data_file,
-                               ncellsperm, nperms)
-    return permuted_binned_folder
 
 ##############################
 ###### Computation Dags ######
@@ -1049,7 +874,7 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
     return bfdict
 
 def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
-                    segment_info, cluster_group=['Good'], dt_overlap=0.0,
+                    segment_info, cluster_group=['Good', 'MUA'], dt_overlap=0.0,
                     comment=''):
     ''' 
     Take data structures from ephys_analysis and bin them into 
@@ -1088,7 +913,7 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
         dictionary containing paths to binned folders.
 
     '''
-
+    setup_logging('Dag Bin')
     block_path = os.path.abspath(block_path)
     # Create directories and filenames
     analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
@@ -1096,14 +921,13 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
     analysis_id_forward = analysis_id + '-{}-{}'.format(winsize, dt_overlap)
     bfdict = {'analysis_id': analysis_id_forward}
 
-    cg_string = '-'.join(cluster_group)
+    #cg_string = '-'.join(cluster_group)
     seg_string = '-'.join(map(str, segment_info))
     if comment:
         seg_string = seg_string+ '-'+comment
-    bin_string = 'binned_data/win-{}_dtovr-{}_cg-{}_seg-{}/'.format(winsize,
-                                                                    dt_overlap,
-                                                                    cg_string,
-                                                                    seg_string)
+    bin_string = 'binned_data/win-{}_dtovr-{}_seg-{}/'.format(winsize,
+                                                              dt_overlap,
+                                                              seg_string)
     binned_folder = os.path.join(block_path, bin_string)
     if not os.path.exists(binned_folder):
         os.makedirs(binned_folder)
@@ -1112,6 +936,7 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
     if len(existing_binned) == 0:
         # not already binned!
         # Bin the raw data
+        print('Data Not already binned')
         TOPOLOGY_LOG.info('Data not already binned.')
         raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
         TOPOLOGY_LOG.info('Binning data')
