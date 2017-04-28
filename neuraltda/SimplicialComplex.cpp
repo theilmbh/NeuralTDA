@@ -3,6 +3,11 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include <string>
+#include <fstream>
+#include <sstream>
+
+#include <boost/tokenizer.hpp>
 
 class Simplex {
 public:
@@ -14,7 +19,7 @@ public:
 	bool operator==(Simplex simplexB) const;
 	bool operator!=(Simplex simplexB) const;
 	bool operator<(Simplex simplexB) const;
-	void print_vertices() const;
+	void print_vertices(std::ostream& out) const;
 };
 
 Simplex::Simplex()
@@ -52,21 +57,21 @@ bool Simplex::operator<(Simplex simplexB) const
 	return this->vertices < simplexB.vertices;
 }
 
-void Simplex::print_vertices() const
+void Simplex::print_vertices(std::ostream& out) const
 {
 	std::vector<int>::const_iterator it;
 	it = this->vertices.begin();
 	for(; it != this->vertices.end(); ++it)
 	{
-		std::cout << *it << ' ';
+		out << *it << ' ';
 		
 	}
-	std::cout << '\n';
+	out << '\n';
 }
 
 class SimplicialComplex
 {
-	typedef std::set<Simplex> chain_group;
+	typedef std::vector<Simplex> chain_group;
 	typedef std::vector<SimplicialComplex::chain_group> scg;
 
 	SimplicialComplex::scg simplicial_chain_groups;
@@ -75,6 +80,7 @@ public:
 	~SimplicialComplex();
 	void add_max_simplex(std::vector<Simplex> K);
 	void print_scgs();
+	void save_scgs(const char* fname);
 private:
 	std::vector<Simplex> primary_faces(Simplex Q);
 };
@@ -82,6 +88,8 @@ private:
 SimplicialComplex::SimplicialComplex(std::vector<Simplex> K)
 {
 	int max_dim = 0;
+	std::vector<Simplex>::iterator it;
+	std::vector<Simplex> *Ek;
 	for(int i=0; i<K.size(); i++)
 	{
 		max_dim = std::max(max_dim, K[i].dim);
@@ -89,9 +97,16 @@ SimplicialComplex::SimplicialComplex(std::vector<Simplex> K)
 
 	for(int i=0; i<max_dim+1; i++)
 	{
-		this->simplicial_chain_groups.push_back(std::set<Simplex>());
+		this->simplicial_chain_groups.push_back(std::vector<Simplex>());
 	}
 	add_max_simplex(K);
+	for(int j=0; j<max_dim+1; j++)
+	{
+		Ek = &this->simplicial_chain_groups[j];
+		std::sort(Ek->begin(), Ek->end());
+		it = std::unique(Ek->begin(), Ek->end());
+		Ek->resize(std::distance(Ek->begin(), it));
+	}
 }	
 
 SimplicialComplex::~SimplicialComplex()
@@ -107,6 +122,7 @@ void SimplicialComplex::add_max_simplex(std::vector<Simplex> K2)
 	std::vector<Simplex>::iterator it;
 	std::vector<Simplex> K(K2);
 	SimplicialComplex::chain_group cg;
+	std::vector<Simplex> *Ek, *Ekm1;
 	while(!K.empty())
 	{
 		Q = K.back();
@@ -114,12 +130,20 @@ void SimplicialComplex::add_max_simplex(std::vector<Simplex> K2)
 		k = Q.dim;
 		if(k <= 0) { continue; }
 		L = primary_faces(Q);
+		Ek = &this->simplicial_chain_groups[k];
+		Ekm1 = &this->simplicial_chain_groups[k-1];
+		//std::cout << "L: " << L.size() << '\n';
+		//std::cout << "Ek: " << Ek->size() << " Ekm1: " << Ekm1->size() << '\n';
+		Ekm1->insert(Ekm1->begin(), L.begin(), L.end());
+		Ek->insert(Ek->begin(), Q);
+
+		//add_max_simplex(L);
 		K.insert(K.begin(), L.begin(), L.end());
 		std::sort(K.begin(), K.end());
 		it = std::unique(K.begin(), K.end());
 		K.resize(std::distance(K.begin(), it));
-		this->simplicial_chain_groups[k-1].insert(L.begin(), L.end());
-		this->simplicial_chain_groups[k].insert(Q);
+
+
 	}
 }
 
@@ -161,11 +185,78 @@ void SimplicialComplex::print_scgs()
 		itend = this->simplicial_chain_groups[dim].end();
 		for(; itbeg != itend; ++itbeg)
 		{
-			(*itbeg).print_vertices();
+			(*itbeg).print_vertices(std::cout);
 		}
 		std::cout << '\n';
 	}
 }
+
+void SimplicialComplex::save_scgs(const char* fname)
+{
+	std::ofstream scg_file(fname, std::ofstream::out);
+
+	int dim = 0;
+	SimplicialComplex::chain_group::iterator itbeg, itend;
+
+	for(; dim < this->simplicial_chain_groups.size(); ++dim)
+	{
+		itbeg = this->simplicial_chain_groups[dim].begin();
+		itend = this->simplicial_chain_groups[dim].end();
+		for(; itbeg != itend; ++itbeg)
+		{
+			(*itbeg).print_vertices(scg_file);
+		}
+		scg_file << '\n';
+	}
+}
+
+class SCGFile
+{
+public:
+	SCGFile();
+	SCGFile(const char* fname);
+	~SCGFile();
+	std::vector<Simplex> get_max_simplices() const;
+private:
+	std::vector<Simplex> max_simplices;
+};
+
+SCGFile::SCGFile(const char* fname)
+{
+	std::ifstream infile(fname);
+	std::string line;
+	std::vector<int> vertices;
+	while(std::getline(infile, line))
+	{
+		vertices.clear();
+		boost::tokenizer<boost::escaped_list_separator<char> > tk(
+   		line, boost::escaped_list_separator<char>('\\', ',', '\"'));
+
+   		for (boost::tokenizer<boost::escaped_list_separator<char> >::iterator i(tk.begin());
+   			i!=tk.end();++i) 
+		{
+   			vertices.push_back(std::stoi(*i));
+		}
+		Simplex new_simplex(vertices);
+		max_simplices.push_back(new_simplex);
+	}
+}
+
+SCGFile::SCGFile()
+{
+
+}
+
+SCGFile::~SCGFile()
+{
+
+}
+
+std::vector<Simplex> SCGFile::get_max_simplices() const
+{
+	return max_simplices;
+}
+
 
 int main()
 {
@@ -174,8 +265,8 @@ int main()
   	std::vector<int>::iterator it;
 
   // set some initial values:
-  	for (int i=1; i<=5; ++i) mylist.push_back(i); // 1 2 3 4 5
-  	for (int i=1; i<=8; ++i) mylist2.push_back(i); // 1 2 3 4 5
+  	for (int i=11; i<=20; ++i) mylist.push_back(i); // 1 2 3 4 5
+  	for (int i=1; i<=10; ++i) mylist2.push_back(i); // 1 2 3 4 5
   	for (int i=22; i<=40; ++i) mylist3.push_back(i); // 1 2 3 4 5
 	Simplex simplex1 =  Simplex(mylist);
 	Simplex simplex2 = Simplex(mylist2);
@@ -196,15 +287,20 @@ int main()
 	} else {
 		std::cout << "False\n";
 	}
-	simplex1.print_vertices();
-	simplex2.print_vertices();
-	simplex3.print_vertices();
+	simplex1.print_vertices(std::cout);
+	simplex2.print_vertices(std::cout);
+	simplex3.print_vertices(std::cout);
 
 	std::vector<Simplex> mysc;
 	mysc.push_back(simplex1);
 	mysc.push_back(simplex2);
 	//mysc.push_back(simplex3);
-	SimplicialComplex mysc2 (mysc);
-	mysc2.print_scgs();
+	//SimplicialComplex mysc2 (mysc);
+	//mysc2.print_scgs();
+
+	SCGFile myscgf("./scgtest.csv");
+	SimplicialComplex mysc3 (myscgf.get_max_simplices());
+	mysc3.print_scgs();
+	mysc3.save_scgs("./scgout.scg");
 	return 0;
 }
