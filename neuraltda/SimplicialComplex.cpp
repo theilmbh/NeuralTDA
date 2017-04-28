@@ -258,9 +258,24 @@ std::vector<Simplex> SCGFile::get_max_simplices() const
 }
 
 
-int main()
+int main(int argc, char* argv[])
 {
-	std::vector<int> mylist;
+	if (argc < 3)
+	{
+		std::cerr << "Usage: " << argv[0] << " infile" << " outfile";
+		std::cerr << std::endl;
+		return 1;
+	}
+	SCGFile infile(argv[1]);
+	SimplicialComplex sc (infile.get_max_simplices());
+	sc.save_scgs(argv[2]);
+	sc.print_scgs();
+	return 0;
+}
+
+void simplicial_complex_test()
+{
+		std::vector<int> mylist;
 	std::vector<int> mylist2, mylist3;
   	std::vector<int>::iterator it;
 
@@ -302,5 +317,4 @@ int main()
 	SimplicialComplex mysc3 (myscgf.get_max_simplices());
 	mysc3.print_scgs();
 	mysc3.save_scgs("./scgout.scg");
-	return 0;
 }
