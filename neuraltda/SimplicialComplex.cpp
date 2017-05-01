@@ -8,11 +8,18 @@
 #include <sstream>
 
 #include <boost/tokenizer.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/io.hpp>
+
+#include <Eigen/Dense>
+
+using namespace Eigen;
 
 class Simplex {
 public:
 	std::vector<int> vertices;
 	int dim;
+	int sgn;
 	Simplex();
 	Simplex(std::vector<int> verts);
 	~Simplex();
@@ -31,6 +38,7 @@ Simplex::Simplex(std::vector<int> verts)
 {	
 	this->vertices.insert(this->vertices.begin(), verts.begin(), verts.end());
 	this->dim = this->vertices.size()-1;
+	sgn = 0;
 }
 
 Simplex::~Simplex()
@@ -81,13 +89,19 @@ public:
 	void add_max_simplex(std::vector<Simplex> K);
 	void print_scgs();
 	void save_scgs(const char* fname);
+	std::vector<Simplex> compute_boundary_operator(Simplex& s);
+	std::vector<int> canonical_coordinates(std::vector<Simplex>& boundary_op, const chain_group& basis);
+	MatrixXd compute_boundary_operator_matrix(int dim);
+	MatrixXd compute_laplacian(int dim);
+
 private:
 	std::vector<Simplex> primary_faces(Simplex Q);
+	int max_dim;
 };
 
 SimplicialComplex::SimplicialComplex(std::vector<Simplex> K)
 {
-	int max_dim = 0;
+	max_dim = 0;
 	std::vector<Simplex>::iterator it;
 	std::vector<Simplex> *Ek;
 	for(int i=0; i<K.size(); i++)
@@ -210,6 +224,72 @@ void SimplicialComplex::save_scgs(const char* fname)
 	}
 }
 
+std::vector<Simplex> SimplicialComplex::compute_boundary_operator(Simplex& s)
+{
+	std::vector<Simplex> faces = primary_faces(s);
+	std::sort(faces.begin(), faces.end());
+	int sgn = -1;
+	for(int i=0; i<faces.size(); ++i)
+	{
+		faces[i].sgn = sgn;
+		sgn *= -1;
+	}
+	return faces;
+}
+
+std::vector<int> SimplicialComplex::canonical_coordinates(std::vector<Simplex>& boundary_op, const chain_group& basis)
+{
+	int d = basis.size();
+	std::vector<int> d_vec (d, 0);
+	std::vector<Simplex>::iterator loc;
+	for(int i=0; i<=basis.size(); ++i)
+	{
+		loc = std::find(boundary_op.begin(), boundary_op.end(), basis[i]);
+		if (loc != boundary_op.end())
+		{
+			d_vec[i] = loc->sgn;
+		}
+	}
+	return d_vec;
+}
+
+MatrixXd SimplicialComplex::compute_boundary_operator_matrix(int dim)
+{
+	int d1 = simplicial_chain_groups[dim-1].size();
+	int d2 = simplicial_chain_groups[dim].size();
+
+	Simplex simp;
+	std::vector<Simplex> L;
+	std::vector<int> d_vec;
+
+	MatrixXd D (d1, d2);
+	for(int i=0; i< d2; ++i)
+	{
+		simp = simplicial_chain_groups[dim][i];
+		L = compute_boundary_operator(simp);
+		d_vec = canonical_coordinates(L, simplicial_chain_groups[dim-1]);
+		for(int j=0; j<d1; ++j)
+		{
+			D(j, i) = d_vec[j];
+		}
+	}
+	return D;
+}
+
+MatrixXd SimplicialComplex::compute_laplacian(int dim)
+{
+	if(dim >= max_dim)
+	{
+		std::cout << "Error: dim exceeds maxdim" << std::endl;
+		exit(-1);
+	}
+	MatrixXd D1, D2, L;
+	D1 = compute_boundary_operator_matrix(dim);
+	D2 = compute_boundary_operator_matrix(dim+1);
+	L = D1.transpose()*D1 + D2*D2.transpose();
+	return L;
+}
+
 class SCGFile
 {
 public:
@@ -266,10 +346,16 @@ int main(int argc, char* argv[])
 		std::cerr << std::endl;
 		return 1;
 	}
-	SCGFile infile(argv[1]);
+	SCGFile infile(argv[argc-2]);
 	SimplicialComplex sc (infile.get_max_simplices());
-	sc.save_scgs(argv[2]);
+	sc.save_scgs(argv[argc-1]);
 	sc.print_scgs();
+	if (argc == 5 && !std::strcmp(argv[1], "-L"))
+	{
+		MatrixXd L = sc.compute_laplacian(std::stoi(argv[2]));
+		std::cout << L << std::endl;
+	}
+
 	return 0;
 }
 
@@ -317,4 +403,5 @@ void simplicial_complex_test()
 	SimplicialComplex mysc3 (myscgf.get_max_simplices());
 	mysc3.print_scgs();
 	mysc3.save_scgs("./scgout.scg");
+
 }
