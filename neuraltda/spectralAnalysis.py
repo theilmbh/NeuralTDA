@@ -138,3 +138,14 @@ def compute_JS_expanded(scgA, scgB, d, beta):
 
     div = sc.JSdivergence(rho1, rho2)
     return div
+
+def compute_entropy(scgA, d, beta):
+  
+    DA = sc.boundaryOperatorMatrix(scgA)
+    
+    LA = sc.laplacian(DA, d)
+        
+    rho1 = sc.densityMatrix(LA, beta)
+
+    div = sc.Entropy(rho1)
+    return div

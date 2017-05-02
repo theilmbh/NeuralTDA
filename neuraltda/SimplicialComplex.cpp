@@ -348,8 +348,8 @@ int main(int argc, char* argv[])
 	}
 	SCGFile infile(argv[argc-2]);
 	SimplicialComplex sc (infile.get_max_simplices());
-	sc.save_scgs(argv[argc-1]);
-	sc.print_scgs();
+	//sc.save_scgs(argv[argc-1]);
+	//sc.print_scgs();
 	if (argc == 5 && !std::strcmp(argv[1], "-L"))
 	{
 		MatrixXd L = sc.compute_laplacian(std::stoi(argv[2]));
