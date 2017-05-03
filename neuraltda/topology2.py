@@ -744,7 +744,7 @@ def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
         nclus = len(clusters_to_use.index)
         popvec_f.attrs['nclus'] = nclus
         stims = trials['stimulus'].unique()
-        popvec_f.create_dataset('clusters', data=clusters_list)
+        #popvec_f.create_dataset('clusters', data=clusters_list)
 
         for stim in stims:
             if str(stim) == 'nan':
