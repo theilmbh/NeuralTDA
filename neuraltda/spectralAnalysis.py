@@ -94,6 +94,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
     # Create output file
     scgGenFile = os.path.join(scgFold, scgGenFile)
     with open(scgGenFile, 'w') as scggf:
+        print(stimGenSave)
         pickle.dump(stimGenSave, scggf)
 
 def computeSimplicialLaplacians(scgf):
