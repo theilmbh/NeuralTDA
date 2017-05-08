@@ -48,6 +48,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
     print('in computeChainGroups')
     with h5py.File(binned_datafile, 'r') as bdf:
         stims = bdf.keys()
+        print(stims)
         stimGenSave = dict()
         for ind, stim in enumerate(stims):
             binned_clusters = np.array(bdf[stim]['clusters'])
