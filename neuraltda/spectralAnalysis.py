@@ -22,9 +22,9 @@ def computeChainGroup(poptens, thresh, trial):
     maxsimps = sorted(maxsimps, key=len)
     newms = maxsimps
     r = 1
-    while(r < len(newms)):
-        newms = [t for t in newms if not set(t) < set(newms[-r])]
-        r+=1
+    #while(r < len(newms)):
+    #    newms = [t for t in newms if not set(t) < set(newms[-r])]
+    #    r+=1
     scgGens = sc.simplicialChainGroups(newms)
     return scgGens 
 
