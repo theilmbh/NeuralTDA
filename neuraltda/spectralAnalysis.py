@@ -52,6 +52,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
         for ind, stim in enumerate(stims):
             binned_clusters = np.array(bdf[stim]['clusters'])
             poptens = np.array(bdf[stim]['pop_tens'])
+            print('Stim: {}, clusters:{}'.format(stim, str(clusters)))
             if clusters is not None:
                 poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
                 print("Selecting Clusters: poptens:" + str(np.shape(poptens)))
