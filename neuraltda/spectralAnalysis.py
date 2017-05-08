@@ -45,7 +45,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
     ''' Takes a binned data file and computes the chain group generators and saves them
         Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg
     '''
-
+    print('in computeChainGroups')
     with h5py.File(binned_datafile, 'r') as bdf:
         stims = bdf.keys()
         stimGenSave = dict()
