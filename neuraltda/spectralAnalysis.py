@@ -54,6 +54,8 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
             poptens = np.array(bdf[stim]['pop_tens'])
             if clusters is not None:
                 poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
+                print("Selecting Clusters: poptens:" + str(np.shape(poptens)))
+
             if shuffle:
                 poptens = tp2.build_shuffled_data_tensor(poptens, 1)
                 poptens = poptens[:, :, :, 0]
