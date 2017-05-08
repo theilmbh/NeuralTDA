@@ -26,6 +26,7 @@ def computeChainGroup(poptens, thresh, trial):
     #    newms = [t for t in newms if not set(t) < set(newms[-r])]
     #    r+=1
     scgGens = sc.simplicialChainGroups(newms)
+    print(len(scgGens))
     return scgGens 
 
 def parallel_compute_chain_group(bdf, stim, thresh):
