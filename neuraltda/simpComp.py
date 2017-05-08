@@ -191,9 +191,25 @@ def expandBases(D1, D2, E1, E2):
 
 def laplacian(D, dim):
 
-    Di = np.array(D[dim])
-    Di1 = np.array(D[dim+1])
-    return np.dot(Di.T, Di) + np.dot(Di1, Di1.T)
+    try:
+        Di = np.array(D[dim])
+    except:
+        Di = []
+    try:
+        Di1 = np.array(D[dim+1])
+    except:
+        Di1 = []
+
+    if len(Di1) >0:
+        L2 = np.dot(Di1, Di1.T)
+    else:
+        L2 = np.array([0], ndmin=2)
+
+    if len(Di) > 0:
+        L1 = np.dot(Di.T, Di)
+    else:
+        L1 = np.array([0], ndmin=2)
+    return L1 + L2
 
 def reconcile_laplacians(L1, L2):
     laps = sorted([L1, L2], key=np.size)

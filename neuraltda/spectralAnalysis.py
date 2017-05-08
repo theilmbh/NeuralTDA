@@ -130,7 +130,7 @@ def compute_JS_expanded(scgA, scgB, d, beta):
     DB = sc.boundaryOperatorMatrix(scgB)
     LA = sc.laplacian(DA, d)
     LB = sc.laplacian(DB, d)
-    
+
     (LA, LB) = sc.reconcile_laplacians(LA, LB)
         
     rho1 = sc.densityMatrix(LA, beta)
