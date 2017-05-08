@@ -26,7 +26,6 @@ def computeChainGroup(poptens, thresh, trial):
     #    newms = [t for t in newms if not set(t) < set(newms[-r])]
     #    r+=1
     scgGens = sc.simplicialChainGroups(newms)
-    print(len(scgGens))
     return scgGens 
 
 def parallel_compute_chain_group(bdf, stim, thresh):
@@ -69,7 +68,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
                 continue
             
             scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
-
+            print('SCGGenSave: '+str(len(scgGenSave)))
 #            for trial in range(ntrial):
 #                print('Stim: {} Trial: {}').format(stim, trial)
 #                popmat = poptens[:, :, trial]
