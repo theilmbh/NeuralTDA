@@ -144,6 +144,21 @@ def compute_JS_expanded(scgA, scgB, d, beta):
     div = sc.JSdivergence(rho1, rho2)
     return div
 
+def compute_JS_expanded_negativeL(scgA, scgB, d, beta):
+  
+    DA = sc.boundaryOperatorMatrix(scgA)
+    DB = sc.boundaryOperatorMatrix(scgB)
+    LA = sc.laplacian(DA, d)
+    LB = sc.laplacian(DB, d)
+
+    (LA, LB) = sc.reconcile_laplacians(LA, LB)
+        
+    rho1 = sc.densityMatrix(-1.0*LA, beta)
+    rho2 = sc.densityMatrix(-1.0*LB, beta)
+
+    div = sc.JSdivergence(rho1, rho2)
+    return div
+
 def compute_entropy(scgA, d, beta):
   
     DA = sc.boundaryOperatorMatrix(scgA)
