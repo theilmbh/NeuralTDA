@@ -45,7 +45,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
     ''' Takes a binned data file and computes the chain group generators and saves them
         Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg
     '''
-    print('in computeChainGroups')
+    print('Computing Chain Groups...')
     with h5py.File(binned_datafile, 'r') as bdf:
         stims = bdf.keys()
         print(stims)
@@ -53,7 +53,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
         for ind, stim in enumerate(stims):
             binned_clusters = np.array(bdf[stim]['clusters'])
             poptens = np.array(bdf[stim]['pop_tens'])
-            print('Stim: {}, clusters:{}'.format(stim, str(clusters)))
+            print('Stim: {}, Clusters:{}'.format(stim, str(clusters)))
             if clusters is not None:
                 poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
                 print("Selecting Clusters: poptens:" + str(np.shape(poptens)))
