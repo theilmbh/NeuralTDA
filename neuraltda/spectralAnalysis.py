@@ -54,18 +54,20 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
             binned_clusters = np.array(bdf[stim]['clusters'])
             poptens = np.array(bdf[stim]['pop_tens'])
             print('Stim: {}, Clusters:{}'.format(stim, str(clusters)))
-            if clusters is not None:
-                poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
-                print("Selecting Clusters: poptens:" + str(np.shape(poptens)))
+            try:
+                if clusters is not None:
+                    poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
+                    print("Selecting Clusters: poptens:" + str(np.shape(poptens)))
+                (ncell, nwin, ntrial) = np.shape(poptens)
+            except (ValueError, IndexError):
+                print('Poptens Error')
+                continue
+
 
             if shuffle:
                 poptens = tp2.build_shuffled_data_tensor(poptens, 1)
                 poptens = poptens[:, :, :, 0]
-            try:
-                (ncell, nwin, ntrial) = np.shape(poptens)
-            except ValueError:
-                print('Empty Poptens')
-                continue
+
             if  nwin == 0:
                 continue
             
