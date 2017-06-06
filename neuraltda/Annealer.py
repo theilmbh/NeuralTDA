@@ -5,28 +5,34 @@ from joblib import Parallel, delayed
 
 class Annealer:
 
-	def __init__(self, loss, system, eps):
+	def __init__(self, loss, system, eps, beta=0.15):
 		self.loss = loss
 		self.system = system
 		# loss is an object that has an "error" method
 		# system is an object that has an initialize, run method
 		self.s = system.initialize()
-		self.out = system.run(self.s)
+		#self.out = system.run(self.s)
 		self.E = np.inf 
 		self.T = np.inf
 		self.eps = eps
-		self.K = 10.0
+		self.K = 0.2
+		self.beta = beta
 
 	def anneal(self, kmax):
 		for k in range(kmax):
 			self.T = self.temperature(k, kmax)
 			s_new = self.neighbor(self.s)
+
 			out_new = self.system.run(s_new)
-			E_new = self.loss.error(out_new)
+			#print(np.any((out_new - self.out) != 0 ))
+			E_new = self.loss.loss(out_new, self.beta)
+			print('Status: {}/{}, E: {}, E_new: {}, Temp: {}'.format(k, kmax, self.E, E_new, self.T))
 			if self.accept_prob(E_new) >= np.random.rand():
+
 				self.s = s_new
 				self.out = out_new
 				self.E = E_new
+			
 		return self.s
 
 	def accept_prob(self, E_new):
@@ -37,7 +43,7 @@ class Annealer:
 
 	def neighbor(self, s_old):
 		ds = np.random.standard_normal(np.shape(s_old))
-		ds = self.eps*(ds / np.sum(np.power(ds, 2)))
+		ds = (self.eps*np.random.rand())*(ds / np.sum(np.power(ds, 2)))
 		return s_old + ds
 
 	def temperature(self, k, kmax):
