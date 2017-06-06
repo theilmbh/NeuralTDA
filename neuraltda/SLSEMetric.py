@@ -12,8 +12,8 @@ class SLSEMetric:
 
     def error(self, spikes, beta):
         JSdivs = []
-        (ncells, nwin, ntrials) = spikes.shape()
-        scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(spikes, self.thresh, trial) for trial in range(ntrials))
+        (ncells, nwin, ntrials) = spikes.shape
+        scgGenSave = Parallel(n_jobs=14)(delayed(sa.computeChainGroup)(spikes, self.thresh, trial) for trial in range(ntrials))
         for scg in scgGenSave:
             JSdivs.append(sa.compute_JS_expanded(self.targ_scg, scg, self.d, beta))
         return np.mean(np.array(JSdivs))
