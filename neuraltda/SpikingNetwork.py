@@ -10,9 +10,9 @@ class SpikingNetwork:
     N = 10
     tau = 10*brian2.ms
     v0_max = 3.
-    duration = 4000*brian2.ms
+    duration = 500*brian2.ms
     sigma = 0.2
-    ntrial = 5
+    ntrial = 1
     Ninputspikes = 100
     
     def __init__(self, win_size, dt_overlap):
@@ -49,7 +49,7 @@ class SpikingNetwork:
         self.G.tau = self.tau
         self.G.sigma=self.sigma
         # Comment these two lines out to see what happens without Synapses
-        self.S = brian2.Synapses(self.G, self.G, syn_eqs, on_pre='''A_syn += w''')
+        self.S = brian2.Synapses(self.G, self.G, syn_eqs, on_pre='''A_syn += w''', method='euler')
         self.S.connect(condition='i!=j', p=1)
         self.S.w = 'randn()'
         self.S.t_syn = 5*brian2.ms
@@ -66,6 +66,7 @@ class SpikingNetwork:
         self.net = brian2.Network()
         self.net.add(self.G, self.M, self.S, self.input_connection, self.input_group)
         self.net.store()
+        self.net.store('init')
         self.spikes = pd.DataFrame(columns=['cluster', 'time_samples', 'recording'])
         self.stim_trials = pd.DataFrame(columns=['time_samples', 'stimulus_end', 'recording'])
 
@@ -73,16 +74,13 @@ class SpikingNetwork:
         return np.array(self.S.w)
     
     def run(self, weights=None):
-        self.net.restore()
-        if weights is not None:
-            self.S.w = weights
-
         self.spikes = pd.DataFrame(columns=['cluster', 'time_samples', 'recording'])
         self.stim_trials = pd.DataFrame(columns=['time_samples', 'stimulus_end', 'recording'])
         for trial in range(self.ntrial):
-            self.net.restore()
+            self.net.restore('init')
             if weights is not None:
                 self.S.w = weights
+            self.net.store('init')
             self.net.run(self.duration)
             new_spikes = pd.DataFrame(data={'cluster': self.M.i, 'time_samples': np.int_(np.array(self.M.t)*self.fs), 'recording': len(self.M.t)*[trial]})
             new_spikes = new_spikes.sort(columns='time_samples')
