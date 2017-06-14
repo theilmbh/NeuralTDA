@@ -1,5 +1,5 @@
-import spectralAnalysis as sa 
-import simpComp as sc 
+import neuraltda.spectralAnalysis as sa 
+import neuraltda.simpComp as sc 
 import numpy as np 
 from joblib import Parallel, delayed
 

@@ -5,8 +5,8 @@
 ## Bradley Theilman 6 February 2017                                                    ##
 #########################################################################################
 
-import simpComp as sc
-import topology2 as tp2
+import neuraltda.simpComp as sc
+import neuraltda.topology2 as tp2
 import h5py
 import os
 import pickle
