@@ -40,7 +40,6 @@ def parallel_compute_chain_group(bdf, stim, thresh):
     scgGenSave = dict()
     scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
 
-
 def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=False, clusters=None):
     ''' Takes a binned data file and computes the chain group generators and saves them
         Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg

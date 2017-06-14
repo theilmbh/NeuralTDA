@@ -829,6 +829,42 @@ def build_shuffled_data_tensor(data_tens, nshuffs):
             shuff_tens[:, :, trial, shuff] = scramble(data_tens[:, :, trial])
     return shuff_tens
 
+def extract_population_tensors(binned_datafile, shuffle=False, clusters=None):
+    '''
+    Returns a dictionary containing all the population tensors for each stimulus 
+
+    Parameters
+    ----------
+    shuffle : bool 
+        If True, returns a shuffled population tensor 
+    clusters : list 
+        List of clusters to include in the returned population tensors. 
+        If None, all clusters in binned file are returned 
+    '''
+    with h5py.File(binned_datafile, 'r') as bdf:
+        stims = bdf.keys()
+        print(stims)
+        stim_tensors = dict()
+        for ind, stim in enumerate(stims):
+            binned_clusters = np.array(bdf[stim]['clusters'])
+            poptens = np.array(bdf[stim]['pop_tens'])
+            print('Stim: {}, Clusters:{}'.format(stim, str(clusters)))
+            try:
+                if clusters is not None:
+                    poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
+                    print("Selecting Clusters: poptens:" + str(np.shape(poptens)))
+                (ncell, nwin, ntrial) = np.shape(poptens)
+            except (ValueError, IndexError):
+                print('Poptens Error')
+                continue
+            if shuffle:
+                poptens = build_shuffled_data_tensor(poptens, 1)
+                poptens = poptens[:, :, :, 0]
+            if  nwin == 0:
+                continue
+            stim_tensors[stim] = poptens
+    return stim_tensors
+
 ##############################
 ###### Computation Dags ######
 ##############################
