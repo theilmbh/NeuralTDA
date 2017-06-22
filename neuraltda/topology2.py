@@ -195,16 +195,16 @@ def run_perseus(pfile):
         File containing resultant betti numbers
 
     '''
-    TOPOLOGY_LOG.info('In run_perseus')
+
     pfile_split = os.path.splitext(pfile)
     of_string = pfile_split[0]
     perseus_command = "perseus"
     perseus_return_code = subprocess.call([perseus_command, 'nmfsimtop', pfile,
                                            of_string])
-    TOPOLOGY_LOG.info('Perseus return code: {}'.format(perseus_return_code))
+
     betti_file = of_string+'_betti.txt'
     #betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
-    TOPOLOGY_LOG.info('Betti file from run_perseus: %s' % betti_file)
+
     return betti_file
 
 def old_get_segment(trial_bounds, fs, segment_info):
@@ -305,7 +305,7 @@ def calc_bettis(data_mat, clusters, pfile, thresh):
                 bettis.append([filtration_time, betti_numbers])
     except:
         bettis.append([-1, [-1]])
-        TOPOLOGY_LOG.warn('Perseus returned invalid betti file')
+
     return bettis
 
 def get_betti_savefile(aid, apath, stim):
@@ -372,17 +372,12 @@ def calc_CI_bettis_tensor(analysis_id, binned_data_file,
     thresh : float
         Threshold to use when identifying cell groups
     '''
-    TOPOLOGY_LOG.info('Starting calc_CI_bettis_tensor')
-    TOPOLOGY_LOG.info('analysis_id: {}'.format(analysis_id))
+
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path,
                                  'topology/{}/'.format(analysis_id))
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
-
-    TOPOLOGY_LOG.info('bdf_name: {}'.format(bdf_name))
-    TOPOLOGY_LOG.info('analysis_path: {}'.format(analysis_path))
-    TOPOLOGY_LOG.info('Theshold: {}'.format(thresh))
 
     if shuffle:
         analysis_id = analysis_id +'-shuffle-'
@@ -394,15 +389,13 @@ def calc_CI_bettis_tensor(analysis_id, binned_data_file,
         bpd_withstim = dict()
 
         for stim in stims:
-            TOPOLOGY_LOG.info('Calculating bettis for stim: {}'.format(stim))
+
             binned_clusters = np.array(bdf[stim]['clusters'])
             stim_trials = bdf[stim]
             (bs, bps, pfs) = get_analysis_paths(analysis_id,
                                                 analysis_path,
                                                 stim)
-            TOPOLOGY_LOG.info('Betti savefile: {}'.format(bs))
-            TOPOLOGY_LOG.info('Betti persistence \
-                               savefile: {}'.format(bps))
+
             bpd = dict()
             ### Compute Bettis
             if swl:
@@ -422,7 +415,6 @@ def calc_CI_bettis_tensor(analysis_id, binned_data_file,
                                  analysis_id+'-bettiResultsDict.pkl')
         with open(bpdws_sfn, 'w') as bpdwsfile:
             pickle.dump(bpd_withstim, bpdwsfile)
-        TOPOLOGY_LOG.info('Completed All Stimuli')
         return bpdws_sfn
 
 def do_compute_betti(stim_trials, pfile_stem, thresh,
@@ -589,36 +581,31 @@ def calc_CI_bettis_all_trials(analysis_id, binned_data_file,
     thresh : float
         Threshold to use when identifying cell groups
     '''
-    TOPOLOGY_LOG.info('Starting calc_CI_bettis_tensor')
-    TOPOLOGY_LOG.info('analysis_id: {}'.format(analysis_id))
+
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path,
                                  'topology/{}/'.format(analysis_id))
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
 
-    TOPOLOGY_LOG.info('bdf_name: {}'.format(bdf_name))
-    TOPOLOGY_LOG.info('analysis_path: {}'.format(analysis_path))
-    TOPOLOGY_LOG.info('Theshold: {}'.format(thresh))
+
 
     with h5py.File(binned_data_file, 'r') as bdf:
         stims = bdf.keys()
         bpd_withstim = dict()
         for stim in stims:
-            TOPOLOGY_LOG.info('Calculating bettis for stim: {}'.format(stim))
+
             stim_trials = bdf[stim]
             ###  Prepare destination file paths
             betti_savefile = analysis_id \
                              + '-stim-{}'.format(stim) \
                              + '-betti.csv'
             betti_savefile = os.path.join(analysis_path, betti_savefile)
-            TOPOLOGY_LOG.info('Betti savefile: {}'.format(betti_savefile))
+
             bps = analysis_id \
                   + '-stim-{}'.format(stim) \
                   + '-ATbettiPersistence.pkl'
             betti_persistence_savefile = os.path.join(analysis_path, bps)
-            TOPOLOGY_LOG.info('Betti persistence \
-                               savefile: {}'.format(betti_persistence_savefile))
             bpd = dict()
             pfile_stem = analysis_id \
                          + '-stim-{}'.format(stim)
@@ -637,7 +624,6 @@ def calc_CI_bettis_all_trials(analysis_id, binned_data_file,
                                  analysis_id+'-AATrial-bettiResultsDict.pkl')
         with open(bpdws_sfn, 'w') as bpdwsfile:
             pickle.dump(bpd_withstim, bpdwsfile)
-        TOPOLOGY_LOG.info('Completed All Stimuli')
         return bpdws_sfn
 
 def concatenate_trials(data_tensor):
@@ -653,17 +639,14 @@ def compute_total_topology(analysis_id, binned_data_file,
     Concatenates all trials across all stimuli and computes topology
     removes redundant cell group columns
     '''
-    TOPOLOGY_LOG.info('Starting compute_total_topology')
-    TOPOLOGY_LOG.info('analysis_id: {}'.format(analysis_id))
+
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path,
                                  'topology/{}/'.format(analysis_id))
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
 
-    TOPOLOGY_LOG.info('bdf_name: {}'.format(bdf_name))
-    TOPOLOGY_LOG.info('analysis_path: {}'.format(analysis_path))
-    TOPOLOGY_LOG.info('Theshold: {}'.format(thresh))
+
 
     bpd = dict()
     pfile_stem = analysis_id \
@@ -676,7 +659,7 @@ def compute_total_topology(analysis_id, binned_data_file,
         bpd_withstim = dict()
         stim_mat_list = []
         for stim in stims:
-            TOPOLOGY_LOG.info('Calculating bettis for stim: {}'.format(stim))
+
             stim_trials = bdf[stim]
             ### Compute Bettis
             data_tens = np.array(stim_trials['pop_tens'])
@@ -696,7 +679,6 @@ def compute_total_topology(analysis_id, binned_data_file,
                             analysis_id+'-TotalTopology-bettiResultsDict.pkl')
         with open(bpdws_sfn, 'w') as bpdwsfile:
             pickle.dump(bpd, bpdwsfile)
-        TOPOLOGY_LOG.info('Completed All Stimuli')
         return bpdws_sfn
 
 ###############################
@@ -902,7 +884,7 @@ def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
 
     # Bin the raw data
     raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
-    TOPOLOGY_LOG.info('Binning data')
+
     build_binned_file(spikes, trials, clusters, winsize, fs,
                                       cluster_group, segment_info, raw_binned_f,
                                       dt_overlap)
@@ -973,9 +955,7 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
         # not already binned!
         # Bin the raw data
         print('Data Not already binned')
-        TOPOLOGY_LOG.info('Data not already binned.')
         raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
-        TOPOLOGY_LOG.info('Binning data')
         build_binned_file_quick(spikes, trials, clusters, winsize, fs,
                               cluster_group, segment_info,
                               raw_binned_f, dt_overlap)
@@ -997,7 +977,6 @@ def dag_topology(block_path, thresh, bfdict, raw=True,
         tpid_raw = aid +'-{}-raw'.format(thresh)
         raw_data_files = glob.glob(os.path.join(raw_folder, '*.binned'))
         for rdf in raw_data_files:
-            TOPOLOGY_LOG.info('Computing topology for: %s' % rdf)
             res_f = calc_CI_bettis_tensor(tpid_raw, rdf, block_path,
                                       thresh, **kwargs)
         with open(res_f, 'r') as f:
@@ -1008,7 +987,6 @@ def dag_topology(block_path, thresh, bfdict, raw=True,
         tpid_raw = aid +'-{}-raw-shuffled'.format(thresh)
         raw_data_files = glob.glob(os.path.join(raw_folder, '*.binned'))
         for rdf in raw_data_files:
-            TOPOLOGY_LOG.info('Computing shuffled topology for: %s' % rdf)
             res_f = calc_CI_bettis_tensor(tpid_raw, rdf, block_path, thresh,
                                       shuffle=True, **kwargs)
         with open(res_f, 'r') as f:
@@ -1019,7 +997,6 @@ def dag_topology(block_path, thresh, bfdict, raw=True,
         tpid_raw = aid +'-{}-permuted-{}-{}'.format(thresh, nperms, ncellsperm)
         raw_data_files = glob.glob(os.path.join(raw_folder, '*.binned'))
         for rdf in raw_data_files:
-            TOPOLOGY_LOG.info('Computing topology for: %s' % rdf)
             res_f = calc_CI_bettis_tensor(tpid_raw, rdf, block_path, thresh,
                                       nperms=nperms, ncellsperm=ncellsperm,
                                       **kwargs)
@@ -1032,7 +1009,6 @@ def dag_topology(block_path, thresh, bfdict, raw=True,
                                                              ncellsperm)
         raw_data_files = glob.glob(os.path.join(raw_folder, '*.binned'))
         for rdf in raw_data_files:
-            TOPOLOGY_LOG.info('Computing topology for: %s' % rdf)
             res_f = calc_CI_bettis_tensor(tpid_raw, rdf, block_path, thresh,
                                       shuffle=True, nperms=nperms,
                                       ncellsperm=ncellsperm, **kwargs)
@@ -1045,7 +1021,6 @@ def dag_topology(block_path, thresh, bfdict, raw=True,
         tpid_at = aid + '-{}-at'.format(thresh)
         atDataFiles = glob.glob(os.path.join(at_folder, '*.binned'))
         for atdf in atDataFiles:
-            TOPOLOGY_LOG.info('Computing topology for %s' % atdf)
             res_f = calc_CI_bettis_all_trials(tpid_at, atdf,
                                                block_path, thresh)
         with open(res_f, 'r') as f:
