@@ -180,6 +180,41 @@ def build_perseus_persistent_input(cell_groups, savefile):
             pfile.write(out_str)
     return savefile
 
+def build_perseus_input(cell_groups, savefile):
+    '''
+    Formats cell group information as an input file
+    for the Perseus persistent homology software, but assigns filtration
+    levels for each cell group based on the time order of their appearance
+    in the signal.
+
+    Parameters
+    ----------
+    cell_groups : list
+        cell_group information returned by calc_cell_groups
+    savefile : str
+        File in which to put the formatted cellgroup information
+
+    Yields
+    ------
+    savefile : text File
+        file suitable for running perseus on
+    '''
+    with open(savefile, 'w+') as pfile:
+        pfile.write('1\n')
+        for ind, win_grp in enumerate(cell_groups):
+            grp = list(win_grp[1])
+            grp_dim = len(grp) - 1
+            if grp_dim < 0:
+                continue
+            vert_str = str(grp)
+            vert_str = vert_str.replace('[', '')
+            vert_str = vert_str.replace(']', '')
+            vert_str = vert_str.replace(' ', '')
+            vert_str = vert_str.replace(',', ' ')
+            out_str = str(grp_dim) + ' ' + vert_str + ' {}\n'.format(str(1))
+            pfile.write(out_str)
+    return savefile
+
 def run_perseus(pfile):
     '''
     Runs Perseus persistent homology software on the data in pfile
