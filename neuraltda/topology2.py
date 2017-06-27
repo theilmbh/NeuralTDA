@@ -106,11 +106,11 @@ def get_windows_for_spike(t, subwin_len, noverlap, segment):
     skip = subwin_len - noverlap
     dur = segment[1] - segment[0]
     A = (int(t) - int(segment[0])) / int(skip)
-    J = int(subwin_len-1) / int(skip)
+    J = int(int(subwin_len-1) / int(skip))
     max_k = int(np.floor(float(dur)/float(skip)))
 
     wins = []
-    i0 = A
+    i0 = int(A)
     wins.append(i0)
     wins = i0 - np.array(range(J+1))
     wins = wins[wins >=0]
@@ -336,7 +336,7 @@ def calc_bettis(data_mat, clusters, pfile, thresh):
                     continue
                 betti_data = bf_line.split()
                 filtration_time = int(betti_data[0])
-                betti_numbers = map(int, betti_data[1:])
+                betti_numbers = list(map(int, betti_data[1:]))
                 bettis.append([filtration_time, betti_numbers])
     except:
         bettis.append([-1, [-1]])
