@@ -83,6 +83,7 @@ class SimplicialComplex
 	typedef std::vector<SimplicialComplex::chain_group> scg;
 
 	SimplicialComplex::scg simplicial_chain_groups;
+	
 public:
 	SimplicialComplex(std::vector<Simplex> K);
 	~SimplicialComplex();
