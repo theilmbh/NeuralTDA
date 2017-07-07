@@ -813,7 +813,7 @@ def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
         # return nothing
         print('Activity Tensor: Duration <= 0')
         return []
-    nwins = int(np.floor(float(dur)/float(skip)))
+    nwins = int(np.round(float(dur)/float(skip)))
     poptens = np.zeros((nclus, nwins, nreps))
     for rep in range(nreps):
         trial_start = stim_trials.iloc[rep]['time_samples']
