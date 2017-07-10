@@ -117,34 +117,6 @@ def get_windows_for_spike(t, subwin_len, noverlap, segment):
     wins = wins[wins < max_k]
     return wins
 
-def create_subwindows(segment, subwin_len, noverlap=0):
-    '''
-    Create list of subwindows for cell group identification.
-
-    Parameters
-    ----------
-    segment : list
-        Sample numbers of the beginning
-        and end of the segment to subdivide into windows.
-    subwin_len : int
-        Number of samples to include in a subwindow.
-    noverlap : int
-        Number of samples to overlap the windows
-
-    Returns
-    ------
-    subwindows : list
-        List of subwindows.
-        Each subwindow is a list containing
-        the starting sample and ending sample.
-    '''
-    dur = segment[1]-segment[0]
-    skip = subwin_len - noverlap
-    max_k = int(np.floor(float(dur)/float(skip)))
-    starts = [segment[0] + k*skip for k in range(max_k)]
-    windows = [[w, min(w + (subwin_len-1), segment[1])] for w in starts]
-    return windows
-
 def build_perseus_persistent_input(cell_groups, savefile):
     '''
     Formats cell group information as an input file
@@ -230,7 +202,6 @@ def run_perseus(pfile):
         File containing resultant betti numbers
 
     '''
-
     pfile_split = os.path.splitext(pfile)
     of_string = pfile_split[0]
     perseus_command = "perseus"
@@ -241,37 +212,6 @@ def run_perseus(pfile):
     #betti_file = os.path.join(os.path.split(pfile)[0], betti_file)
 
     return betti_file
-
-def old_get_segment(trial_bounds, fs, segment_info):
-    '''
-    Convert a segment info specifier into a segment.
-
-    Parameters
-    ------
-    trial_bounds : list
-        List containing trial start and trial end in samples
-    fs : int
-        The sampling rate
-    segment_info : dict
-        Dictionary containing:
-        'period' (1 for stim, 0 for other)
-        'segstart' : time in ms of segment start relative to trial start
-        'segend' : time in ms of segment end relative to trial end
-
-    Returns
-    ------
-    segment : list
-        bounds for the segment for which to compute topology, in samples.
-
-    '''
-    if segment_info['period'] == 1:
-        return trial_bounds
-    else:
-        seg_start = trial_bounds[0] \
-                    + np.floor(segment_info['segstart']*(fs/1000.))
-        seg_end = trial_bounds[1] \
-                  + np.floor(segment_info['segend']*(fs/1000.))
-    return [seg_start, seg_end]
 
 def get_segment(trial_bounds, fs, segment_info):
     '''
@@ -785,22 +725,6 @@ def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
             poptens_dset.attrs['fs'] = fs
             poptens_dset.attrs['win_size'] = win_size
 
-def compute_gen_windows(trial_len, fs, segment_info, win_size, dt_overlap):
-        # Compute generic windows for this stimulus.
-        #This assumes stimulus for all trials is same length
-        # In order to avoid recomputing windows for each trial
-        # trial_len is in samples 
-        gen_seg_start, gen_seg_end = get_segment([0, trial_len],
-                                                 fs,
-                                                 segment_info)
-        gen_seg = [gen_seg_start, gen_seg_end]
-        win_size_samples = int(np.round(win_size/1000. * fs))
-        overlap_samples = int(np.round(dt_overlap/1000. * fs))
-        gen_windows = create_subwindows(gen_seg,
-                                        win_size_samples,
-                                        overlap_samples)
-        return gen_windows
-
 def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
                                 win_size, subwin_len, noverlap, segment):
 
@@ -900,30 +824,6 @@ def dag_bin(block_path, winsize, segment_info, **kwargs):
     (spikes, trials, clusters, fs) = db_load_data(block_path)
     bfdict = do_dag_bin_lazy(block_path, spikes, trials, clusters,
                              fs, winsize, segment_info, **kwargs)
-    return bfdict
-
-def do_dag_bin(block_path, spikes, trials, clusters, fs, winsize, segment_info,
-               cluster_group=['Good'], dt_overlap=0.0):
-
-    block_path = os.path.abspath(block_path)
-    # Create directories and filenames
-    analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
-    raw_binned_fname = analysis_id + '-{}-{}.binned'.format(winsize, dt_overlap)
-    analysis_id_forward = analysis_id + '-{}-{}'.format(winsize, dt_overlap)
-    bfdict = {'analysis_id': analysis_id_forward}
-
-    binned_folder = os.path.join(block_path,
-                                 'binned_data/{}/'.format(analysis_id))
-    if not os.path.exists(binned_folder):
-        os.makedirs(binned_folder)
-
-    # Bin the raw data
-    raw_binned_f = os.path.join(binned_folder, raw_binned_fname)
-
-    build_binned_file(spikes, trials, clusters, winsize, fs,
-                                      cluster_group, segment_info, raw_binned_f,
-                                      dt_overlap)
-    bfdict['raw'] = binned_folder
     return bfdict
 
 def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
