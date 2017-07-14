@@ -729,7 +729,7 @@ def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
                                 win_size, subwin_len, noverlap, segment):
 
     nreps = len(stim_trials.index)
-    stim_recs = stim_trials['recording'].values   
+    stim_recs = stim_trials['recording'].values
     skip = subwin_len - noverlap
     dur = segment[1] - segment[0]
     if dur <= 0:
@@ -751,7 +751,7 @@ def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
             wins = get_windows_for_spike(sp, subwin_len, noverlap, samp_period)
             poptens[clusters_list==clu, wins, rep] += 1
     poptens /= (win_size/1000.0)
-    return poptens 
+    return poptens
 
 def scramble(a, axis=-1):
     b = np.random.random(a.shape)
@@ -772,15 +772,15 @@ def build_shuffled_data_tensor(data_tens, nshuffs):
 
 def extract_population_tensors(binned_datafile, shuffle=False, clusters=None):
     '''
-    Returns a dictionary containing all the population tensors for each stimulus 
+    Returns a dictionary containing all the population tensors for each stimulus
 
     Parameters
     ----------
-    shuffle : bool 
-        If True, returns a shuffled population tensor 
-    clusters : list 
-        List of clusters to include in the returned population tensors. 
-        If None, all clusters in binned file are returned 
+    shuffle : bool
+        If True, returns a shuffled population tensor
+    clusters : list
+        List of clusters to include in the returned population tensors.
+        If None, all clusters in binned file are returned
     '''
     with h5py.File(binned_datafile, 'r') as bdf:
         stims = bdf.keys()
@@ -829,44 +829,44 @@ def dag_bin(block_path, winsize, segment_info, **kwargs):
 def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
                     segment_info, cluster_group=['Good', 'MUA'], dt_overlap=0.0,
                     comment=''):
-    ''' 
-    Take data structures from ephys_analysis and bin them into 
+    '''
+    Take data structures from ephys_analysis and bin them into
     population tensors.
     This version checks to see if a binning with the same parameters already
-    exists and returns the path to that file if so. 
+    exists and returns the path to that file if so.
 
     Parameters
     ----------
-    block_path : str 
+    block_path : str
         Path to the directory containing the kwik file of the data to process.
-    spikes : DataFrame 
-        Spike dataframe containing all the spikes for the dataset 
-    trials : DataFrame 
-        Trial DataFrame containing all the trials you'd like to bin. 
-    clusters : DataFrame 
-        cluster dataframe containing information for all the clusters 
-    fs : int 
-        sampling rate 
-    winsize :  float 
+    spikes : DataFrame
+        Spike dataframe containing all the spikes for the dataset
+    trials : DataFrame
+        Trial DataFrame containing all the trials you'd like to bin.
+    clusters : DataFrame
+        cluster dataframe containing information for all the clusters
+    fs : int
+        sampling rate
+    winsize :  float
         window size in milliseconds.
-    segment_info : list 
-        List containing time in milliseconds relative to trial start for the 
+    segment_info : list
+        List containing time in milliseconds relative to trial start for the
         beginning of the segment and time in ms relative to trial end for the
-        end of the segment 
-    cluster_group : list 
-        List of strings of cluster groups to include in binning. 
-    dt_overlap : float 
-        time in milliseconds for windows to overlap 
-    comment : str 
-        string identifying anything special about this binning. 
+        end of the segment
+    cluster_group : list
+        List of strings of cluster groups to include in binning.
+    dt_overlap : float
+        time in milliseconds for windows to overlap
+    comment : str
+        string identifying anything special about this binning.
 
     Returns
     -------
-    bfdict : dict 
+    bfdict : dict
         dictionary containing paths to binned folders.
 
     '''
-    setup_logging('Dag Bin')
+    #setup_logging('Dag Bin')
     block_path = os.path.abspath(block_path)
     # Create directories and filenames
     analysis_id = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
