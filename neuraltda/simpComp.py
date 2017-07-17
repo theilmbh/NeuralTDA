@@ -35,17 +35,17 @@ def simplexUnion(E1, E2):
 def primaryFaces(Q):
     '''
     Take a simplex and return its primary faces
-    These are the faces of one dimension less. 
+    These are the faces of one dimension less.
 
     Parameters
     ----------
     Q : tuple
-        tuple of vertices defining a simplex 
+        tuple of vertices defining a simplex
 
     Returns
     -------
-    L : list 
-        list of simplices for the primary faces of Q 
+    L : list
+        list of simplices for the primary faces of Q
     '''
 
     L = []
@@ -59,24 +59,24 @@ def primaryFaces(Q):
 
 def simplicialChainGroups(maxsimps):
     '''
-    Take a list of maximal simplices and 
-    successively add faces until all generators 
+    Take a list of maximal simplices and
+    successively add faces until all generators
     of the chain groups are present
 
     Parameters
     ----------
-    maxsimps : list of tuples 
-        list of the maximal simplices in the complex 
+    maxsimps : list of tuples
+        list of the maximal simplices in the complex
 
     Returns
     -------
-    E : list of lists 
-        simplicial complex generators in each dimension 
+    E : list of lists
+        simplicial complex generators in each dimension
     '''
 
     maxdim = max([len(s) for s in maxsimps])
     Elen = maxdim+2
-    E = [[] for ind in xrange(Elen)]
+    E = [[] for ind in range(Elen)]
     K = list(maxsimps)
     while(len(K) > 0):
         Q = K.pop(0)
@@ -87,12 +87,12 @@ def simplicialChainGroups(maxsimps):
         K = union(K, L)
         E[k] = union(E[k], L)
         E[k+1] = union(E[k+1], {Q})
-    for k in xrange(Elen):
+    for k in range(Elen):
         E[k] = sorted(E[k])
     return E
 
 def boundaryOperator(Q):
-    ''' 
+    '''
     Given a simplex, return its boundary operator
     in a dictionary
     '''
@@ -112,9 +112,9 @@ def boundaryOperator(Q):
 
 def canonicalCoordinates(c, K):
     '''
-    given a boundary operator dictionary, 
-    convert it into canonicalCoordinates using the basis K 
-    
+    given a boundary operator dictionary,
+    convert it into canonicalCoordinates using the basis K
+
     '''
 
     v = np.zeros(len(K))
@@ -124,6 +124,10 @@ def canonicalCoordinates(c, K):
     return v
 
 def boundaryOperatorMatrix(E):
+    '''
+    Given a list of simplicial complex generators,
+    Return a list of boundary operator matrices.
+    '''
 
     nmat = len(E)-1
     D = [[] for i in range(nmat)]

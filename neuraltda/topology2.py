@@ -562,9 +562,6 @@ def calc_CI_bettis_all_trials(analysis_id, binned_data_file,
                                  'topology/{}/'.format(analysis_id))
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
-
-
-
     with h5py.File(binned_data_file, 'r') as bdf:
         stims = bdf.keys()
         bpd_withstim = dict()
@@ -620,9 +617,6 @@ def compute_total_topology(analysis_id, binned_data_file,
                                  'topology/{}/'.format(analysis_id))
     if not os.path.exists(analysis_path):
         os.makedirs(analysis_path)
-
-
-
     bpd = dict()
     pfile_stem = analysis_id \
                  + '-TotalTopology'

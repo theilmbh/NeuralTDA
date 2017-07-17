@@ -14,6 +14,10 @@ import numpy as np
 from joblib import Parallel, delayed
 
 def computeChainGroup(poptens, thresh, trial):
+    '''
+    Computes the Chain complex for the population data in poptens
+    '''
+    
     print(trial)
     popmat = poptens[:, :, trial]
     popmatbinary = sc.binnedtobinary(popmat, thresh)
@@ -22,11 +26,8 @@ def computeChainGroup(poptens, thresh, trial):
     maxsimps = sorted(maxsimps, key=len)
     newms = maxsimps
     r = 1
-    #while(r < len(newms)):
-    #    newms = [t for t in newms if not set(t) < set(newms[-r])]
-    #    r+=1
     scgGens = sc.simplicialChainGroups(newms)
-    return scgGens 
+    return scgGens
 
 def parallel_compute_chain_group(bdf, stim, thresh):
     poptens = np.array(bdf[stim]['pop_tens'])
@@ -34,9 +35,9 @@ def parallel_compute_chain_group(bdf, stim, thresh):
         (ncell, nwin, ntrial) = np.shape(poptens)
     except ValueError:
         print('Empty Poptens')
-        return 
+        return
     if  nwin == 0:
-        return 
+        return
     scgGenSave = dict()
     scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
 
@@ -69,7 +70,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
 
             if  nwin == 0:
                 continue
-            
+
             scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
             print('SCGGenSave: '+str(len(scgGenSave)))
 #            for trial in range(ntrial):
@@ -102,7 +103,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
 
 def computeSimplicialLaplacians(scgf):
     ''' Takes a path to a Simplicial Complex Generator File
-        Computes Laplacians 
+        Computes Laplacians
         Stores the matrcies
     '''
 
@@ -111,7 +112,7 @@ def computeSimplicialLaplacians(scgf):
     (scgFileName, scgExt) = os.path.splitext(scgFile)
     LapFile = scgFileName + '.laplacians'
 
-    # Load the SCGs 
+    # Load the SCGs
     with open(scgf, 'r') as scgff:
         E = pickle.load(scgff)
     LapDict = dict()
@@ -131,14 +132,19 @@ def computeSimplicialLaplacians(scgf):
         pickle.dump(LapDict, lpf)
 
 def compute_JS_expanded(scgA, scgB, d, beta):
-  
+    '''
+    Computes the Jensen-Shannon Divergence between
+    simplicial complexes A and B in dimension d
+    using parameter beta.
+    The bases are expanded according to reconcile_laplacians
+    '''
     DA = sc.boundaryOperatorMatrix(scgA)
     DB = sc.boundaryOperatorMatrix(scgB)
     LA = sc.laplacian(DA, d)
     LB = sc.laplacian(DB, d)
 
     (LA, LB) = sc.reconcile_laplacians(LA, LB)
-        
+
     rho1 = sc.densityMatrix(LA, beta)
     rho2 = sc.densityMatrix(LB, beta)
 
@@ -146,27 +152,21 @@ def compute_JS_expanded(scgA, scgB, d, beta):
     return div
 
 def compute_JS_expanded_negativeL(scgA, scgB, d, beta):
-  
+
     DA = sc.boundaryOperatorMatrix(scgA)
     DB = sc.boundaryOperatorMatrix(scgB)
     LA = sc.laplacian(DA, d)
     LB = sc.laplacian(DB, d)
-
     (LA, LB) = sc.reconcile_laplacians(LA, LB)
-        
     rho1 = sc.densityMatrix(-1.0*LA, beta)
     rho2 = sc.densityMatrix(-1.0*LB, beta)
-
     div = sc.JSdivergence(rho1, rho2)
     return div
 
 def compute_entropy(scgA, d, beta):
-  
-    DA = sc.boundaryOperatorMatrix(scgA)
-    
-    LA = sc.laplacian(DA, d)
-        
-    rho1 = sc.densityMatrix(LA, beta)
 
+    DA = sc.boundaryOperatorMatrix(scgA)
+    LA = sc.laplacian(DA, d)
+    rho1 = sc.densityMatrix(LA, beta)
     div = sc.Entropy(rho1)
     return div
