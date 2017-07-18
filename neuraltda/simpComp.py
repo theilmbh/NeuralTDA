@@ -119,7 +119,7 @@ def canonicalCoordinates(c, K):
 
     v = np.zeros(len(K))
     for ind in range(len(K)):
-        if c.has_key(K[ind]):
+        if K[ind] in c:
             v[ind] = c[K[ind]]
     return v
 

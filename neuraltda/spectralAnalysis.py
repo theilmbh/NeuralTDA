@@ -17,8 +17,8 @@ def computeChainGroup(poptens, thresh, trial):
     '''
     Computes the Chain complex for the population data in poptens
     '''
-    
-    print(trial)
+
+    #print(trial)
     popmat = poptens[:, :, trial]
     popmatbinary = sc.binnedtobinary(popmat, thresh)
     maxsimps = sc.binarytomaxsimplex(popmatbinary, rDup=True)
@@ -72,7 +72,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
                 continue
 
             scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
-            print('SCGGenSave: '+str(len(scgGenSave)))
+            #print('SCGGenSave: '+str(len(scgGenSave)))
 #            for trial in range(ntrial):
 #                print('Stim: {} Trial: {}').format(stim, trial)
 #                popmat = poptens[:, :, trial]
@@ -97,8 +97,8 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
 
     # Create output file
     scgGenFile = os.path.join(scgFold, scgGenFile)
-    with open(scgGenFile, 'w') as scggf:
-        print(stimGenSave)
+    with open(scgGenFile, 'wb') as scggf:
+        #print(stimGenSave)
         pickle.dump(stimGenSave, scggf)
 
 def computeSimplicialLaplacians(scgf):
