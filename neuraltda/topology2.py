@@ -911,6 +911,7 @@ def compute_betti_curves(analysis_id, block_path, bdf, thresh, nperms, ncellsper
                 t = [int(x[0]) for x in dat]
                 b = [x[1] for x in dat]
                 t_vals = np.linspace(np.amin(t), np.amax(t), Ntimes)
+                b = [np.pad(np.array(x), (0, 10), 'constant', constant_values=0) for x in b]
                 b_val = np.array([x[dim] for x in b]) #this is gonna fail
                 b_func = interp1d(t, b_val, kind='zero', bounds_error=False,
                                   fill_value=(b_val[0], b_val[-1]))
