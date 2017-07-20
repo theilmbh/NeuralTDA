@@ -896,8 +896,8 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
     return bfdict
 
 def compute_betti_curves(analysis_id, block_path, bdf,
-                         thresh, nperms, ncellsperm, dim,
-                         Ntimes, windt, dtovr):
+                         thresh, nperms, ncellsperm, dim, twin,
+                        windt, dtovr):
 
     (resf, betti_dict) = calc_CI_bettis_tensor(analysis_id, bdf,
                               block_path, thresh, shuffle=False, nperms=nperms,
@@ -913,8 +913,11 @@ def compute_betti_curves(analysis_id, block_path, bdf,
                 t = np.array([int(x[0]) for x in dat])
                 t_milliseconds = t*((windt - dtovr)) + windt / 2.0
                 b = [x[1] for x in dat]
-                t_vals = np.linspace(np.amin(t), np.amax(t), Ntimes)
-                t_vals_milliseconds = t_vals*((windt - dtovr)) + windt / 2.0
+                #t_vals = np.linspace(window[0], window[1], Ntimes)
+                #t_vals = np.linspace(np.amin(t), np.amax(t), Ntimes)
+                t_vals = np.round((twin - windt/2) /(windt-dtovr))
+                #t_vals_milliseconds = t_vals*((windt - dtovr)) + windt / 2.0
+                t_vals_milliseconds = twin
                 b = [np.pad(np.array(x), (0, 10), 'constant', constant_values=0) for x in b]
                 b_val = np.array([x[dim] for x in b]) #this is gonna fail
                 b_func = interp1d(t, b_val, kind='zero', bounds_error=False,
