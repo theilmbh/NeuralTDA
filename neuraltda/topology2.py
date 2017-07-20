@@ -895,7 +895,9 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
     bfdict['raw'] = binned_folder
     return bfdict
 
-def compute_betti_curves(analysis_id, block_path, bdf, thresh, nperms, ncellsperm, dim, Ntimes):
+def compute_betti_curves(analysis_id, block_path, bdf,
+                         thresh, nperms, ncellsperm, dim,
+                         Ntimes, windt, dtovr):
 
     (resf, betti_dict) = calc_CI_bettis_tensor(analysis_id, bdf,
                               block_path, thresh, shuffle=False, nperms=nperms,
@@ -908,9 +910,11 @@ def compute_betti_curves(analysis_id, block_path, bdf, thresh, nperms, ncellsper
             perms = trials[trial]
             for perm in perms.keys():
                 dat = perms[perm]['bettis']
-                t = [int(x[0]) for x in dat]
+                t = np.array([int(x[0]) for x in dat])
+                t_milliseconds = t*((windt - dtovr)) + windt / 2.0
                 b = [x[1] for x in dat]
                 t_vals = np.linspace(np.amin(t), np.amax(t), Ntimes)
+                t_vals_milliseconds = t_vals*((windt - dtovr)) + windt / 2.0
                 b = [np.pad(np.array(x), (0, 10), 'constant', constant_values=0) for x in b]
                 b_val = np.array([x[dim] for x in b]) #this is gonna fail
                 b_func = interp1d(t, b_val, kind='zero', bounds_error=False,
@@ -918,7 +922,7 @@ def compute_betti_curves(analysis_id, block_path, bdf, thresh, nperms, ncellsper
                 betti_curve = b_func(t_vals)
                 betticurve_save.append(list(betti_curve))
         stim_betticurves[stim] = np.array(betticurve_save)
-    return stim_betticurves
+    return (stim_betticurves, t_vals, t_vals_milliseconds)
 
 def dag_topology(block_path, thresh, bfdict, raw=True,
                  shuffle=False, shuffleperm=False, nperms=0, ncellsperm=1,
