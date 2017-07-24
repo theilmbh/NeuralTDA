@@ -432,6 +432,8 @@ def get_shuffle(data_mat):
 def get_perms(data_mat, nperms, ncellsperm):
 
     (cells, wins) = data_mat.shape
+    if ncellsperm > cells:
+        ncellsperm = cells
     new_tensor = np.zeros((ncellsperm, wins, nperms))
     perm_cells = np.zeros((ncellsperm, nperms)).astype(int)
     for perm in range(nperms):
@@ -897,10 +899,10 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
 
 def compute_betti_curves(analysis_id, block_path, bdf,
                          thresh, nperms, ncellsperm, dim, twin,
-                        windt, dtovr):
+                        windt, dtovr, shuffle=False):
 
     (resf, betti_dict) = calc_CI_bettis_tensor(analysis_id, bdf,
-                              block_path, thresh, shuffle=False, nperms=nperms,
+                              block_path, thresh, shuffle=shuffle, nperms=nperms,
                               ncellsperm=ncellsperm)
     stim_betticurves = {}
     for stim in betti_dict.keys():
