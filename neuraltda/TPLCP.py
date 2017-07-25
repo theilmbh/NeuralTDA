@@ -6,7 +6,7 @@ import glob
 import os
 from sklearn.linear_model import LogisticRegression
 
-def predict_stimuli_classes(betti_curves, npercurve, stimuli, stim_classes, pc_test, n_predict):
+def predict_stimuli_classes(betti_curves, npercurve, stimuli, stim_classes, pc_test, n_predict, shuff_Y=False):
     n_curves = len(betti_curves)
     dats = []
     pred_y = np.array([])
@@ -24,6 +24,9 @@ def predict_stimuli_classes(betti_curves, npercurve, stimuli, stim_classes, pc_t
 
     pred_Y = np.array(pred_y)
     pred_X = np.array(pred_x)
+
+    if shuff_Y:
+        pred_Y = np.random.permutation(pred_Y)
     accuracies = []
     for pred in range(n_predict):
 
