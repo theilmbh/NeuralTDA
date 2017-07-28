@@ -898,7 +898,7 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
     return bfdict
 
 def compute_betti_curves(analysis_id, block_path, bdf,
-                         thresh, nperms, ncellsperm, dim, twin,
+                         thresh, nperms, ncellsperm, dims, twin,
                         windt, dtovr, shuffle=False):
 
     (resf, betti_dict) = calc_CI_bettis_tensor(analysis_id, bdf,
@@ -906,7 +906,8 @@ def compute_betti_curves(analysis_id, block_path, bdf,
                               ncellsperm=ncellsperm)
     stim_betticurves = {}
     for stim in betti_dict.keys():
-        betticurve_save = []
+        betticurve_save = np.empty((len(dims), len(twin), 0))
+
         trials = betti_dict[stim]
         for trial in trials.keys():
             perms = trials[trial]
@@ -914,18 +915,24 @@ def compute_betti_curves(analysis_id, block_path, bdf,
                 dat = perms[perm]['bettis']
                 t = np.array([int(x[0]) for x in dat])
                 t_milliseconds = t*((windt - dtovr)) + windt / 2.0
+                t_vals = np.round((twin - windt/2) /(windt-dtovr))
+                t_vals_milliseconds = twin
                 b = [x[1] for x in dat]
                 #t_vals = np.linspace(window[0], window[1], Ntimes)
                 #t_vals = np.linspace(np.amin(t), np.amax(t), Ntimes)
-                t_vals = np.round((twin - windt/2) /(windt-dtovr))
                 #t_vals_milliseconds = t_vals*((windt - dtovr)) + windt / 2.0
-                t_vals_milliseconds = twin
                 b = [np.pad(np.array(x), (0, 10), 'constant', constant_values=0) for x in b]
-                b_val = np.array([x[dim] for x in b]) #this is gonna fail
-                b_func = interp1d(t, b_val, kind='zero', bounds_error=False,
-                                  fill_value=(b_val[0], b_val[-1]))
-                betti_curve = b_func(t_vals)
-                betticurve_save.append(list(betti_curve))
+                betticurve_save_alldims = np.empty((0, len(twin)))
+                for dim in dims:
+                    b_val = np.array([x[dim] for x in b])
+                    b_func = interp1d(t, b_val, kind='zero', bounds_error=False,
+                                      fill_value=(b_val[0], b_val[-1]))
+                    betti_curve_dim = b_func(t_vals)
+                    betticurve_save_alldims = np.vstack((betticurve_save_alldims,
+                                                        betti_curve_dim))
+                betticurve_save = np.concatenate((betticurve_save,
+                                                  betticurve_save_alldims[:, :,
+                                                  np.newaxis]), axis=2)
         stim_betticurves[stim] = np.array(betticurve_save)
     return (stim_betticurves, t_vals, t_vals_milliseconds)
 

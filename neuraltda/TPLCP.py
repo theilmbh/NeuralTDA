@@ -7,18 +7,14 @@ import os
 from sklearn.linear_model import LogisticRegression
 
 def predict_stimuli_classes(betti_curves, npercurve, stimuli, stim_classes, pc_test, n_predict, shuff_Y=False):
-    n_curves = len(betti_curves)
-    dats = []
+
+    (ndims, ntimes, ntrials) = betti_curves[list(betti_curves.keys())[0]].shape
     pred_y = np.array([])
-    pred_x = np.empty((0, n_curves*npercurve))
+    pred_x = np.empty((0, ndims*ntimes))
 
     for stim in stimuli:
-        dats=[]
-        for bc in range(n_curves):
-            dats.append(betti_curves[bc][stim])
-        dat = np.hstack(dats)
-        n = np.shape(dat)[0]
-        stim_vec = np.array(n*[stim_classes[stim]])
+        dat = np.reshape(betti_curves[stim], (ndims*ntimes, ntrials)).T
+        stim_vec = np.array(ntrials*[stim_classes[stim]])
         pred_y = np.hstack([pred_y,stim_vec])
         pred_x = np.vstack([pred_x, dat])
 
@@ -29,7 +25,6 @@ def predict_stimuli_classes(betti_curves, npercurve, stimuli, stim_classes, pc_t
         pred_Y = np.random.permutation(pred_Y)
     accuracies = []
     for pred in range(n_predict):
-
         accuracies.append(run_prediction(pred_Y, pred_X, pc_test));
 
     return accuracies
