@@ -18,6 +18,63 @@ def maxEnt(scg, dim):
 def union(a, b):
     return list(set(a) | set(b))
 
+def num_ones(N):
+    count = 0
+    while N:
+        N = N & (N-1)
+        count += 1
+    return count
+
+def check_bit(N, i):
+    if N & (1 << i):
+        return True
+    else:
+        return False
+
+def common_get_faces(N, num_verts):
+    faces = []
+    verts = list(range(num_verts))
+    for k in range(2**num_verts):
+        face_list = []
+        if k & N == k:
+            dim = num_ones(k)-1
+            for j in verts:
+                if check_bit(k, j):
+                    face_list.append(j)
+            faces.append([dim, face_list])
+    return faces
+
+def max_simp_to_binary(max_simp):
+    N = 0
+    nbits = len(max_simp)+1
+    for n in range(nbits-1):
+        N += 2**n
+    return (N, nbits)
+
+def get_faces(max_simp):
+
+    (N, nbits) = max_simp_to_binary(max_simp)
+    faces = common_get_faces(N, nbits)
+    out_faces = [[] for x in range(nbits)]
+    for face in faces:
+        out_faces[face[0]+1].append(tuple(sorted(np.array(max_simp)[face[1]])))
+    return out_faces
+
+def simplicialChainGroups(maxsimps):
+
+    maxdim = max([len(s) for s in maxsimps])
+    Elen = maxdim+1
+    E = [[] for ind in range(Elen)]
+    K = list(maxsimps)
+    for maxsimp in K:
+        faces = get_faces(maxsimp)
+        for j in range(len(faces)):
+            E[j] = union(E[j], faces[j])
+    for k in range(Elen):
+        E[k] = sorted(E[k])
+    return E
+
+
 def simplexUnion(E1, E2):
     ''' Calculate the union of two simplicial complexes
         represented as lists of generators
@@ -57,7 +114,7 @@ def primaryFaces(Q):
         L.append(tuple(sorted(face)))
     return L
 
-def simplicialChainGroups(maxsimps):
+def old_simplicialChainGroups(maxsimps):
     '''
     Take a list of maximal simplices and
     successively add faces until all generators

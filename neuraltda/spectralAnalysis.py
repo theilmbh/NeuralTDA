@@ -62,15 +62,11 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
             except (ValueError, IndexError):
                 print('Poptens Error')
                 continue
-
-
             if shuffle:
                 poptens = tp2.build_shuffled_data_tensor(poptens, 1)
                 poptens = poptens[:, :, :, 0]
-
             if  nwin == 0:
                 continue
-
             scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
             #print('SCGGenSave: '+str(len(scgGenSave)))
 #            for trial in range(ntrial):
@@ -100,6 +96,7 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
     with open(scgGenFile, 'wb') as scggf:
         #print(stimGenSave)
         pickle.dump(stimGenSave, scggf)
+    return scgGenFile
 
 def computeSimplicialLaplacians(scgf):
     ''' Takes a path to a Simplicial Complex Generator File
