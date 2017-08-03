@@ -180,7 +180,7 @@ def canonicalCoordinates(c, K):
             v[ind] = c[K[ind]]
     return v
 
-def boundaryOperatorMatrix(E):
+def boundaryOperatorMatrices(E):
     '''
     Given a list of simplicial complex generators,
     Return a list of boundary operator matrices.
@@ -195,8 +195,17 @@ def boundaryOperatorMatrix(E):
         for j in range(n):
             c = boundaryOperator(E[k][j])
             mat[:, j] = canonicalCoordinates(c, E[k-1])
-            D[k-1] = mat
+        D[k-1] = mat
     return D
+
+def boundaryOperatorMatrix(E, dim):
+    m = len(E[dim])
+    n = len(E[dim+1])
+    mat = np.zeros((m, n))
+    for j in range(n):
+        c = boundaryOperator(E[dim+1][j])
+        mat[:, j] = canonicalCoordinates(c, E[dim])
+    return mat
 
 def maskedBoundaryOperatorMatrix(E, Emask):
     ''' Emask is the simplicial Chain groups you want to mask in
@@ -272,6 +281,29 @@ def laplacian(D, dim):
         L1 = np.array([0], ndmin=2)
     return L1 + L2
 
+def compute_laplacian(scg, dim):
+    try:
+        Di = np.array(boundaryOperatorMatrix(scg, dim))
+    except:
+        print('error1')
+        Di = []
+    try:
+        Di1 = np.array(boundaryOperatorMatrix(scg, dim+1))
+    except:
+        print('error2')
+        Di1 = []
+
+    if len(Di1) >0:
+        L2 = np.dot(Di1, Di1.T)
+    else:
+        L2 = np.array([0], ndmin=2)
+
+    if len(Di) > 0:
+        L1 = np.dot(Di.T, Di)
+    else:
+        L1 = np.array([0], ndmin=2)
+    return L1 + L2
+
 def reconcile_laplacians(L1, L2):
     laps = sorted([L1, L2], key=np.size)
     L1 = laps[0]
@@ -320,26 +352,41 @@ def Entropy(rho):
 
     r, w = np.linalg.eig(rho)
     np.real(r)
-    ent = np.real(np.sum(np.multiply(r, np.log(r)/np.log(2.0))))
+    ent = -np.real(np.sum(np.multiply(r, np.log(r)/np.log(2.0))))
     return ent
 
 def KLdivergence(rho, sigma):
     r, w = np.linalg.eig(rho)
     s, w = np.linalg.eig(sigma)
+    # r = spla.eigh(rho, eigvals_only=True)
+    # s = spla.eigh(sigma, eigvals_only=True)
+    # r = np.real(sorted(r))
+    # s = np.real(sorted(s))
     r = np.real(r)
     s = np.real(s)
     div = np.sum(np.multiply(r, (np.log(r) - np.log(s))/np.log(2.0)))
     return div
 
-def KLdivergence_matrixlog(rho, sigma):
+def Likelihood(rho, sigma):
 
+    return np.linalg.det(spla.expm(np.dot(rho, spla.logm(sigma))))
+    
+def KLdivergence_matrixlog(rho, sigma):
     divMat = np.dot(rho, (spla.logm(rho) - spla.logm(sigma))/ 2.0)
     return np.trace(divMat)
 
-def JSdivergence(rho, sigma):
+def JSdivergence_matrixlog_old(rho, sigma):
 
     M = (rho+sigma)/2.0
+    return (KLdivergence_matrixlog(rho, M) + KLdivergence_matrixlog(sigma, M))/2.0
+
+def JSdivergence_old(rho, sigma):
+    M = (rho+sigma)/2.0
     return (KLdivergence(rho, M) + KLdivergence(sigma, M))/2.0
+
+def JSdivergence(rho, sigma):
+    M = (rho+sigma)/2.0
+    return Entropy(M) - (1/2.0)*(Entropy(rho) + Entropy(sigma))
 
 def JSdivergences(rho, sigma):
 

@@ -135,16 +135,21 @@ def compute_JS_expanded(scgA, scgB, d, beta):
     using parameter beta.
     The bases are expanded according to reconcile_laplacians
     '''
-    DA = sc.boundaryOperatorMatrix(scgA)
-    DB = sc.boundaryOperatorMatrix(scgB)
-    LA = sc.laplacian(DA, d)
-    LB = sc.laplacian(DB, d)
+    # print('Computing Boundary Operators')
+    # DA = sc.boundaryOperatorMatrix(scgA)
+    # DB = sc.boundaryOperatorMatrix(scgB)
+    print('Computing Laplacians')
+    LA = sc.compute_laplacian(scgA, d)
+    LB = sc.compute_laplacian(scgB, d)
 
+    print('Reconciling Laplacians')
     (LA, LB) = sc.reconcile_laplacians(LA, LB)
 
+    print('Computing Density Matrices')
     rho1 = sc.densityMatrix(LA, beta)
     rho2 = sc.densityMatrix(LB, beta)
 
+    print('Computing JS divergence')
     div = sc.JSdivergence(rho1, rho2)
     return div
 
