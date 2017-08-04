@@ -360,17 +360,17 @@ def KLdivergence(rho, sigma):
     s, w = np.linalg.eig(sigma)
     # r = spla.eigh(rho, eigvals_only=True)
     # s = spla.eigh(sigma, eigvals_only=True)
-    # r = np.real(sorted(r))
-    # s = np.real(sorted(s))
-    r = np.real(r)
-    s = np.real(s)
+    r = np.real(sorted(r))
+    s = np.real(sorted(s))
+    # r = np.real(r)
+    # s = np.real(s)
     div = np.sum(np.multiply(r, (np.log(r) - np.log(s))/np.log(2.0)))
     return div
 
 def Likelihood(rho, sigma):
 
     return np.linalg.det(spla.expm(np.dot(rho, spla.logm(sigma))))
-    
+
 def KLdivergence_matrixlog(rho, sigma):
     divMat = np.dot(rho, (spla.logm(rho) - spla.logm(sigma))/ 2.0)
     return np.trace(divMat)
