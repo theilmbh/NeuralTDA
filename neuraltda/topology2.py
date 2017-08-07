@@ -12,12 +12,16 @@ import glob
 import pickle
 import logging
 import datetime
+import tqdm
+import tempfile
 
 import numpy as np
 import h5py
 from scipy.interpolate import interp1d
 
 from ephys import events, core
+
+import neuraltda.simpComp as sc
 
 ################################
 ###### Module Definitions ######
@@ -28,6 +32,8 @@ DEFAULT_CG_PARAMS = {'cluster_group': None, 'subwin_len': 100,
                      'threshold': 6.0, 'n_subwin': 5}
 
 DEFAULT_SEGMENT_INFO = {'period': 1}
+
+SCM_EXECUTABLE = '/home/brad/bin/mcmc_sampler'
 
 #################################
 ###### Auxiliary Functions ######
@@ -329,9 +335,24 @@ def lin2ind(shp, t):
 ###### Topology Computation Functions ######
 ############################################
 
+def prep_paths(analysis_id, binned_data_file, block_path, shuffle, nperms):
+
+    bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
+    analysis_path = os.path.join(block_path,
+                                 'topology/{}/'.format(analysis_id))
+    if not os.path.exists(analysis_path):
+        os.makedirs(analysis_path)
+
+    if shuffle:
+        analysis_id = analysis_id +'-shuffle-'
+    if nperms:
+        analysis_id = analysis_id + '-permuted{}-'.format(nperms)
+
+    return (analysis_id, analysis_path)
+
 def calc_CI_bettis_tensor(analysis_id, binned_data_file,
                           block_path, thresh, shuffle=False, nperms=0,
-                          ncellsperm=1, swl=None, clusters=None):
+                          ncellsperm=1, clusters=None):
     '''
     Given a binned data file, compute the betti numbers of the Curto-Itskov
 
@@ -346,18 +367,7 @@ def calc_CI_bettis_tensor(analysis_id, binned_data_file,
     thresh : float
         Threshold to use when identifying cell groups
     '''
-
-    bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
-    analysis_path = os.path.join(block_path,
-                                 'topology/{}/'.format(analysis_id))
-    if not os.path.exists(analysis_path):
-        os.makedirs(analysis_path)
-
-    if shuffle:
-        analysis_id = analysis_id +'-shuffle-'
-    if nperms:
-        analysis_id = analysis_id + '-permuted{}-'.format(nperms)
-
+    (analysis_id, analysis_path) = prep_paths(analysis_id, binned_data_file, block_path, shuffle, nperms)
     with h5py.File(binned_data_file, 'r') as bdf:
         stims = bdf.keys()
         bpd_withstim = dict()
@@ -369,16 +379,10 @@ def calc_CI_bettis_tensor(analysis_id, binned_data_file,
                                                 stim)
             bpd = dict()
             ### Compute Bettis
-            if swl:
-                bpd = do_compute_betti_sliding_window(stim_trials,
-                                                      pfs,
-                                                      thresh, shuffle, nperms,
-                                                      ncellsperm,
-                                                      sliding_window_length=swl)
-            else:
-                bpd = do_compute_betti(stim_trials,
-                                       pfs,
-                                       thresh, shuffle, nperms, ncellsperm)
+            poptens = np.array(stim_trials['pop_tens'])
+            clusters = np.array(stim_trials['clusters'])
+            bpd = do_compute_betti(poptens, clusters, pfs, thresh,
+                                   shuffle, nperms, ncellsperm)
             bpd_withstim[stim] = bpd
             with open(bps, 'wb') as bpfile:
                 pickle.dump(bpd, bpfile)
@@ -388,12 +392,57 @@ def calc_CI_bettis_tensor(analysis_id, binned_data_file,
             pickle.dump(bpd_withstim, bpdwsfile)
         return (bpdws_sfn, bpd_withstim)
 
-def do_compute_betti(stim_trials, pfile_stem, thresh,
+
+def calc_CI_bettis_tensor_trialavg(analysis_id, binned_data_file,
+                          block_path, thresh, shuffle=False, nperms=0,
+                          ncellsperm=1, clusters=None):
+    '''
+    Given a binned data file, compute the betti numbers of the Curto-Itskov
+    Average all trials for a given stim before computing bettis
+    Parameters
+    ------
+    analysis_id : str
+        A string to identify this particular analysis run
+    binned_data_file : str
+        Path to the binned data file on which to compute topology
+    block_path : str
+        Path to the folder containing the data for the block
+    thresh : float
+        Threshold to use when identifying cell groups
+    '''
+    (analysis_id, analysis_path) = prep_paths(analysis_id, binned_data_file, block_path, shuffle, nperms)
+    with h5py.File(binned_data_file, 'r') as bdf:
+        stims = bdf.keys()
+        bpd_withstim = dict()
+        for stim in stims:
+            binned_clusters = np.array(bdf[stim]['clusters'])
+            stim_trials = bdf[stim]
+            (bs, bps, pfs) = get_analysis_paths(analysis_id,
+                                                analysis_path,
+                                                stim)
+            bpd = dict()
+            ### Compute Bettis
+            poptens = np.array(stim_trials['pop_tens'])
+            clusters = np.array(stim_trials['clusters'])
+
+            ## do trialaverage
+            poptens = np.mean(poptens, axis=2)
+            bpd = do_compute_betti(poptens[:, :, np.newaxis], clusters, pfs, thresh,
+                                   shuffle, nperms, ncellsperm)
+            bpd_withstim[stim] = bpd
+            with open(bps, 'wb') as bpfile:
+                pickle.dump(bpd, bpfile)
+        bpdws_sfn = os.path.join(analysis_path,
+                                 analysis_id+'-bettiResultsDict.pkl')
+        with open(bpdws_sfn, 'wb') as bpdwsfile:
+            pickle.dump(bpd_withstim, bpdwsfile)
+        return (bpdws_sfn, bpd_withstim)
+
+def do_compute_betti(poptens, clusters, pfile_stem, thresh,
                      shuffle, nperms, ncellsperm):
 
-    assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
-    data_tensor = np.array(stim_trials['pop_tens'])
-    clusters = np.array(stim_trials['clusters'])
+    data_tensor = np.array(poptens)
+    clusters = np.array(clusters)
     levels = (data_tensor.shape)[2:] # First two axes are cells, windows.
     assert len(levels) == 1, 'Cant handle more than one level yet'
     ntrials = levels[0]
@@ -803,6 +852,108 @@ def extract_population_tensors(binned_datafile, shuffle=False, clusters=None):
             stim_tensors[stim] = poptens
     return stim_tensors
 
+def extract_population_tensor(binned_data_file, stim, shuffle=False, clusters=None):
+    '''
+    Extracts the population tensor from a binned data file for
+    a specific stim.  Shuffles it on command.
+    Selects clusters given by 'clusters', all if none
+    '''
+
+    print('Extracting Population Activity Tensor...')
+    with h5py.File(binned_data_file, 'r') as bdf:
+        binned_clusters = np.array(bdf[stim]['clusters'])
+        poptens = np.array(bdf[stim]['pop_tens'])
+        print('Stim: {}, Clusters:{}'.format(stim, str(clusters)))
+        try:
+            if clusters is not None:
+                poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
+                print("Selecting Clusters: poptens:" + str(np.shape(poptens)))
+            (ncell, nwin, ntrial) = np.shape(poptens)
+        except (ValueError, IndexError):
+            print('Population Tensor Error')
+            return []
+        if shuffle:
+            poptens = tp2.build_shuffled_data_tensor(poptens, 1)
+            poptens = poptens[:, :, :, 0]
+        if  nwin == 0:
+            return []
+    return poptens
+
+##########################
+###### SCM Controls ######
+##########################
+
+def num_trials(poptens):
+    (ncells, nwin, ntrials) = np.shape(poptens)
+    return ntrials
+
+def num_win(poptens):
+    (ncells, nwin, ntrials) = np.shape(poptens)
+    return nwin
+
+def num_cells(poptens):
+    (ncells, nwin, ntrials) = np.shape(poptens)
+    return ncells
+
+def rejection_sampling(command, seed=0):
+    # Call sampler with subprocess
+    proc = subprocess.run(command, stdout=subprocess.PIPE)
+    # Read output as a facet list
+    facet_list = []
+    for line in proc.stdout.decode().split("\n")[1:-1]:
+        if line.find("#") == 0:
+            yield facet_list
+            facet_list = []
+        else:
+            facet_list.append([int(x) for x in line.strip().split()])
+    yield facet_list
+
+def prepare_scm_initial_condition(binmat, **kwargs):
+
+    facets = sc.binarytomaxsimplex(binmat, rDup=True, **kwargs)
+    with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as f:
+        fname = f.name
+        for facet in facets:
+            fstr = str(facet)
+            fstr = fstr.replace('(', '')
+            fstr = fstr.replace(')', '')
+            fstr = fstr.replace(',', '')
+            f.write(fstr+'\n')
+    return fname
+
+def prepare_scm_command(facet_file, nsamps):
+
+    command = [SCM_EXECUTABLE, facet_file, '-t', str(nsamps)]
+    return command
+
+def calc_scm_betti_distribution(poptens, thresh, trial, nsamples):
+    popmat = poptens[:, :, trial]
+    popmat_bin = sc.binnedtobinary(popmat, thresh)
+    fname = prepare_scm_initial_condition(popmat_bin)
+    cmd = prepare_scm_command(fname, nsamples)
+    samples = rejection_sampling(cmd)
+    sample_bettis = []
+    for sample in tqdm.tqdm(samples):
+        bettis=[]
+        cgs = [[1, x] for x in sample]
+        build_perseus_input(cgs, '/home/brad/betti_pfile.txt')
+        betti_file = run_perseus('/home/brad/betti_pfile.txt')
+        try:
+            with open(betti_file, 'r') as bf:
+                for bf_line in bf:
+                    betti_numbers_arr = np.zeros(10)
+                    if len(bf_line) < 2:
+                        continue
+                    betti_data = bf_line.split()
+                    filtration_time = int(betti_data[0])
+                    betti_numbers = np.array(list(map(int, betti_data[1:])))
+                    betti_numbers_arr[0:len(betti_numbers)] = betti_numbers
+                    bettis.append(np.array(betti_numbers_arr))
+        except:
+            bettis.append([-1, [-1]])
+        sample_bettis.append(bettis)
+    return np.array(sample_bettis)
+
 ##############################
 ###### Computation Dags ######
 ##############################
@@ -897,13 +1048,8 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
     bfdict['raw'] = binned_folder
     return bfdict
 
-def compute_betti_curves(analysis_id, block_path, bdf,
-                         thresh, nperms, ncellsperm, dims, twin,
-                        windt, dtovr, shuffle=False):
+def betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr):
 
-    (resf, betti_dict) = calc_CI_bettis_tensor(analysis_id, bdf,
-                              block_path, thresh, shuffle=shuffle, nperms=nperms,
-                              ncellsperm=ncellsperm)
     stim_betticurves = {}
     for stim in betti_dict.keys():
         betticurve_save = np.empty((len(dims), len(twin), 0))
@@ -935,6 +1081,28 @@ def compute_betti_curves(analysis_id, block_path, bdf,
                                                   np.newaxis]), axis=2)
         stim_betticurves[stim] = np.array(betticurve_save)
     return (stim_betticurves, t_vals, t_vals_milliseconds)
+
+def compute_betti_curves(analysis_id, block_path, bdf,
+                         thresh, nperms, ncellsperm, dims, twin,
+                        windt, dtovr, shuffle=False):
+
+    (resf, betti_dict) = calc_CI_bettis_tensor(analysis_id, bdf,
+                              block_path, thresh, shuffle=shuffle, nperms=nperms,
+                              ncellsperm=ncellsperm)
+
+    return betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr)
+
+
+def compute_trialaverage_betti_curves(analysis_id, block_path, bdf,
+                         thresh, nperms, ncellsperm, dims, twin,
+                         windt, dtovr, shuffle=False):
+
+    (resf, betti_dict) = calc_CI_bettis_tensor_trialavg(analysis_id, bdf,
+                              block_path, thresh, shuffle=shuffle, nperms=nperms,
+                              ncellsperm=ncellsperm)
+
+    return betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr)
+
 
 def dag_topology(block_path, thresh, bfdict, raw=True,
                  shuffle=False, shuffleperm=False, nperms=0, ncellsperm=1,
