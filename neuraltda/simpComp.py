@@ -355,16 +355,37 @@ def Entropy(rho):
     ent = -np.real(np.sum(np.multiply(r, np.log(r)/np.log(2.0))))
     return ent
 
+def KLdivergence_lap(LA, LB, beta):
+    r, w = np.linalg.eig(LA)
+    s = np.linalg.eig(LB)
+    r = np.real(sorted(r))
+    s = np.real(sorted(s))
+
+    r = np.exp(beta*r)
+    s = np.exp(beta*s)
+
+    r = r / np.sum(r)
+    s = s / np.sum(s)
+    div = np.sum(np.multiply(r, (np.log(r) - np.log(s))/np.log(2.0)))
+    return div
+
 def KLdivergence(rho, sigma):
-    r, w = np.linalg.eig(rho)
-    s, w = np.linalg.eig(sigma)
+    print('k')
+    r= np.linalg.eigvalsh(rho)
+    s= np.linalg.eigvalsh(sigma)
     # r = spla.eigh(rho, eigvals_only=True)
     # s = spla.eigh(sigma, eigvals_only=True)
     r = np.real(sorted(r))
     s = np.real(sorted(s))
     # r = np.real(r)
     # s = np.real(s)
-    div = np.sum(np.multiply(r, (np.log(r) - np.log(s))/np.log(2.0)))
+    div = 0.
+    for rval, sval in zip(r,s):
+        if rval < 1e-14 or sval < 1e-14:
+            div += 0
+        else:
+            div += rval*(np.log(rval) - np.log(sval))/np.log(2.0)
+    #div = np.sum(np.multiply(r, (np.log(r) - np.log(s))/np.log(2.0)))
     return div
 
 def Likelihood(rho, sigma):
@@ -380,11 +401,11 @@ def JSdivergence_matrixlog_old(rho, sigma):
     M = (rho+sigma)/2.0
     return (KLdivergence_matrixlog(rho, M) + KLdivergence_matrixlog(sigma, M))/2.0
 
-def JSdivergence_old(rho, sigma):
+def JSdivergence(rho, sigma):
     M = (rho+sigma)/2.0
     return (KLdivergence(rho, M) + KLdivergence(sigma, M))/2.0
 
-def JSdivergence(rho, sigma):
+def JSdivergence_BDD(rho, sigma):
     M = (rho+sigma)/2.0
     return Entropy(M) - (1/2.0)*(Entropy(rho) + Entropy(sigma))
 
