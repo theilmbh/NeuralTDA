@@ -138,18 +138,18 @@ def compute_JS_expanded(scgA, scgB, d, beta):
     # print('Computing Boundary Operators')
     # DA = sc.boundaryOperatorMatrix(scgA)
     # DB = sc.boundaryOperatorMatrix(scgB)
-    print('Computing Laplacians')
+    #print('Computing Laplacians')
     LA = sc.compute_laplacian(scgA, d)
     LB = sc.compute_laplacian(scgB, d)
 
-    print('Reconciling Laplacians')
+    #print('Reconciling Laplacians')
     (LA, LB) = sc.reconcile_laplacians(LA, LB)
 
-    print('Computing Density Matrices')
+    #print('Computing Density Matrices')
     rho1 = sc.densityMatrix(LA, beta)
     rho2 = sc.densityMatrix(LB, beta)
 
-    print('Computing JS divergence')
+    #print('Computing JS divergence')
     div = sc.JSdivergence(rho1, rho2)
     return div
 

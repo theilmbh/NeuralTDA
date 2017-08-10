@@ -370,7 +370,6 @@ def KLdivergence_lap(LA, LB, beta):
     return div
 
 def KLdivergence(rho, sigma):
-    print('k')
     r= np.linalg.eigvalsh(rho)
     s= np.linalg.eigvalsh(sigma)
     # r = spla.eigh(rho, eigvals_only=True)
