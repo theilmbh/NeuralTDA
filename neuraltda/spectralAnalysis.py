@@ -153,6 +153,31 @@ def compute_JS_expanded(scgA, scgB, d, beta):
     div = sc.JSdivergence(rho1, rho2)
     return div
 
+def compute_JS_expanded_SSG(scgA, scgB, beta):
+    '''
+    Computes stim space graph (SSG) JS divergence
+    '''
+
+    DA = sc.boundaryOperatorMatrices(scgA)
+    DB = sc.boundaryOperatorMatrices(scgB)
+    GA, ex = sc.stimSpaceGraph(scgA, DA)
+    GB, ex = sc.stimSpaceGraph(scgB, DB)
+
+    LA = np.diag(np.sum(GA, axis=0)) - GA
+    LB = np.diag(np.sum(GB, axis=0)) - GB
+
+    #print('Reconciling Laplacians')
+    (LA, LB) = sc.reconcile_laplacians(LA, LB)
+
+    #print('Computing Density Matrices')
+    rho1 = sc.densityMatrix(LA, beta)
+    rho2 = sc.densityMatrix(LB, beta)
+
+    #print('Computing JS divergence')
+    div = sc.JSdivergence(rho1, rho2)
+    return div
+
+
 def compute_JS_expanded_negativeL(scgA, scgB, d, beta):
 
     DA = sc.boundaryOperatorMatrix(scgA)
