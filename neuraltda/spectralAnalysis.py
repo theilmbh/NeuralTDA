@@ -68,14 +68,6 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='', shuffle=F
             if  nwin == 0:
                 continue
             scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
-            #print('SCGGenSave: '+str(len(scgGenSave)))
-#            for trial in range(ntrial):
-#                print('Stim: {} Trial: {}').format(stim, trial)
-#                popmat = poptens[:, :, trial]
-#                popmatbinary = sc.binnedtobinary(popmat, thresh)
-#                maxsimps = sc.binarytomaxsimplex(popmatbinary, rDup=True)
-#                scgGens = sc.simplicialChainGroups(maxsimps)
-#                scgGenSave[trial] = scgGens
             stimGenSave[stim] = scgGenSave
 
     # Create output filename
