@@ -950,7 +950,7 @@ def calc_scm_betti_distribution(poptens, thresh, trial, nsamples):
                     betti_numbers_arr[0:len(betti_numbers)] = betti_numbers
                     bettis.append(np.array(betti_numbers_arr))
         except:
-            bettis.append([-1, [-1]])
+            bettis.append([-1, -1])
         sample_bettis.append(bettis)
     return np.array(sample_bettis)
 
