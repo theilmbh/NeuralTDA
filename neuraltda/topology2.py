@@ -33,6 +33,7 @@ DEFAULT_CG_PARAMS = {'cluster_group': None, 'subwin_len': 100,
 
 DEFAULT_SEGMENT_INFO = {'period': 1}
 
+# Path to MCMC Sampler from Young et al. 2017
 SCM_EXECUTABLE = '/home/brad/bin/mcmc_sampler'
 
 #################################
@@ -109,7 +110,25 @@ def get_spikes_in_window(spikes, window, rec):
     return spikes[mask]
 
 def get_windows_for_spike(t, subwin_len, noverlap, segment):
+    '''
+    Determines bins into which a given spike should be placed
 
+    Parameters
+    ----------
+    t : integer
+        Spike time (samples)
+    subwin_len : integer
+        window length in samples
+    noverlap : integer
+        Number of samples of overlap for each bin
+    segment : list
+        Beginning and end samples of time period
+
+    Returns
+    -------
+    wins : list
+        list of bin IDs to which that spike belongs
+    '''
     skip = subwin_len - noverlap
     dur = segment[1] - segment[0]
     A = (int(t) - int(segment[0])) / int(skip)
@@ -270,7 +289,25 @@ def calc_cell_groups(data_mat, clusters, thresh):
 
 def calc_bettis(data_mat, clusters, pfile, thresh):
     '''
-    Calculate bettis, matrix form
+    Calculate betti numbers from binned firing rates.
+
+    Parameters
+    ----------
+    data_mat : Ncells x Nbins array
+        Firing rates
+    clusters : list
+        Cluster ids correspoding to the first dimension of data_mat
+    pfile : str
+        name of file to store intermediate computations
+    thresh : float
+        Multiple of average firing rate to consider a cell 'active'
+
+    Returns
+    -------
+    bettis : list
+        list of betti numbers.
+        Each element is [<filtration_time>, <betti_vals_list>]
+        Returns [-1, [-1]] on error
     '''
     cell_groups = calc_cell_groups(data_mat, clusters, thresh)
     build_perseus_persistent_input(cell_groups, pfile)
@@ -291,21 +328,33 @@ def calc_bettis(data_mat, clusters, pfile, thresh):
     return bettis
 
 def get_betti_savefile(aid, apath, stim):
+    '''
+    Formats filename to save betti csv file
+    '''
     bs = aid + '-stim-{}'.format(stim) + '-betti.csv'
     bs = os.path.join(apath, bs)
     return bs
 
 def get_bps(aid, apath, stim):
+    '''
+    Formats filename to save betti persistence save file
+    '''
     bps = aid + '-stim-{}'.format(stim) + '-bettiPersistence.pkl'
     bps = os.path.join(apath, bps)
     return bps
 
 def get_pfile_stem(aid, apath, stim):
+    '''
+    Formats the file stem for the pfile for perseus computations
+    '''
     pfile_stem = aid + '-stim-{}'.format(stim)
     pfile_stem = os.path.join(apath, pfile_stem)
     return pfile_stem
 
 def get_analysis_paths(aid, apath, stim):
+    '''
+    Computes all the required file paths for the betti computation
+    '''
     ###  Prepare destination file paths
     bs = get_betti_savefile(aid, apath, stim)
 
@@ -315,6 +364,9 @@ def get_analysis_paths(aid, apath, stim):
     return (bs, bps, pfs)
 
 def get_pfile_name(pfile_stem, **kwargs):
+    '''
+    Formats a pfile name for perseus
+    '''
     for key, val in kwargs.items():
         pfile_stem = pfile_stem + '-%s%d' % (str(key), int(val))
     pfile = pfile_stem +'-simplex.txt'
@@ -336,6 +388,10 @@ def lin2ind(shp, t):
 ############################################
 
 def prep_paths(analysis_id, binned_data_file, block_path, shuffle, nperms):
+    '''
+    Formats analysis paths for betti computation
+    '''
+
 
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path,
@@ -367,7 +423,8 @@ def calc_CI_bettis_tensor(analysis_id, binned_data_file,
     thresh : float
         Threshold to use when identifying cell groups
     '''
-    (analysis_id, analysis_path) = prep_paths(analysis_id, binned_data_file, block_path, shuffle, nperms)
+    (analysis_id, analysis_path) = prep_paths(analysis_id, binned_data_file,
+                                              block_path, shuffle, nperms)
     with h5py.File(binned_data_file, 'r') as bdf:
         stims = bdf.keys()
         bpd_withstim = dict()
@@ -410,7 +467,8 @@ def calc_CI_bettis_tensor_trialavg(analysis_id, binned_data_file,
     thresh : float
         Threshold to use when identifying cell groups
     '''
-    (analysis_id, analysis_path) = prep_paths(analysis_id, binned_data_file, block_path, shuffle, nperms)
+    (analysis_id, analysis_path) = prep_paths(analysis_id, binned_data_file,
+                                              block_path, shuffle, nperms)
     with h5py.File(binned_data_file, 'r') as bdf:
         stims = bdf.keys()
         bpd_withstim = dict()
@@ -427,8 +485,8 @@ def calc_CI_bettis_tensor_trialavg(analysis_id, binned_data_file,
 
             ## do trialaverage
             poptens = np.mean(poptens, axis=2)
-            bpd = do_compute_betti(poptens[:, :, np.newaxis], clusters, pfs, thresh,
-                                   shuffle, nperms, ncellsperm)
+            bpd = do_compute_betti(poptens[:, :, np.newaxis], clusters, pfs,
+                                   thresh, shuffle, nperms, ncellsperm)
             bpd_withstim[stim] = bpd
             with open(bps, 'wb') as bpfile:
                 pickle.dump(bpd, bpfile)
@@ -440,6 +498,10 @@ def calc_CI_bettis_tensor_trialavg(analysis_id, binned_data_file,
 
 def do_compute_betti(poptens, clusters, pfile_stem, thresh,
                      shuffle, nperms, ncellsperm):
+
+    '''
+    Function to actually perform the betti number computation
+    '''
 
     data_tensor = np.array(poptens)
     clusters = np.array(clusters)
@@ -472,14 +534,19 @@ def do_compute_betti(poptens, clusters, pfile_stem, thresh,
     return bettidict
 
 def get_shuffle(data_mat):
-
+    '''
+    Shuffles a data matrix, each cell independently in time
+    '''
     (cells, wins) = data_mat.shape
     for cell in range(cells):
         np.random.shuffle(data_mat[cell, :])
     return data_mat
 
 def get_perms(data_mat, nperms, ncellsperm):
-
+    '''
+    Permutes the data matrix by building a data_tensor from random subsets
+    of the population
+    '''
     (cells, wins) = data_mat.shape
     if ncellsperm > cells:
         ncellsperm = cells
@@ -927,6 +994,11 @@ def prepare_scm_command(facet_file, nsamps):
     return command
 
 def calc_scm_betti_distribution(poptens, thresh, trial, nsamples):
+    '''
+    Use the simplicial configuration model of Young et al. 2017
+    to compute the null distribution of betti numbers for a specific trial
+    in a population activity tensor
+    '''
     popmat = poptens[:, :, trial]
     popmat_bin = sc.binnedtobinary(popmat, thresh)
     fname = prepare_scm_initial_condition(popmat_bin)
