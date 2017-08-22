@@ -883,6 +883,17 @@ def build_shuffled_data_tensor(data_tens, nshuffs):
             shuff_tens[:, :, trial, shuff] = scramble(data_tens[:, :, trial])
     return shuff_tens
 
+def build_permuted_data_tensor(data_tens, ncellsperm, nperms):
+    '''
+    Permutes a data tensor
+    '''
+    ncells, nwin, ntrial = data_tens.shape
+    perm_tens = np.zeros((ncellsperm, nwin, ntrial, nperms))
+
+    for trial in range(ntrial):
+        perm_tens[:, :, trial, :] = get_perms(data_tens[:, :, trial], nperms, ncellsperm)[0]
+    return perm_tens
+
 def extract_population_tensors(binned_datafile, shuffle=False, clusters=None):
     '''
     Returns a dictionary containing all the population tensors for each stimulus
