@@ -391,8 +391,6 @@ def prep_paths(analysis_id, binned_data_file, block_path, shuffle, nperms):
     '''
     Formats analysis paths for betti computation
     '''
-
-
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path,
                                  'topology/{}/'.format(analysis_id))
@@ -502,7 +500,6 @@ def do_compute_betti(poptens, clusters, pfile_stem, thresh,
     '''
     Function to actually perform the betti number computation
     '''
-
     data_tensor = np.array(poptens)
     clusters = np.array(clusters)
     levels = (data_tensor.shape)[2:] # First two axes are cells, windows.
@@ -608,7 +605,6 @@ def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
         popvec_f.attrs['fs'] = fs
         popvec_f.attrs['nclus'] = nclus
         stims = trials['stimulus'].unique()
-        #popvec_f.create_dataset('clusters', data=clusters_list)
 
         for stim in stims:
             if str(stim) == 'nan':
