@@ -56,7 +56,7 @@ def predict_arbitrary_classes(betti_curves, stimuli, stim_class_labels, pc_test,
     Attempt to predict arbitary class labels from stimuli betti curves
     '''
     (ndims, ntimes, ntrials) = betti_curves[list(betti_curves.keys())[0]].shape
-
+    print(stimuli)
     accuracies = []
     for pred in range(n_predict):
         pred_y = np.array([])
@@ -83,6 +83,7 @@ def run_prediction(pred_Y, pred_X, pc_test):
     '''
     total_pts = len(pred_Y)
     ntrain = int(np.round((1-pc_test)*total_pts))
+    print('total pts: {}, ntrain: {}'.format(total_pts, ntrain))
     L = LogisticRegression()
     inds = np.random.permutation(np.arange(len(pred_Y)))
     inds_train = inds[0:ntrain]
