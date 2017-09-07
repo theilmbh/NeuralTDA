@@ -391,8 +391,6 @@ def prep_paths(analysis_id, binned_data_file, block_path, shuffle, nperms):
     '''
     Formats analysis paths for betti computation
     '''
-
-
     bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
     analysis_path = os.path.join(block_path,
                                  'topology/{}/'.format(analysis_id))
@@ -502,7 +500,6 @@ def do_compute_betti(poptens, clusters, pfile_stem, thresh,
     '''
     Function to actually perform the betti number computation
     '''
-
     data_tensor = np.array(poptens)
     clusters = np.array(clusters)
     levels = (data_tensor.shape)[2:] # First two axes are cells, windows.
@@ -558,224 +555,13 @@ def get_perms(data_mat, nperms, ncellsperm):
         perm_cells[:, perm] = celllist
     return (new_tensor, perm_cells)
 
-def do_compute_betti_shuffle(stim_trials, pfile_stem,
-                             thresh, nshuffs=1):
-
-    assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
-    data_tensor = np.array(stim_trials['pop_tens'])
-    clusters = np.array(stim_trials['clusters'])
-    levels = (data_tensor.shape)[2:] # First two axes are cells, windows.
-    assert len(levels) == 1, 'Cant handle more than one level yet'
-    bettidict = {}
-    for trial in range(levels[0]):
-        pfile = pfile_stem + '-rep%d-shuffle-simplex.txt' % trial
-        data_mat = data_tensor[:, :, trial] # cell, window
-        data_mat = (np.random.permute(data_mat.T)).T
-        bettis = calc_bettis(data_mat, clusters, pfile, thresh)
-        bettidict[str(trial)] = {'bettis': bettis}
-    return bettidict
-
-def do_compute_betti_multilevel(stim_trials, pfile_stem, thresh):
-
-    assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
-    data_tensor = np.array(stim_trials['pop_tens'])
-    clusters = np.array(stim_trials['clusters'])
-    dts = data_tensor.shape
-    levels = (dts)[2:] # First two axes are cells, windows.
-    nlen = np.product(dts[2:])
-    reshaped_data = np.reshape(data_tensor, (dts[0], dts[1], nlen))
-    bettidict = {}
-    for trial in range(nlen):
-        ids = lin2ind(levels, trial) # ids is [trial, perm, perm, perm, ...]
-        pfile = pfile_stem + ''.join(['-lev%d' % s for s in ids]) \
-                + '-simplex.txt'
-        data_mat = reshaped_data[:, :, trial]
-        bettis = calc_bettis(data_mat, clusters, pfile, thresh)
-        bettidict[str(trial)] = {'bettis': bettis, 'indices': ids}
-    return bettidict
-
-def do_compute_betti_sliding_window(stim_trials, pfile_stem,
-                                    thresh, shuffle, nperms, ncellsperm,
-                                    sliding_window_length=10):
-    ''' sliding window length is given in # of bins. '''
-
-    assert 'pop_tens' in stim_trials.keys(), 'No Data Tensor!!'
-    data_tensor = np.array(stim_trials['pop_tens'])
-    clusters = np.array(stim_trials['clusters'])
-    (ncells, nwin, ntrials) = (data_tensor.shape)
-    bettidict = {}
-
-    # Compute number of sliding windows
-    nslide = nwin - sliding_window_length
-    for trial in range(ntrials):
-        bettitrial = {}
-        for slide in range(nslide):
-            pfile = get_pfile_name(pfile_stem, rep=trial, slide=slide)
-            data_mat = data_tensor[:, slide:slide+sliding_window_length, trial]
-            if nperms:
-                bettipermdict = {}
-                (new_tensor, perm_cells) = get_perms(data_mat, nperms, ncellsperm)
-                for perm in range(nperms):
-                    pfile = get_pfile_name(pfile_stem, rep=trial,
-                                           slide=slide, perm=perm)
-                    print(perm)
-                    nmat = new_tensor[:, :, perm]
-                    if shuffle:
-                        nmat = get_shuffle(nmat)
-                    perm_clus = clusters[perm_cells[:, perm]]
-                    bettis = calc_bettis(data_mat, perm_clusters, pfile, thresh)
-                    bettipermdict[str(perm)] = {'bettis': bettis}
-                bettitrial[str(slide)] = bettipermdict
-            else:
-                if shuffle:
-                    data_mat = get_shuffle(data_mat)
-                    pfile = get_pfile_name(pfile_stem, rep=trial,
-                                           slide=slide, shuffled=1)
-                bettis = calc_bettis(data_mat, clusters, pfile, thresh)
-                bettitrial[str(slide)] = {'bettis': bettis}
-        bettidict[str(trial)] = bettitrial
-    return bettidict
-
-def compute_topology_all_trials(data_tensor, clusters, pfile_stem,
-                                thresh, remove_duplicates=False):
-    ''' Combine all trials into one trial
-        Compute total topology
-    '''
-    (ncells, nwin, ntrials) = data_tensor.shape
-    rs = nwin*ntrials
-    pfile = pfile_stem + '-at-simplex.txt'
-    data_mat = np.reshape(data_tensor, (ncells, rs))
-    if remove_duplicates:
-        lex_ind = np.lexsort(data_mat)
-        data_mat = data_mat[:, lex_ind]
-        diff = np.diff(data_mat, axis=1)
-        ui = np.ones(len(data_mat.T), 'bool')
-        ui[1:] = (diff != 0).any(axis=0)
-        data_mat = data_mat[:, ui]
-    # Note persistence is meaningless here...
-    pbettis = calc_bettis(data_mat, clusters, pfile, thresh)
-    bettis = pbettis[-1] # need last one
-    bpd = {'bettis': bettis}
-    return bpd
-
-def calc_CI_bettis_all_trials(analysis_id, binned_data_file,
-                              block_path, thresh):
-    '''
-    Given a binned data file, compute the betti numbers of the Curto-Itskov
-    Collapses across all trials for a given stimulus
-
-    Parameters
-    ------
-    analysis_id : str
-        A string to identify this particular analysis run
-    binned_data_file : str
-        Path to the binned data file on which to compute topology
-    block_path : str
-        Path to the folder containing the data for the block
-    thresh : float
-        Threshold to use when identifying cell groups
-    '''
-
-    bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
-    analysis_path = os.path.join(block_path,
-                                 'topology/{}/'.format(analysis_id))
-    if not os.path.exists(analysis_path):
-        os.makedirs(analysis_path)
-    with h5py.File(binned_data_file, 'r') as bdf:
-        stims = bdf.keys()
-        bpd_withstim = dict()
-        for stim in stims:
-
-            stim_trials = bdf[stim]
-            ###  Prepare destination file paths
-            betti_savefile = analysis_id \
-                             + '-stim-{}'.format(stim) \
-                             + '-betti.csv'
-            betti_savefile = os.path.join(analysis_path, betti_savefile)
-
-            bps = analysis_id \
-                  + '-stim-{}'.format(stim) \
-                  + '-ATbettiPersistence.pkl'
-            betti_persistence_savefile = os.path.join(analysis_path, bps)
-            bpd = dict()
-            pfile_stem = analysis_id \
-                         + '-stim-{}'.format(stim)
-            pfile_stem = os.path.join(analysis_path, pfile_stem)
-            ### Compute Bettis
-            data_tens = np.array(stim_trials['pop_tens'])
-            clusters = np.array(stim_trials['clusters'])
-            bpd = compute_topology_all_trials(data_tens,
-                                   	         clusters,
-                                                 pfile_stem,
-                                                 thresh)
-            bpd_withstim[stim] = bpd
-            with open(betti_persistence_savefile, 'w') as bpfile:
-                pickle.dump(bpd, bpfile)
-        bpdws_sfn = os.path.join(analysis_path,
-                                 analysis_id+'-AATrial-bettiResultsDict.pkl')
-        with open(bpdws_sfn, 'w') as bpdwsfile:
-            pickle.dump(bpd_withstim, bpdwsfile)
-        return bpdws_sfn
-
-def concatenate_trials(data_tensor):
-
-    (ncells, nwin, ntrials) = data_tensor.shape
-    rs = nwin*ntrials
-    data_mat = np.reshape(data_tensor, (ncells, rs))
-    return data_mat
-
-def compute_total_topology(analysis_id, binned_data_file,
-                           block_path, thresh):
-    '''
-    Concatenates all trials across all stimuli and computes topology
-    removes redundant cell group columns
-    '''
-
-    bdf_name, ext = os.path.splitext(os.path.basename(binned_data_file))
-    analysis_path = os.path.join(block_path,
-                                 'topology/{}/'.format(analysis_id))
-    if not os.path.exists(analysis_path):
-        os.makedirs(analysis_path)
-    bpd = dict()
-    pfile_stem = analysis_id \
-                 + '-TotalTopology'
-    pfile_stem = os.path.join(analysis_path, pfile_stem)
-
-    with h5py.File(binned_data_file, 'r') as bdf:
-        stims = bdf.keys()
-        nstims = len(stims)
-        bpd_withstim = dict()
-        stim_mat_list = []
-        for stim in stims:
-
-            stim_trials = bdf[stim]
-            ### Compute Bettis
-            data_tens = np.array(stim_trials['pop_tens'])
-            clusters = np.array(stim_trials['clusters'])
-            stim_mat = concatenate_trials(data_tens)
-            stim_mat_list.append(stim_mat)
-
-        (ncell, nwin) = stim_mat_list[0].shape
-        stimtens = np.zeros((ncell, nwin, nstims))
-        for ind, stim_mat in enumerate(stim_mat_list):
-            stimtens[:, :, ind] = stim_mat
-
-        bpd = compute_topology_all_trials(stimtens, clusters, pfile_stem,
-                                             thresh, remove_duplicates=True)
-
-        bpdws_sfn = os.path.join(analysis_path,
-                            analysis_id+'-TotalTopology-bettiResultsDict.pkl')
-        with open(bpdws_sfn, 'w') as bpdwsfile:
-            pickle.dump(bpd, bpdwsfile)
-        return bpdws_sfn
-
 ###############################
 ###### Binning Functions ######
 ###############################
 
 def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
-                      cluster_group, segment_info,
-                      popvec_fname, dt_overlap=0.0):
+                            cluster_group, segment_info,
+                            popvec_fname, dt_overlap=0.0):
     '''
     Embeds binned population activity into R^n
     resulting Tensor is Ncell x Nwin x NTrials
@@ -802,37 +588,49 @@ def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
     '''
     with h5py.File(popvec_fname, "w") as popvec_f:
 
-        popvec_f.attrs['win_size'] = win_size
-        popvec_f.attrs['fs'] = fs
+        # Extract clusters to bin
         if cluster_group != None:
             mask = np.ones(len(clusters.index)) < 0
             for grp in cluster_group:
                 mask = np.logical_or(mask, clusters['quality'] == grp)
         clusters_to_use = clusters[mask]
         clusters_list = clusters_to_use['cluster'].unique()
-        spikes = spikes[spikes['cluster'].isin(clusters_list)]
         nclus = len(clusters_to_use.index)
+
+        # Extract spikes
+        spikes = spikes[spikes['cluster'].isin(clusters_list)]
+
+        # Set binned file attributes
+        popvec_f.attrs['win_size'] = win_size
+        popvec_f.attrs['fs'] = fs
         popvec_f.attrs['nclus'] = nclus
         stims = trials['stimulus'].unique()
-        #popvec_f.create_dataset('clusters', data=clusters_list)
 
         for stim in stims:
             if str(stim) == 'nan':
                 continue
+            # Create Stimulus data group
             stimgrp = popvec_f.create_group(stim)
+
+            # Extract stimulus trial information
             stim_trials = trials[trials['stimulus'] == stim]
             nreps = len(stim_trials.index)
             stim_recs = stim_trials['recording'].values
             trial_len = (stim_trials['stimulus_end'] \
                          - stim_trials['time_samples']).unique()[0]
 
-            # compute subwin len and noverlap in samples
+            # Compute subwindow length and overlap in samples
             subwin_len = int(np.round(win_size/1000. * fs))
             noverlap = int(np.round(dt_overlap/1000. * fs))
             segment = get_segment([0, trial_len], fs, segment_info)
-            # Create Data set
-            poptens = build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
-                                win_size, subwin_len, noverlap, segment)
+
+            # Bin the stimulus data into a population tensor
+            poptens = build_activity_tensor_quick(stim_trials, spikes,
+                                                  clusters_list, nclus,
+                                                  win_size, subwin_len,
+                                                  noverlap, segment)
+
+            # Create the dataset and set attributes
             poptens_dset = stimgrp.create_dataset('pop_tens', data=poptens)
             stimgrp.create_dataset('clusters', data=clusters_list)
             poptens_dset.attrs['fs'] = fs
@@ -840,7 +638,37 @@ def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
 
 def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
                                 win_size, subwin_len, noverlap, segment):
+    '''
+    Bins population spike times into a population activity tensor
+    The resultant tensor is Ncells x Nbins x Ntrials
 
+    Parameters
+    ----------
+    stim_trials : pandas DataFrame
+        Subset of trials dataframe from ephys_analysis containing
+        all of the trial information from a single stimulus
+    spikes : pandas DataFrame
+        Subset of spikes dataframe from ephys_analysis containing
+        all of the spike information for all the trials from a
+        single stimulus
+    clusters_list : list
+        List of Cluster IDs to use in the binning
+    nclus : int
+        Number of clusters
+    win_size : float
+        window (bin) size in milliseconds
+    subwin_len : int
+        window (bin) length in samples
+    noverlap : int
+        bin overlap in samples
+    segment : list
+        return value of get_segment
+
+    Returns
+    ------
+    poptens : numpy array
+        Ncells x Nbin x Ntrials population activity tensor
+    '''
     nreps = len(stim_trials.index)
     stim_recs = stim_trials['recording'].values
     skip = subwin_len - noverlap
@@ -891,7 +719,8 @@ def build_permuted_data_tensor(data_tens, ncellsperm, nperms):
     perm_tens = np.zeros((ncellsperm, nwin, ntrial, nperms))
 
     for trial in range(ntrial):
-        perm_tens[:, :, trial, :] = get_perms(data_tens[:, :, trial], nperms, ncellsperm)[0]
+        perm_tens[:, :, trial, :] = get_perms(data_tens[:, :, trial],
+                                              nperms, ncellsperm)[0]
     return perm_tens
 
 def extract_population_tensors(binned_datafile, shuffle=False, clusters=None):
@@ -930,13 +759,13 @@ def extract_population_tensors(binned_datafile, shuffle=False, clusters=None):
             stim_tensors[stim] = poptens
     return stim_tensors
 
-def extract_population_tensor(binned_data_file, stim, shuffle=False, clusters=None):
+def extract_population_tensor(binned_data_file, stim,
+                              shuffle=False, clusters=None):
     '''
     Extracts the population tensor from a binned data file for
     a specific stim.  Shuffles it on command.
     Selects clusters given by 'clusters', all if none
     '''
-
     print('Extracting Population Activity Tensor...')
     with h5py.File(binned_data_file, 'r') as bdf:
         binned_clusters = np.array(bdf[stim]['clusters'])
@@ -1037,6 +866,67 @@ def calc_scm_betti_distribution(poptens, thresh, trial, nsamples):
         sample_bettis.append(bettis)
     return np.array(sample_bettis)
 
+
+##############################
+###### Betti Curve Funcs #####
+##############################
+
+def betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr):
+
+    stim_betticurves = {}
+    for stim in betti_dict.keys():
+        betticurve_save = np.empty((len(dims), len(twin), 0))
+
+        trials = betti_dict[stim]
+        for trial in trials.keys():
+            perms = trials[trial]
+            for perm in perms.keys():
+                dat = perms[perm]['bettis']
+                t = np.array([int(x[0]) for x in dat])
+                t_milliseconds = t*((windt - dtovr)) + windt / 2.0
+                t_vals = np.round((twin - windt/2) /(windt-dtovr))
+                t_vals_milliseconds = twin
+                b = [x[1] for x in dat]
+                #t_vals = np.linspace(window[0], window[1], Ntimes)
+                #t_vals = np.linspace(np.amin(t), np.amax(t), Ntimes)
+                #t_vals_milliseconds = t_vals*((windt - dtovr)) + windt / 2.0
+                b = [np.pad(np.array(x), (0, 10), 'constant', constant_values=0)
+                     for x in b]
+                betticurve_save_alldims = np.empty((0, len(twin)))
+                for dim in dims:
+                    b_val = np.array([x[dim] for x in b])
+                    b_func = interp1d(t, b_val, kind='zero', bounds_error=False,
+                                      fill_value=(b_val[0], b_val[-1]))
+                    betti_curve_dim = b_func(t_vals)
+                    betticurve_save_alldims = np.vstack((betticurve_save_alldims,
+                                                        betti_curve_dim))
+                betticurve_save = np.concatenate((betticurve_save,
+                                                  betticurve_save_alldims[:, :,
+                                                  np.newaxis]), axis=2)
+        stim_betticurves[stim] = np.array(betticurve_save)
+    return (stim_betticurves, t_vals, t_vals_milliseconds)
+
+def compute_betti_curves(analysis_id, block_path, bdf,
+                         thresh, nperms, ncellsperm, dims, twin,
+                        windt, dtovr, shuffle=False):
+
+    (resf, betti_dict) = calc_CI_bettis_tensor(analysis_id, bdf,
+                              block_path, thresh, shuffle=shuffle, nperms=nperms,
+                              ncellsperm=ncellsperm)
+
+    return betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr)
+
+
+def compute_trialaverage_betti_curves(analysis_id, block_path, bdf,
+                         thresh, nperms, ncellsperm, dims, twin,
+                         windt, dtovr, shuffle=False):
+
+    (resf, betti_dict) = calc_CI_bettis_tensor_trialavg(analysis_id, bdf,
+                              block_path, thresh, shuffle=shuffle, nperms=nperms,
+                              ncellsperm=ncellsperm)
+
+    return betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr)
+
 ##############################
 ###### Computation Dags ######
 ##############################
@@ -1130,61 +1020,6 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
 
     bfdict['raw'] = binned_folder
     return bfdict
-
-def betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr):
-
-    stim_betticurves = {}
-    for stim in betti_dict.keys():
-        betticurve_save = np.empty((len(dims), len(twin), 0))
-
-        trials = betti_dict[stim]
-        for trial in trials.keys():
-            perms = trials[trial]
-            for perm in perms.keys():
-                dat = perms[perm]['bettis']
-                t = np.array([int(x[0]) for x in dat])
-                t_milliseconds = t*((windt - dtovr)) + windt / 2.0
-                t_vals = np.round((twin - windt/2) /(windt-dtovr))
-                t_vals_milliseconds = twin
-                b = [x[1] for x in dat]
-                #t_vals = np.linspace(window[0], window[1], Ntimes)
-                #t_vals = np.linspace(np.amin(t), np.amax(t), Ntimes)
-                #t_vals_milliseconds = t_vals*((windt - dtovr)) + windt / 2.0
-                b = [np.pad(np.array(x), (0, 10), 'constant', constant_values=0) for x in b]
-                betticurve_save_alldims = np.empty((0, len(twin)))
-                for dim in dims:
-                    b_val = np.array([x[dim] for x in b])
-                    b_func = interp1d(t, b_val, kind='zero', bounds_error=False,
-                                      fill_value=(b_val[0], b_val[-1]))
-                    betti_curve_dim = b_func(t_vals)
-                    betticurve_save_alldims = np.vstack((betticurve_save_alldims,
-                                                        betti_curve_dim))
-                betticurve_save = np.concatenate((betticurve_save,
-                                                  betticurve_save_alldims[:, :,
-                                                  np.newaxis]), axis=2)
-        stim_betticurves[stim] = np.array(betticurve_save)
-    return (stim_betticurves, t_vals, t_vals_milliseconds)
-
-def compute_betti_curves(analysis_id, block_path, bdf,
-                         thresh, nperms, ncellsperm, dims, twin,
-                        windt, dtovr, shuffle=False):
-
-    (resf, betti_dict) = calc_CI_bettis_tensor(analysis_id, bdf,
-                              block_path, thresh, shuffle=shuffle, nperms=nperms,
-                              ncellsperm=ncellsperm)
-
-    return betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr)
-
-
-def compute_trialaverage_betti_curves(analysis_id, block_path, bdf,
-                         thresh, nperms, ncellsperm, dims, twin,
-                         windt, dtovr, shuffle=False):
-
-    (resf, betti_dict) = calc_CI_bettis_tensor_trialavg(analysis_id, bdf,
-                              block_path, thresh, shuffle=shuffle, nperms=nperms,
-                              ncellsperm=ncellsperm)
-
-    return betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr)
 
 
 def dag_topology(block_path, thresh, bfdict, raw=True,

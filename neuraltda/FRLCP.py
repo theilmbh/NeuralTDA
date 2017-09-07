@@ -6,8 +6,9 @@ import glob
 import os
 from sklearn.linear_model import LogisticRegression
 
-def predict_stimuli_classes_population_FR(pop_tensors, dimensionality, stimuli, stim_classes,
-                            pc_test, n_predict, shuff_Y=False):
+def predict_stimuli_classes_population_FR(pop_tensors, dimensionality, stimuli,
+                                          stim_classes, pc_test, n_predict,
+                                          shuff_Y=False):
 
     (ncells, nwin, ntrials, nperms) = pop_tensors[stimuli[0]].shape
     print(nperms)
