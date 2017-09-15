@@ -862,10 +862,20 @@ def calc_scm_betti_distribution(poptens, thresh, trial, nsamples):
                     betti_numbers_arr[0:len(betti_numbers)] = betti_numbers
                     bettis.append(np.array(betti_numbers_arr))
         except:
-            bettis.append([-1, -1])
+            bettis.append(-1*np.ones(10))
         sample_bettis.append(bettis)
     return np.array(sample_bettis)
 
+def get_scg_at_time(binmat, t):
+    '''
+    Extract scg at a specific time
+    time is given as specific index
+    '''
+
+    (ncells, nwins) = binmat.shape
+    subpopmat = binmat[:, 0:t]
+    scg = sc.binarytomaxsimplex(binmat, rDup=True)
+    return scg
 
 ##############################
 ###### Betti Curve Funcs #####
