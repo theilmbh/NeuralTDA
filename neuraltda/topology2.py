@@ -28,10 +28,6 @@ import neuraltda.simpComp as sc
 ################################
 
 TOPOLOGY_LOG = logging.getLogger('NeuralTDA')
-DEFAULT_CG_PARAMS = {'cluster_group': None, 'subwin_len': 100,
-                     'threshold': 6.0, 'n_subwin': 5}
-
-DEFAULT_SEGMENT_INFO = {'period': 1}
 
 # Path to MCMC Sampler from Young et al. 2017
 SCM_EXECUTABLE = '/home/brad/bin/mcmc_sampler'
