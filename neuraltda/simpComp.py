@@ -18,7 +18,14 @@ def maxEnt(scg, dim):
 def union(a, b):
     return list(set(a) | set(b))
 
+#####################################################
+#### Bitwise computation of Simplicial Complexes ####
+#####################################################
+
 def num_ones(N):
+    ''' Return the number of ones 
+        in the binary representation of N
+    '''
     count = 0
     while N:
         N = N & (N-1)
@@ -75,7 +82,10 @@ def max_simp_to_binary(max_simp):
     return (N, nbits)
 
 def get_faces(max_simp):
-
+    '''
+    Get all of the faces of a simplex 
+     Returns a list of faces 
+    '''
     (N, nbits) = max_simp_to_binary(max_simp)
     faces = common_get_faces(N, nbits)
     out_faces = [[] for x in range(nbits)]
@@ -84,7 +94,21 @@ def get_faces(max_simp):
     return out_faces
 
 def simplicialChainGroups(maxsimps):
+    '''
+    Take a list of maximal simplices and
+    successively add faces until all generators
+    of the chain groups are present
 
+    Parameters
+    ----------
+    maxsimps : list of tuples
+        list of the maximal simplices in the complex
+
+    Returns
+    -------
+    E : list of lists
+        simplicial complex generators in each dimension
+    '''
     maxdim = max([len(s) for s in maxsimps])
     Elen = maxdim+1
     E = [[] for ind in range(Elen)]
@@ -97,6 +121,9 @@ def simplicialChainGroups(maxsimps):
         E[k] = sorted(E[k])
     return E
 
+###############################################################
+#### KMM Computation of Simplicial Complexes (Much slower) ####
+###############################################################
 
 def simplexUnion(E1, E2):
     ''' Calculate the union of two simplicial complexes
@@ -171,12 +198,15 @@ def old_simplicialChainGroups(maxsimps):
         E[k] = sorted(E[k])
     return E
 
+#####################################
+#### Boundary Operator Functions ####
+#####################################
+
 def boundaryOperator(Q):
     '''
     Given a simplex, return its boundary operator
     in a dictionary
     '''
-
     sgn = 1
     c = dict()
     Ql = list(Q)
@@ -222,6 +252,10 @@ def boundaryOperatorMatrices(E):
     return D
 
 def boundaryOperatorMatrix(E, dim):
+    '''
+    Return the matrix of the boundary operator
+    in dimension dim for simplicial complex E
+    '''
     m = len(E[dim])
     n = len(E[dim+1])
     mat = np.zeros((m, n))
@@ -250,37 +284,9 @@ def maskedBoundaryOperatorMatrix(E, Emask):
         D[k-1] = mat
     return D
 
-def expandBasis(mat, oldK, newK, oldKm1, newKm1):
-    ''' oldK: source basis 1
-        newK: source basis 2
-        oldKm1: target basis 1
-        newKm1: target basis 2
-    '''
-    basSource = sorted(union(oldK, newK))
-    basTarget = sorted(union(oldKm1, newKm1))
-    if mat == []:
-        mat = np.zeros((len(basTarget), len(basSource)))
-    else:
-        for ind, b in enumerate(basSource):
-            if b not in oldK:
-                mat = np.insert(mat, ind, 0, axis=1)
-        for ind, b in enumerate(basTarget):
-            if b not in oldKm1:
-                mat = np.insert(mat, ind, 0, axis=0)
-    return mat
-
-def expandBases(D1, D2, E1, E2):
-    newD1 = []
-    newD2 = []
-    minlen = min([len(D1), len(D2)])
-    for ind in range(minlen-1):
-        print(ind)
-        print(D1[ind], D2[ind])
-        newMat1 = expandBasis(D1[ind], E1[ind+1], E2[ind+1], E1[ind], E2[ind])
-        newMat2 = expandBasis(D2[ind], E2[ind+1], E1[ind+1], E2[ind], E1[ind])
-        newD1.append(newMat1)
-        newD2.append(newMat2)
-    return (newD1, newD2)
+#############################
+#### Laplacian Functions ####
+#############################
 
 def laplacian(D, dim):
 
@@ -305,6 +311,10 @@ def laplacian(D, dim):
     return L1 + L2
 
 def compute_laplacian(scg, dim):
+    '''
+    Compute the Laplacian matrix in dimension dim 
+    for the simplicial complex scg 
+    '''
     try:
         Di = np.array(boundaryOperatorMatrix(scg, dim))
     except:
@@ -328,6 +338,10 @@ def compute_laplacian(scg, dim):
     return L1 + L2
 
 def reconcile_laplacians(L1, L2):
+    ''' 
+    Expand the bases so that Laplacian matrices 
+    L1 and L2 have the same shape 
+    '''
     laps = sorted([L1, L2], key=np.size)
     L1 = laps[0]
     L2 = laps[1]
@@ -339,27 +353,9 @@ def reconcile_laplacians(L1, L2):
         print('Reconcile Laplacians: L1 Size Value Error')
     return (L_new, L2)
 
-def laplacians(D):
-
-    l = len(D)
-    laps = []
-    for dim in range(1, len(D)-1):
-        laps.append(laplacian(D, dim))
-    return laps
-
-def densityMatrices(D, beta_list):
-
-    rhos = []
-    for ind in range(len(D)-3):
-        L = laplacian(D, ind)
-        try:
-            M = spla.expm(beta_list[ind]*L)
-        except ValueError:
-            print('ValueError')
-            print(L)
-        M = M / np.trace(M)
-        rhos.append(M)
-    return rhos
+#######################################################
+#### Density Matrix and KL/JS Divergence Functions ####
+#######################################################
 
 def densityMatrix(L, beta):
     try:
@@ -448,6 +444,10 @@ def spectralEntropies(rhos):
         ent = -np.dot(v.T, ve)
         ents.append(ent)
     return ents
+
+###############################################
+#### Graph and Population Tensor Functions ####
+###############################################
 
 def stimSpaceGraph(E, D):
     ''' Takes a set of generators for the chain groups
