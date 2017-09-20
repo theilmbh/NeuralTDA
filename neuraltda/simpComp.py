@@ -26,18 +26,36 @@ def num_ones(N):
     return count
 
 def check_bit(N, i):
+    ''' Checks to see if bit i is 1 in number N '''
+
     if N & (1 << i):
         return True
     else:
         return False
 
 def common_get_faces(N, num_verts):
+    '''
+    Get the faces of a simplex represented in the binary 
+    number N.  N is an integer.  In the binary representation of N,
+    each 1 represents the presence of a vertex
+    '''
+
     faces = []
     verts = list(range(num_verts))
+    
+    # For each possible subface 
+    # of the num_verts-1 simplex
     for k in range(2**num_verts):
         face_list = []
+
+        # Check to see if the subface is in the simplex
         if k & N == k:
+
+            # Dimension is number of vertices - 1
             dim = num_ones(k)-1
+
+            # Check which bits are set in the subface
+            # These correspond to the vertices in the subface
             for j in verts:
                 if check_bit(k, j):
                     face_list.append(j)
@@ -45,7 +63,12 @@ def common_get_faces(N, num_verts):
     return faces
 
 def max_simp_to_binary(max_simp):
+    ''' Compute a binary representation of a simplex '''
+
+    # Start with 0
     N = 0
+
+    # len(max_simp) is number of vertices.  
     nbits = len(max_simp)+1
     for n in range(nbits-1):
         N += 2**n
