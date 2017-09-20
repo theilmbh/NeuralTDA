@@ -1,9 +1,9 @@
-################################################################################
-### topology2.py                                                            ####
-### Computing Curto-Itskov topological features from neural population data ####
-### Version 2.0: 30 November 2016                                           ####
-### Brad Theilman                                                           ####
-################################################################################
+###############################################################################
+### topology2.py                                                            ###
+### Computing Curto-Itskov topological features from neural population data ###
+### Version 2.0: 30 November 2016                                           ###
+### Brad Theilman                                                           ###
+###############################################################################
 
 import os
 import subprocess
@@ -946,6 +946,33 @@ def db_load_data(block_path):
     clusters = core.load_clusters(block_path)
     return (spikes, trials, clusters, fs)
 
+def bin_data(block_path, winsize, segment_info, **kwargs):
+    '''
+    Bins spiking data into population tensors.
+
+    Parameters
+    ----------
+    block_path : str 
+        Path to directory containing Kwik file of spike data 
+    winsize : float 
+        Width of the binning windows in MILLISECONDS
+    segment_info : list 
+        [a, b] gives a MILLISECONDS after stimulus start 
+        and b MILLISECONDS before stimulus end 
+    kwargs :
+        cluster_group : list 
+            Quality of clusters to include. e.g. ['Good', 'MUA']
+            includes all Good and MUA clusters 
+        dt_overlap : float 
+            MILLISECONDS of overlap for each window 
+        comment : str 
+            A string to tag the resultant binned file with 
+    '''
+    (spikes, trials, clusters, fs) = db_load_data(block_path)
+    bfdict = do_dag_bin_lazy(block_path, spikes, trials, clusters,
+                             fs, winsize, segment_info, **kwargs)
+    return bfdict 
+
 def dag_bin(block_path, winsize, segment_info, **kwargs):
 
     (spikes, trials, clusters, fs) = db_load_data(block_path)
@@ -954,8 +981,8 @@ def dag_bin(block_path, winsize, segment_info, **kwargs):
     return bfdict
 
 def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
-                    segment_info, cluster_group=['Good', 'MUA'], dt_overlap=0.0,
-                    comment=''):
+                    segment_info, cluster_group=['Good', 'MUA'], 
+                    dt_overlap=0.0, comment=''):
     '''
     Take data structures from ephys_analysis and bin them into
     population tensors.
@@ -1026,7 +1053,6 @@ def do_dag_bin_lazy(block_path, spikes, trials, clusters, fs, winsize,
 
     bfdict['raw'] = binned_folder
     return bfdict
-
 
 def dag_topology(block_path, thresh, bfdict, raw=True,
                  shuffle=False, shuffleperm=False, nperms=0, ncellsperm=1,
