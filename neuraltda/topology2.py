@@ -742,7 +742,8 @@ def extract_population_tensors(binned_datafile, shuffle=False, clusters=None):
             try:
                 if clusters is not None:
                     poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
-                    print("Selecting Clusters: poptens:" + str(np.shape(poptens)))
+                    print("Selecting Clusters: poptens:" 
+                            + str(np.shape(poptens)))
                 (ncell, nwin, ntrial) = np.shape(poptens)
             except (ValueError, IndexError):
                 print('Poptens Error')
@@ -878,6 +879,23 @@ def get_scg_at_time(binmat, t):
 ##############################
 
 def betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr):
+    '''
+    Interpolates Betti values using step functions to produce
+    Betti curves
+
+    Parameters
+    ----------
+    betti_dict : dict 
+        Dictionary returned by betti computation
+    dims : list 
+        Dimensions to compute betti curves for 
+    twin : list 
+        list of interpolation time points
+    windt : float 
+        window size in milliseconds 
+    dtovr : float 
+        amount of window overlap in milliseconds
+    '''
 
     stim_betticurves = {}
     for stim in betti_dict.keys():
@@ -896,12 +914,14 @@ def betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr):
                 #t_vals = np.linspace(window[0], window[1], Ntimes)
                 #t_vals = np.linspace(np.amin(t), np.amax(t), Ntimes)
                 #t_vals_milliseconds = t_vals*((windt - dtovr)) + windt / 2.0
-                b = [np.pad(np.array(x), (0, 10), 'constant', constant_values=0)
+                b = [np.pad(np.array(x), (0, 10),
+                            'constant', constant_values=0)
                      for x in b]
                 betticurve_save_alldims = np.empty((0, len(twin)))
                 for dim in dims:
                     b_val = np.array([x[dim] for x in b])
-                    b_func = interp1d(t, b_val, kind='zero', bounds_error=False,
+                    b_func = interp1d(t, b_val,
+                                      kind='zero', bounds_error=False,
                                       fill_value=(b_val[0], b_val[-1]))
                     betti_curve_dim = b_func(t_vals)
                     betticurve_save_alldims = np.vstack((betticurve_save_alldims,
@@ -917,8 +937,8 @@ def compute_betti_curves(analysis_id, block_path, bdf,
                         windt, dtovr, shuffle=False):
 
     (resf, betti_dict) = calc_CI_bettis_tensor(analysis_id, bdf,
-                              block_path, thresh, shuffle=shuffle, nperms=nperms,
-                              ncellsperm=ncellsperm)
+                              block_path, thresh, shuffle=shuffle,
+                              nperms=nperms, ncellsperm=ncellsperm)
 
     return betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr)
 
@@ -928,8 +948,8 @@ def compute_trialaverage_betti_curves(analysis_id, block_path, bdf,
                          windt, dtovr, shuffle=False):
 
     (resf, betti_dict) = calc_CI_bettis_tensor_trialavg(analysis_id, bdf,
-                              block_path, thresh, shuffle=shuffle, nperms=nperms,
-                              ncellsperm=ncellsperm)
+                              block_path, thresh, shuffle=shuffle,
+                              nperms=nperms, ncellsperm=ncellsperm)
 
     return betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr)
 
