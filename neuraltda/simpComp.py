@@ -417,7 +417,8 @@ def KLdivergence_matrixlog(rho, sigma):
 def JSdivergence_matrixlog_old(rho, sigma):
 
     M = (rho+sigma)/2.0
-    return (KLdivergence_matrixlog(rho, M) + KLdivergence_matrixlog(sigma, M))/2.0
+    return (KLdivergence_matrixlog(rho, M) + 
+            KLdivergence_matrixlog(sigma, M))/2.0
 
 def JSdivergence(rho, sigma):
     M = (rho+sigma)/2.0

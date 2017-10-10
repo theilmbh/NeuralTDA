@@ -934,8 +934,10 @@ def betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr):
 
 def compute_betti_curves(analysis_id, block_path, bdf,
                          thresh, nperms, ncellsperm, dims, twin,
-                        windt, dtovr, shuffle=False):
-
+                         windt, dtovr, shuffle=False):
+    '''
+    Computes betti numbers and returns betti curves 
+    '''
     (resf, betti_dict) = calc_CI_bettis_tensor(analysis_id, bdf,
                               block_path, thresh, shuffle=shuffle,
                               nperms=nperms, ncellsperm=ncellsperm)
@@ -952,6 +954,22 @@ def compute_trialaverage_betti_curves(analysis_id, block_path, bdf,
                               nperms=nperms, ncellsperm=ncellsperm)
 
     return betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr)
+
+def compute_mean_stderr_betti_curves(betti_curves):
+    '''
+    Takes betti curve dictionary from 'compute_betti_curves'
+    Computes mean and standard error betti curves for each stimulus
+    
+    '''
+    stims = betti_curves.keys()
+    bc_plot_dict = {}
+    for ind, stim in enumerate(stims):
+        dat = betti_curves[stim]
+        avg = np.mean(dat, axis=2)
+        std = np.std(dat, axis=2)
+        stderr = std / np.sqrt(np.shape(dat)[2])
+        bc_plot_dict[stim] = (avg, stderr)
+    return bc_plot_dict
 
 ##############################
 ###### Computation Dags ######

@@ -39,11 +39,16 @@ def parallel_compute_chain_group(bdf, stim, thresh):
     if  nwin == 0:
         return
     scgGenSave = dict()
-    scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
+    scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)
+                                     (poptens, thresh, trial)
+                                     for trial in range(ntrial))
 
-def computeChainGroups(blockPath, binned_datafile, thresh, comment='',
-                       shuffle=False, clusters=None, nperms=None, ncellsperm=30):
-    ''' Takes a binned data file and computes the chain group generators and saves them
+def computeChainGroups(blockPath, binned_datafile,
+                       thresh, comment='',
+                       shuffle=False, clusters=None,
+                       nperms=None, ncellsperm=30):
+    ''' Takes a binned data file and computes the chain group 
+        generators and saves them
         Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg
     '''
     print('Computing Chain Groups...')
@@ -58,7 +63,8 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='',
             try:
                 if clusters is not None:
                     poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
-                    print("Selecting Clusters: poptens:" + str(np.shape(poptens)))
+                    print("Selecting Clusters: poptens:" 
+                            + str(np.shape(poptens)))
                 (ncell, nwin, ntrial) = np.shape(poptens)
             except (ValueError, IndexError):
                 print('Poptens Error')
@@ -68,13 +74,17 @@ def computeChainGroups(blockPath, binned_datafile, thresh, comment='',
                 poptens = poptens[:, :, :, 0]
             if nperms:
                 print('Permuting Poptens')
-                poptens = tp2.build_permuted_data_tensor(poptens, ncellsperm, nperms)
-                poptens = np.reshape(poptens, (ncellsperm, nwin, ntrial*nperms))
+                poptens = tp2.build_permuted_data_tensor(poptens,
+                                                         ncellsperm,
+                                                         nperms)
+                poptens = np.reshape(poptens,
+                        (ncellsperm, nwin, ntrial*nperms))
                 ntrial = ntrial*nperms
             if  nwin == 0:
                 continue
             print('Starting jobs...')
-            scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial))
+            scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)
+                    (poptens, thresh, trial) for trial in range(ntrial))
             stimGenSave[stim] = scgGenSave
 
     # Create output filename
@@ -138,17 +148,19 @@ def compute_JS_expanded(scgA, scgB, d, beta):
     # DA = sc.boundaryOperatorMatrix(scgA)
     # DB = sc.boundaryOperatorMatrix(scgB)
     #print('Computing Laplacians')
+
+    # Compute Laplacian Matrices in dimension d
     LA = sc.compute_laplacian(scgA, d)
     LB = sc.compute_laplacian(scgB, d)
 
-    #print('Reconciling Laplacians')
+    # Reconcile Laplacians
     (LA, LB) = sc.reconcile_laplacians(LA, LB)
 
-    #print('Computing Density Matrices')
+    # Computing Density Matrices
     rho1 = sc.densityMatrix(LA, beta)
     rho2 = sc.densityMatrix(LB, beta)
 
-    #print('Computing JS divergence')
+    # Computing JS divergence
     div = sc.JSdivergence(rho1, rho2)
     return div
 
