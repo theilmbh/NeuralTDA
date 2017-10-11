@@ -34,5 +34,5 @@ def plot_betti_curve(bc, t, stim, betti, ax):
 
     ax.plot(t/1000., y, linewidth=2)
     ax.fill_between(t/1000., y-s, y+s, alpha=0.5)
-    ax.set_xticks(range(int(np.amax(t)/1000.)))
+    ax.set_xticks(range(int(np.amax(t)/1000.) + 1))
 
