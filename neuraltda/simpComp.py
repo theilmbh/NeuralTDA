@@ -25,6 +25,7 @@ def union(a, b):
 def num_ones(N):
     ''' Return the number of ones 
         in the binary representation of N
+
     '''
     count = 0
     while N:
@@ -33,7 +34,10 @@ def num_ones(N):
     return count
 
 def check_bit(N, i):
-    ''' Checks to see if bit i is 1 in number N '''
+    ''' 
+    Checks to see if bit i is 1 in number N 
+    
+    '''
 
     if N & (1 << i):
         return True
@@ -45,6 +49,7 @@ def common_get_faces(N, num_verts):
     Get the faces of a simplex represented in the binary 
     number N.  N is an integer.  In the binary representation of N,
     each 1 represents the presence of a vertex
+
     '''
 
     faces = []
@@ -70,8 +75,10 @@ def common_get_faces(N, num_verts):
     return faces
 
 def max_simp_to_binary(max_simp):
-    ''' Compute a binary representation of a simplex '''
-
+    '''
+    Compute a binary representation of a simplex 
+    
+    '''
     # Start with 0
     N = 0
 
@@ -84,7 +91,8 @@ def max_simp_to_binary(max_simp):
 def get_faces(max_simp):
     '''
     Get all of the faces of a simplex 
-     Returns a list of faces 
+    Returns a list of faces 
+
     '''
     (N, nbits) = max_simp_to_binary(max_simp)
     faces = common_get_faces(N, nbits)
@@ -108,6 +116,7 @@ def simplicialChainGroups(maxsimps):
     -------
     E : list of lists
         simplicial complex generators in each dimension
+
     '''
     maxdim = max([len(s) for s in maxsimps])
     Elen = maxdim+1
@@ -126,8 +135,10 @@ def simplicialChainGroups(maxsimps):
 ###############################################################
 
 def simplexUnion(E1, E2):
-    ''' Calculate the union of two simplicial complexes
-        represented as lists of generators
+    '''
+    Calculate the union of two simplicial complexes
+    represented as lists of generators
+
     '''
     sorted_E = sorted([E1, E2], key=len)
     maxlen = len(sorted_E[1])
@@ -206,6 +217,7 @@ def boundaryOperator(Q):
     '''
     Given a simplex, return its boundary operator
     in a dictionary
+
     '''
     sgn = 1
     c = dict()
@@ -237,6 +249,7 @@ def boundaryOperatorMatrices(E):
     '''
     Given a list of simplicial complex generators,
     Return a list of boundary operator matrices.
+
     '''
 
     nmat = len(E)-1
@@ -255,6 +268,7 @@ def boundaryOperatorMatrix(E, dim):
     '''
     Return the matrix of the boundary operator
     in dimension dim for simplicial complex E
+
     '''
     m = len(E[dim])
     n = len(E[dim+1])
@@ -267,6 +281,7 @@ def boundaryOperatorMatrix(E, dim):
 def maskedBoundaryOperatorMatrix(E, Emask):
     ''' Emask is the simplicial Chain groups you want to mask in
         It is the chain groups of the subsimplex
+
     '''
     nmat = len(E)-1
     D = [[] for i in range(nmat)]
@@ -314,6 +329,7 @@ def compute_laplacian(scg, dim):
     '''
     Compute the Laplacian matrix in dimension dim 
     for the simplicial complex scg 
+
     '''
     try:
         Di = np.array(boundaryOperatorMatrix(scg, dim))
