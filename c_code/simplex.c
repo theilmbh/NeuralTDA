@@ -115,7 +115,7 @@ int simplex_equals(struct Simplex * s1, struct Simplex * s2)
     return 1;
 }
 
-void scg_list_union(SCG * scg1, SCG * scg2, int dim)
+void scg_list_union(SCG * scg1, SCG * scg2)
 {
     /*  form the union of scg lists */
     /*  The output is in list2 */
