@@ -254,6 +254,43 @@ void free_SCG(SCG * scg)
     free(scg);
 }
 
+/* print functions */
+void print_simplex(struct Simplex * s)
+{
+    if (s == NULL) {
+        return;
+    }
+
+    printf("SIMPLEX | D = %d | Vertices: ", s->dim);
+    for (int i = 0; i < MAXDIM; i++)
+    {
+        printf("%d, ", s->vertices[i]);
+    }
+    printf("\n");
+}
+
+void print_simplex_list(struct simplex_list *sl)
+{
+    printf("SIMPLEX LIST\n");
+    printf("------------\n");
+
+    while (sl != NULL)
+    {
+        print_simplex(sl->s);
+        sl = sl->next;
+    }
+    printf("\n");
+}
+void print_SCG(SCG * scg)
+{
+    printf("SCG\n");
+    printf("---\n");
+    for (int i = 0; i < MAXDIM; i++) {
+        printf("Dimension %d\n", i);
+        print_simplex_list(scg->x[i]);
+    }
+    printf("\n");
+}
 void compute_chain_groups(struct Simplex * max_simps,
                           int n_max_simps, SCG * scg_out)
 {

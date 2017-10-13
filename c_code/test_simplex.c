@@ -28,10 +28,24 @@ static unsigned int v2[MAXDIM] = {1,2,4,8,0,0,0,0,0,0};
 int test_scg_list_union()
 {
     /* Test union of two scg lists */
+    int retcode = 1;
+    int dim = 3;
+
     SCG * scg1 = get_empty_SCG();
     SCG * scg2 = get_empty_SCG();
+    
+    struct Simplex * s1 = create_simplex(v1, dim);
+    struct Simplex * s2 = create_simplex(v2, dim);
+    
+    add_simplex(scg1->x[3], s1);
+    add_simplex(scg2->x[3], s2);
 
-
+    scg_list_union(scg1, scg2);
+    if ((!simplex_list_isin(scg2->x[3], s1))) {
+        retcode = 0;
+    }
+    print_SCG(scg2);
+    return retcode;
 }
 
 int test_add_remove_simplex()
@@ -98,6 +112,10 @@ int main(int argc, char **argv)
     }
     if (!test_add_remove_simplex()) {
         printf("Add Remove Simplex fails\n");
+        exit(-1);
+    }
+    if (!test_scg_list_union()) {
+        printf("SCG list union fails\n");
         exit(-1);
     }
     printf("Tests succeeded \n");

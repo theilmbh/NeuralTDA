@@ -66,4 +66,9 @@ struct simplex_list * simplex_list_isin(struct simplex_list *slist,
 SCG * get_empty_SCG(); 
 void free_SCG(SCG * scg);
 void scg_list_union(SCG * scg1, SCG * scg2);
+
+/* print functions */
+void print_simplex(struct Simplex * s);
+void print_simplex_list(struct simplex_list *sl);
+void print_SCG(SCG * scg);
 #endif
