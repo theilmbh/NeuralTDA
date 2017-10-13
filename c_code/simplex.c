@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "simplex.h"
 
@@ -74,6 +75,19 @@ int int_cmp(const void * a, const void * b)
     return ( *(int*)a - *(int*)b );
 }
 
+void free_simplex(struct Simplex *s)
+{
+    free(s);
+}
+
+struct Simplex * create_simplex(unsigned int *vertices, int dim)
+{
+    struct Simplex * s_out = malloc(sizeof(struct Simplex));
+    memcpy(s_out->vertices, vertices, MAXDIM*sizeof(unsigned int));
+    s_out->dim = dim;
+    return s_out;
+}
+
 int simplex_equals(struct Simplex * s1, struct Simplex * s2)
 {
     /* Returns 1 if the two simplices are identical */
@@ -88,7 +102,7 @@ int simplex_equals(struct Simplex * s1, struct Simplex * s2)
     qsort(s2->vertices, s2->dim+1, sizeof(int), int_cmp);
 
     /* Check if arrays are equal */
-    for (int i = 0; i <= s1->dim; i++) {
+    for (int i = 0; i <= MAXDIM; i++) {
         if (s1->vertices[i] != s2->vertices[i]) {
             return 0;
         }
@@ -159,6 +173,42 @@ void simplex_list_free(struct simplex_list * sl)
         free(sl);
         sl = nx;
         nx = sl->next;
+    }
+}
+
+/* Checks if a simplex is already in a simplex list */
+int simplex_list_isin(struct simplex_list *slist, struct Simplex *s)
+{
+    int retcode = 0;
+    while ( slist != NULL ) {
+        if (simplex_equals(slist->s, s)) {
+            retcode = 1;
+            return retcode;
+        }
+        slist = slist->next;
+    }
+    return retcode;
+}
+
+/* Adds a simplex to a simplex list if not already present */
+void add_simplex(struct simplex_list *slist, struct Simplex *s)
+{
+    if (slist->s == NULL) {
+        /* Empty list */
+        slist->s = s;
+        return;
+    }
+
+    if (!simplex_list_isin(slist, s)) {
+        struct simplex_list *new = get_empty_simplex_list();
+        new->s = s;
+        /* Advance to end of list */
+        while (slist->next != NULL) {
+            slist = slist->next;
+        }
+        /* Add new simplex */
+        slist->next = new;
+        new->prev = slist;
     }
 }
 

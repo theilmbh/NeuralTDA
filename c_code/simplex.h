@@ -41,18 +41,27 @@ typedef struct SCG {
 
 unsigned int num_ones(unsigned int N);
 int check_bit(unsigned int N, unsigned int i);
-struct Simplex *get_simplex_from_integer(unsigned int N);
 void get_faces_common(struct simplex_list face_list,
                       unsigned int N, int n_verts);
 int int_cmp(const void * a, const void * b);
-int simplex_equals(struct Simplex * s1, struct Simplex * s2);
-void scg_list_union(SCG * scg1, SCG * scg2);
-struct simplex_list * get_empty_simplex_list();
-void simplex_list_free(struct simplex_list * sl);
-SCG * get_empty_SCG(); 
-void free_SCG(SCG * scg);
-struct simplex_list * get_empty_simplex_list();
 void compute_chain_groups(struct Simplex * max_simps,
                           int n_max_simps, SCG * scg_out);
 
+/* Simplex Functions */
+struct Simplex * create_simplex(unsigned int *vertices, int dim);
+void free_simplex(struct Simplex * s);
+int simplex_equals(struct Simplex * s1, struct Simplex * s2);
+struct Simplex *get_simplex_from_integer(unsigned int N);
+
+/* Simplex List functions */
+void simplex_list_free(struct simplex_list * sl);
+struct simplex_list * get_empty_simplex_list();
+void add_simplex(struct simplex_list *slist, struct Simplex *s);
+void remove_simplex(struct simplex_list *slist, struct Simplex *s);
+int simplex_list_isin(struct simplex_list *slist, struct Simplex *);
+
+/* SCG functions */
+SCG * get_empty_SCG(); 
+void free_SCG(SCG * scg);
+void scg_list_union(SCG * scg1, SCG * scg2);
 #endif
