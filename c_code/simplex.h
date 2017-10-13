@@ -52,6 +52,8 @@ struct Simplex * create_simplex(unsigned int *vertices, int dim);
 void free_simplex(struct Simplex * s);
 int simplex_equals(struct Simplex * s1, struct Simplex * s2);
 struct Simplex *get_simplex_from_integer(unsigned int N);
+struct Simplex * create_empty_simplex();
+void add_vertex(struct Simplex * s, int v);
 
 /* Simplex List functions */
 void simplex_list_free(struct simplex_list * sl);
@@ -66,6 +68,7 @@ struct simplex_list * simplex_list_isin(struct simplex_list *slist,
 SCG * get_empty_SCG(); 
 void free_SCG(SCG * scg);
 void scg_list_union(SCG * scg1, SCG * scg2);
+void scg_add_simplex(SCG * scg, struct Simplex * s);
 
 /* print functions */
 void print_simplex(struct Simplex * s);

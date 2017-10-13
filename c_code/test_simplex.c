@@ -37,11 +37,19 @@ int test_scg_list_union()
     
     struct Simplex * s1 = create_simplex(v1, dim);
     struct Simplex * s2 = create_simplex(v2, dim);
-    struct Simplex * s3 = create_simplex(v3, 5);
+    struct Simplex * s3 = create_empty_simplex();
+    for (int i=1; i<9; i++) {
+        add_vertex(s3, i);
+    }
     
-    add_simplex(scg1->x[3], s1);
-    add_simplex(scg2->x[3], s2);
-    add_simplex(scg1->x[5], s3);
+    scg_add_simplex(scg1, s1);
+    scg_add_simplex(scg2, s2);
+    scg_add_simplex(scg1, s3);
+
+    printf("SCG1\n");
+    print_SCG(scg1);
+    printf("SCG2\n");
+    print_SCG(scg2);
 
     scg_list_union(scg1, scg2);
     if ((!simplex_list_isin(scg2->x[3], s1))) {

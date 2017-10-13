@@ -83,7 +83,7 @@ void add_vertex(struct Simplex * s, int v)
 {
     if (s->dim == MAXDIM) return;
     s->dim++;
-    s->vertices[dim] = v;
+    s->vertices[s->dim] = v;
 
 }
 struct Simplex * create_simplex(unsigned int *vertices, int dim)
@@ -238,6 +238,12 @@ void free_SCG(SCG * scg)
         simplex_list_free(scg->x[dim]);
     }
     free(scg);
+}
+
+void scg_add_simplex(SCG * scg, struct Simplex * s)
+{
+    int d = s->dim;
+    add_simplex(scg->x[d], s);
 }
 
 /* print functions */
