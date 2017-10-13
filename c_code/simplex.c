@@ -19,26 +19,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
-#define MAXNAME 128
-#define MAXMS 12
-#define MAXDIM 10
-
-struct Simplex {
-    unsigned int vertices[MAXDIM];
-    int dim;
-};
-
-struct simplex_list {
-    struct Simplex * s;
-    struct simplex_list * next;
-    struct simplex_list * prev;
-};
-
-/* Array of simplex lists forms simplicial complex generators */
-typedef struct SCG {
-    struct simplex_list *x[MAXDIM];
-} SCG;
+#include "simplex.h"
 
 unsigned int num_ones(unsigned int N)
 {
