@@ -56,7 +56,22 @@ struct Simplex *get_simplex_from_integer(unsigned int N)
 void get_faces_common(struct simplex_list face_list,
                       unsigned int N, int n_verts)
 {
+    
+}
 
+unsigned int integer_from_simplex(struct Simplex * simp)
+{
+    unsigned int N;
+    N = (1 << (simp->dim + 1)) - 1;
+    return N;
+}
+
+SCG * get_faces(struct Simplex * simp)
+{
+    SCG * out = get_empty_SCG();
+    int N;
+
+    N = integer_from_simplex(simp);
 }
 
 int int_cmp(const void * a, const void * b)
@@ -84,8 +99,9 @@ void add_vertex(struct Simplex * s, int v)
     if (s->dim == MAXDIM) return;
     s->dim++;
     s->vertices[s->dim] = v;
-
+    qsort(s->vertices, s->dim+1, sizeof(int), int_cmp);
 }
+
 struct Simplex * create_simplex(unsigned int *vertices, int dim)
 {
     struct Simplex * s_out = malloc(sizeof(struct Simplex));

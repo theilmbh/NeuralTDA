@@ -38,7 +38,7 @@ int test_scg_list_union()
     struct Simplex * s1 = create_simplex(v1, dim);
     struct Simplex * s2 = create_simplex(v2, dim);
     struct Simplex * s3 = create_empty_simplex();
-    for (int i=1; i<9; i++) {
+    for (int i=9; i>=1; i--) {
         add_vertex(s3, i);
     }
     
@@ -58,6 +58,23 @@ int test_scg_list_union()
     print_SCG(scg2);
     scg_list_union(scg1, scg2);
     print_SCG(scg2);
+    return retcode;
+}
+
+int test_int_from_simplex()
+{
+    unsigned int N;
+    int retcode = 1;
+    
+    struct Simplex * s = create_empty_simplex();
+    add_vertex(s, 3);
+    add_vertex(s, 5);
+    add_vertex(s, 4);
+    print_simplex(s);
+    N = integer_from_simplex(s);
+    if (N != 7) {
+        retcode = 0;
+    }
     return retcode;
 }
 
@@ -129,6 +146,10 @@ int main(int argc, char **argv)
     }
     if (!test_scg_list_union()) {
         printf("SCG list union fails\n");
+        exit(-1);
+    }
+    if (!test_int_from_simplex()) {
+        printf("int from simplex fails\n");
         exit(-1);
     }
     printf("Tests succeeded \n");

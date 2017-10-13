@@ -41,6 +41,7 @@ typedef struct SCG {
 
 unsigned int num_ones(unsigned int N);
 int check_bit(unsigned int N, unsigned int i);
+unsigned int integer_from_simplex(struct Simplex * simp);
 void get_faces_common(struct simplex_list face_list,
                       unsigned int N, int n_verts);
 int int_cmp(const void * a, const void * b);
