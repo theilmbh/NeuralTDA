@@ -20,7 +20,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <string.h>
 
 int test_simplex_equals()
 {
@@ -40,10 +40,10 @@ int test_simplex_equals()
     memcpy(s2->vertices, v1, MAXDIM*sizeof(unsigned int));
     memcpy(s3->vertices, v2, MAXDIM*sizeof(unsigned int));
 
-    if ((!simplex_equals(s1, s2)) || (simplex_equals(s1, s3))) {
-        return 0;
+    if ((simplex_equals(s1, s2)) && (!simplex_equals(s1, s3))) {
+        return 1;
     }
-    return 1;
+    return 0;
 }
 
 int main(int argc, char **argv)
