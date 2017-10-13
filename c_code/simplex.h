@@ -57,8 +57,10 @@ struct Simplex *get_simplex_from_integer(unsigned int N);
 void simplex_list_free(struct simplex_list * sl);
 struct simplex_list * get_empty_simplex_list();
 void add_simplex(struct simplex_list *slist, struct Simplex *s);
-void remove_simplex(struct simplex_list *slist, struct Simplex *s);
-int simplex_list_isin(struct simplex_list *slist, struct Simplex *);
+struct simplex_list * remove_simplex(struct simplex_list *slist,
+                                     struct Simplex *s);
+struct simplex_list * simplex_list_isin(struct simplex_list *slist,
+                                        struct Simplex *);
 
 /* SCG functions */
 SCG * get_empty_SCG(); 

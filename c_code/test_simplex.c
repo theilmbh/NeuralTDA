@@ -54,6 +54,12 @@ int test_add_remove_simplex()
         retcode = 0;
         return retcode;
     }
+
+    new_sl = remove_simplex(new_sl, s2);
+    if ((!simplex_list_isin(new_sl, s1)) || (simplex_list_isin(new_sl, s2))) {
+        retcode = 0;
+        return retcode;
+    }
     return retcode;
 }
 

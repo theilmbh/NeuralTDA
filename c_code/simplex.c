@@ -177,17 +177,41 @@ void simplex_list_free(struct simplex_list * sl)
 }
 
 /* Checks if a simplex is already in a simplex list */
-int simplex_list_isin(struct simplex_list *slist, struct Simplex *s)
+/* If so, returns a pointer to the list entry */
+struct simplex_list * simplex_list_isin(struct simplex_list *slist,
+                                        struct Simplex *s)
 {
-    int retcode = 0;
+    struct simplex_list * retcode = NULL;
     while ( slist != NULL ) {
         if (simplex_equals(slist->s, s)) {
-            retcode = 1;
+            retcode = slist;
             return retcode;
         }
         slist = slist->next;
     }
     return retcode;
+}
+
+struct simplex_list * remove_simplex(struct simplex_list *slist,
+                                     struct Simplex *s)
+{
+    struct simplex_list *entry = simplex_list_isin(slist, s);
+    struct simplex_list *ret = slist;
+    if (entry != NULL) {
+        if (entry->prev != NULL) {
+            /* Entry is not first in list */
+            entry->prev->next = entry->next;
+        }
+        if (entry->next != NULL) {
+            /* Entry is not last in list */
+            entry->next->prev = entry->prev;
+        }
+        if (entry->prev == NULL) {
+            /* Entry is first in list */
+            ret = entry->next;
+        }
+    }
+    return ret;
 }
 
 /* Adds a simplex to a simplex list if not already present */
