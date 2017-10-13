@@ -52,7 +52,8 @@ struct Simplex *get_simplex_from_integer(unsigned int N)
     return out;
 }
 
-void get_faces_common(simplex_list_t face_list, unsigned int N, int n_verts)
+void get_faces_common(struct simplex_list face_list,
+                      unsigned int N, int n_verts)
 {
     unsigned int k, dim;
 
@@ -101,6 +102,7 @@ void scg_list_union(SCG * scg1, SCG * scg2)
     /*  form the union of scg lists */
     /*  The output is in list2 */
     /*  This is ugly! */
+    int dim;
     for ( dim = 0; dim < MAXDIM; dim++) {
         struct simplex_list * list1d = scg1->x[dim];
         struct simplex_list * list2d = scg2->x[dim];
@@ -191,11 +193,10 @@ void compute_chain_groups(struct Simplex * max_simps,
     }
     /* for each max simp, get the faces and add to the scg */
     for (int i=0; i<n_max_simps; i++) {
-        SCG * faces = get_faces(max_simps[i]);
-        for (int dim = 0; dim < MAXDIM; dim++) {
-            /* take the union of face lists */
-            scg_list_union(faces, scg_out, dim); 
-        }
+        /*  SCG * faces = get_faces(max_simps[i]); */
+        SCG * faces = NULL;
+        /* take the union of face lists */
+        scg_list_union(faces, scg_out); 
     }
     
 }

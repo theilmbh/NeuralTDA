@@ -36,13 +36,14 @@ struct simplex_list {
 
 /* Array of simplex lists forms simplicial complex generators */
 typedef struct SCG {
-    struct simplex_list *x[MAXDIM]
-} SCG;
+    struct simplex_list *x[MAXDIM];
+}SCG;
 
 unsigned int num_ones(unsigned int N);
 int check_bit(unsigned int N, unsigned int i);
 struct Simplex *get_simplex_from_integer(unsigned int N);
-void get_faces_common(simplex_list_t face_list, unsigned int N, int n_verts);
+void get_faces_common(struct simplex_list face_list,
+                      unsigned int N, int n_verts);
 int int_cmp(const void * a, const void * b);
 int simplex_equals(struct Simplex * s1, struct Simplex * s2);
 void scg_list_union(SCG * scg1, SCG * scg2);
