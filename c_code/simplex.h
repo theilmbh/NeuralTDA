@@ -42,10 +42,10 @@ typedef struct SCG {
 unsigned int num_ones(unsigned int N);
 int check_bit(unsigned int N, unsigned int i);
 unsigned int integer_from_simplex(struct Simplex * simp);
-void get_faces_common(struct simplex_list face_list,
-                      unsigned int N, int n_verts);
+void get_faces_common(unsigned int N, int *verts, int dim, SCG * scg_temp);
+SCG * get_faces(struct Simplex * simp);
 int int_cmp(const void * a, const void * b);
-void compute_chain_groups(struct Simplex * max_simps,
+void compute_chain_groups(struct Simplex ** max_simps,
                           int n_max_simps, SCG * scg_out);
 
 /* Simplex Functions */

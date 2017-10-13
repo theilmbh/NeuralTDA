@@ -26,6 +26,31 @@ static unsigned int v1[MAXDIM] = {1,2,3,4,0,0,0,0,0,0};
 static unsigned int v2[MAXDIM] = {1,2,4,8,0,0,0,0,0,0};
 static unsigned int v3[MAXDIM] = {1,2,4,8,6,10,0,0,0,0};
 
+int test_compute_chain_groups()
+{
+    struct Simplex *max_simps[2];
+
+    struct Simplex * s1 = create_empty_simplex();
+    add_vertex(s1, 3);
+    add_vertex(s1, 10);
+    add_vertex(s1, 1);
+    add_vertex(s1, 7);
+
+    struct Simplex * s2 = create_empty_simplex();
+    add_vertex(s2, 3);
+    add_vertex(s2, 5);
+    add_vertex(s2, 6);
+    add_vertex(s2, 7);
+    
+    max_simps[0] = s1;
+    max_simps[1] = s2;
+    SCG * scg1 = get_empty_SCG();
+
+    compute_chain_groups(max_simps, 2, scg1);
+    print_SCG(scg1);
+    return 0;
+}
+
 int test_scg_list_union()
 {
     /* Test union of two scg lists */
@@ -150,6 +175,10 @@ int main(int argc, char **argv)
     }
     if (!test_int_from_simplex()) {
         printf("int from simplex fails\n");
+        exit(-1);
+    }
+    if (!test_compute_chain_groups()) {
+        printf("compute chain groups fails\n");
         exit(-1);
     }
     printf("Tests succeeded \n");

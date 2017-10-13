@@ -53,10 +53,20 @@ struct Simplex *get_simplex_from_integer(unsigned int N)
     return out;
 }
 
-void get_faces_common(struct simplex_list face_list,
-                      unsigned int N, int n_verts)
+void get_faces_common(unsigned int N, int *verts, int dim, SCG * scg_temp)
 {
-    
+    struct Simplex * s_new;
+   for (int k = 0; k <= N; k++) {
+       if ( (k & N) == k ) {
+            s_new = create_empty_simplex();
+            for ( int j = 0; j < dim+1; j++) {
+                if (check_bit(k, j)) {
+                    add_vertex(s_new, verts[j]);
+                }
+            }
+            scg_add_simplex(scg_temp, s_new);
+       }
+   } 
 }
 
 unsigned int integer_from_simplex(struct Simplex * simp)
@@ -72,6 +82,8 @@ SCG * get_faces(struct Simplex * simp)
     int N;
 
     N = integer_from_simplex(simp);
+    get_faces_common(N, simp->vertices, simp->dim, out);
+    return out;
 }
 
 int int_cmp(const void * a, const void * b)
@@ -259,7 +271,9 @@ void free_SCG(SCG * scg)
 void scg_add_simplex(SCG * scg, struct Simplex * s)
 {
     int d = s->dim;
-    add_simplex(scg->x[d], s);
+    if (d >= 0) {
+        add_simplex(scg->x[d], s);
+    }
 }
 
 /* print functions */
@@ -299,7 +313,7 @@ void print_SCG(SCG * scg)
     }
     printf("\n");
 }
-void compute_chain_groups(struct Simplex * max_simps,
+void compute_chain_groups(struct Simplex ** max_simps,
                           int n_max_simps, SCG * scg_out)
 {
     /* Compute the chain group generators for the complex
@@ -308,13 +322,15 @@ void compute_chain_groups(struct Simplex * max_simps,
     /* Find the maximum dimension */
     int maxdim = 0;
     for (int i=0; i<n_max_simps; i++) {
-        maxdim = max_simps[i].dim < maxdim ? maxdim : max_simps[i].dim;
+        maxdim = max_simps[i]->dim < maxdim ? maxdim : max_simps[i]->dim;
     }
     /* for each max simp, get the faces and add to the scg */
     for (int i=0; i<n_max_simps; i++) {
-        /*  SCG * faces = get_faces(max_simps[i]); */
-        SCG * faces = NULL;
+        SCG * faces = get_faces(max_simps[i]);
         /* take the union of face lists */
+        printf("Faces: \n");
+        print_SCG(faces);
+        printf("-------------------------\n");
         scg_list_union(faces, scg_out); 
     }
     
