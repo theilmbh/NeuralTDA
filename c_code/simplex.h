@@ -24,7 +24,7 @@
 #define MAXDIM 10
 
 struct Simplex {
-    unsigned int vertices[MAXDIM];
+    int vertices[MAXDIM];
     int dim;
 };
 

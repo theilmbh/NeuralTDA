@@ -56,18 +56,7 @@ struct Simplex *get_simplex_from_integer(unsigned int N)
 void get_faces_common(struct simplex_list face_list,
                       unsigned int N, int n_verts)
 {
-    unsigned int k, dim;
 
-    for (k = 0; k < (1 << n_verts); k++) {
-        if ((k & N) == k) {
-            dim = num_ones(k) - 1;
-            for(int i = 0; i < n_verts; i++) {
-                if (check_bit(k, i)) {
-                    
-                }
-            } 
-        }
-    }
 }
 
 int int_cmp(const void * a, const void * b)
@@ -80,6 +69,23 @@ void free_simplex(struct Simplex *s)
     free(s);
 }
 
+struct Simplex * create_empty_simplex()
+{
+    struct Simplex * s_out = malloc(sizeof(struct Simplex));
+    for (int i=0; i < MAXDIM; i++) {
+        s_out->vertices[i] = -1;
+    }
+    s_out->dim = -1;
+    return s_out;
+}
+
+void add_vertex(struct Simplex * s, int v)
+{
+    if (s->dim == MAXDIM) return;
+    s->dim++;
+    s->vertices[dim] = v;
+
+}
 struct Simplex * create_simplex(unsigned int *vertices, int dim)
 {
     struct Simplex * s_out = malloc(sizeof(struct Simplex));
@@ -126,32 +132,12 @@ void scg_list_union(SCG * scg1, SCG * scg2)
 
         struct simplex_list * l1 = list1d;
         struct simplex_list * l2 = list2d;
-        struct simplex_list * l2start = list2d; /* Original start of list2 */
-        struct simplex_list * c = NULL;        /* Placeholder */
-        int do_add; /* Flag to decide whether to add or not */
+        /* Add each simplex from l1 to l2 */
         while (l1 != NULL) {
-            do_add = 1;
-            while (l2 != NULL) {
-                if (simplex_equals(l1->s, l2->s)) {
-                    do_add = 0;
-                    break;
-                }
-                l2 = l2->next;
-            }
-            if (do_add) {
-                /* simplex not found, add to beginning of list2 */
-                list2d->prev = l1;
-                c = l1;
-                l1 = l1->next; /* Advance l1 */
-                c->next = list2d; 
-                c->prev = NULL; /* Make it the head of the list */
-                list2d = c;  /* Advance head of list2d */
-            }
-            l2 = l2start; /* reset */
+            add_simplex(l2, l1->s);
+            l1 = l1->next;
         }
-        scg2->x[dim] = list2d; /* update SCG */
     }
-
 }
 
 struct simplex_list * get_empty_simplex_list() 
