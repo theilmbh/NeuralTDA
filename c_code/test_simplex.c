@@ -17,15 +17,16 @@
  */
 
 #include "simplex.h"
+#include "hash_table.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 
-static unsigned int v1[MAXDIM] = {1,2,3,4,0,0,0,0,0,0};
-static unsigned int v2[MAXDIM] = {1,2,4,8,0,0,0,0,0,0};
-static unsigned int v3[MAXDIM] = {1,2,4,8,6,10,0,0,0,0};
+static int v1[MAXDIM] = {1,2,3,4,-1,-1,-1,-1,-1,-1};
+static int v2[MAXDIM] = {1,2,4,8,-1,-1,-1,-1,-1,-1};
+static int v3[MAXDIM] = {1,2,4,8,6,10,-1,-1,-1,-1};
 
 int test_compute_chain_groups()
 {
@@ -33,7 +34,7 @@ int test_compute_chain_groups()
 
     struct Simplex * s1 = create_empty_simplex();
     add_vertex(s1, 3);
-    add_vertex(s1, 10);
+    add_vertex(s1, 110);
     add_vertex(s1, 1);
     add_vertex(s1, 7);
 
@@ -44,7 +45,7 @@ int test_compute_chain_groups()
     add_vertex(s2, 7);
 
     struct Simplex * s3 = create_empty_simplex();
-    for (int i=10; i>=0; i--) {
+    for (int i=20; i>=0; i--) {
         add_vertex(s3, i);
     }
     
@@ -73,12 +74,22 @@ int test_scg_list_union()
     SCG * scg1 = get_empty_SCG();
     SCG * scg2 = get_empty_SCG();
     
-    struct Simplex * s1 = create_simplex(v1, dim);
-    struct Simplex * s2 = create_simplex(v2, dim);
+    //struct Simplex * s1 = create_simplex(v1, dim);
+    //struct Simplex * s2 = create_simplex(v2, dim);
     struct Simplex * s3 = create_empty_simplex();
-    for (int i=90; i>=1; i--) {
+    for (int i=4; i>=1; i--) {
         add_vertex(s3, i);
     }
+
+    struct Simplex * s1 = create_empty_simplex();
+    add_vertex(s1, 1);
+    add_vertex(s1, 34444);
+    add_vertex(s1, 10);
+
+    struct Simplex * s2 = create_empty_simplex();
+    add_vertex(s2, 1);
+    add_vertex(s2, 4);
+    add_vertex(s2, 11);
     
     scg_add_simplex(scg1, s1);
     scg_add_simplex(scg2, s2);
@@ -89,14 +100,43 @@ int test_scg_list_union()
     printf("SCG2\n");
     print_SCG(scg2);
 
-    scg_list_union(scg1, scg2);
-    if ((!simplex_list_isin(scg2->x[3], s1))) {
+    scg_list_union_hash(scg1, scg2);
+    if ((!simplex_list_isin(scg2->x[2], s1))) {
         retcode = 0;
     }
     print_SCG(scg2);
-    scg_list_union(scg1, scg2);
+    scg_list_union_hash(scg1, scg2);
     print_SCG(scg2);
     return retcode;
+}
+
+int test_hash_table()
+{
+    struct simplex_hash_entry **table = get_empty_hash_table();
+    struct Simplex * s3 = create_empty_simplex();
+    for (int i=4; i>=1; i--) {
+        add_vertex(s3, i);
+    }
+
+    struct Simplex * s1 = create_empty_simplex();
+    add_vertex(s1, 1);
+    add_vertex(s1, 34444);
+    add_vertex(s1, 10);
+
+    struct Simplex * s2 = create_empty_simplex();
+    add_vertex(s2, 1);
+    add_vertex(s2, 4);
+    add_vertex(s2, 11);
+
+    check_hash(table, s1); /* Should put s1 in hash table */  
+    check_hash(table, s2); 
+    unsigned int hashp = simplex_hash(s1);
+    unsigned int hashp2 = simplex_hash(s1);
+    if (check_hash(table, s1)) {
+        printf("In hash table\n");
+        return 1;
+    } /* Should already be in there */
+    return 0;
 }
 
 int test_int_from_simplex()
@@ -174,6 +214,10 @@ int test_simplex_equals()
 
 int main(int argc, char **argv)
 {
+    if (!test_hash_table()) {
+        printf("hash table fails\n");
+        exit(-1);
+    }
     if (!test_simplex_equals()) {
         printf("Simplex equals fails\n");
         exit(-1);
@@ -195,5 +239,6 @@ int main(int argc, char **argv)
         exit(-1);
     }
     printf("Tests succeeded \n");
+    printf("Ncollisions: %d\n", ncollisions);
     return 0;
 }

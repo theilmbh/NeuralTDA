@@ -70,6 +70,7 @@ struct simplex_list * simplex_list_isin(struct simplex_list *slist,
 SCG * get_empty_SCG(); 
 void free_SCG(SCG * scg);
 void scg_list_union(SCG * scg1, SCG * scg2);
+void scg_list_union_hash(SCG * scg1, SCG * scg2);
 void scg_add_simplex(SCG * scg, struct Simplex * s);
 void scg_add_simplex_nocheck(SCG * scg, struct Simplex * s);
 
@@ -77,4 +78,8 @@ void scg_add_simplex_nocheck(SCG * scg, struct Simplex * s);
 void print_simplex(struct Simplex * s);
 void print_simplex_list(struct simplex_list *sl);
 void print_SCG(SCG * scg);
+
+extern int ncollisions; 
+
 #endif
+

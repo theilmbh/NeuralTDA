@@ -22,6 +22,8 @@
 #include "hash_table.h"
 #include "simplex.h"
 
+int ncollisions = 0;
+
 struct simplex_hash_entry **get_empty_hash_table()
 {
     /* Allocate space for hash table */
@@ -69,16 +71,21 @@ int check_hash(struct simplex_hash_entry **table, struct Simplex * sp)
     /* index into hash table */
     unsigned int index = sp_hash % NR_HASH;
     struct simplex_hash_entry *list = table[index];
+    struct simplex_hash_entry *prev;
 
     /* check for presence of simplex */
     while (list != NULL) {
+        if (list->s) {
+            ncollisions++;
+        }
         if (simplex_equals(sp, list->s)) {
-            /* Match! Add to end of list and return 0 */
-            add_to_hash_list(list, sp);
             return 1;
         }
+        prev = list;
         list = list->next;
     }
+    /* not found, add to list */
+    add_to_hash_list(prev, sp);
     return 0;
 }
 

@@ -21,7 +21,7 @@
 
 #include "simplex.h"
 
-#define NR_HASH 2048
+#define NR_HASH 1048575
 struct simplex_hash_entry {
     struct Simplex * s;
     struct simplex_hash_entry * next;
