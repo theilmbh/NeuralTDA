@@ -21,7 +21,7 @@
 
 #define MAXNAME 128
 #define MAXMS 12
-#define MAXDIM 128
+#define MAXDIM 40
 
 struct Simplex {
     int vertices[MAXDIM];

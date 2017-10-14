@@ -201,7 +201,7 @@ void scg_list_union_hash(SCG * scg1, SCG * scg2)
             }
             l1 = l1->next;
         }
-        free_hash_table(table);
+     //   free_hash_table(table);
     }
 }
 

@@ -45,7 +45,7 @@ int test_compute_chain_groups()
     add_vertex(s2, 7);
 
     struct Simplex * s3 = create_empty_simplex();
-    for (int i=20; i>=0; i--) {
+    for (int i=19; i>=0; i--) {
         add_vertex(s3, i);
     }
     
