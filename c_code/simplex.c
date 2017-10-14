@@ -284,15 +284,20 @@ void print_simplex(struct Simplex * s)
     }
 
     printf("SIMPLEX | D = %d | Vertices: ", s->dim);
+    
     for (int i = 0; i < MAXDIM; i++)
     {
-        printf("%d, ", s->vertices[i]);
+        if (s->vertices[i] >= 0) {
+            printf("%d, ", s->vertices[i]);
+        }
     }
     printf("\n");
 }
 
 void print_simplex_list(struct simplex_list *sl)
 {
+    if (sl->s == NULL) return;
+
     printf("SIMPLEX LIST\n");
     printf("------------\n");
 
@@ -308,8 +313,10 @@ void print_SCG(SCG * scg)
     printf("SCG\n");
     printf("---\n");
     for (int i = 0; i < MAXDIM; i++) {
-        printf("Dimension %d\n", i);
-        print_simplex_list(scg->x[i]);
+        if (scg->x[i]->s != NULL) {
+            printf("Dimension %d\n", i);
+            print_simplex_list(scg->x[i]);
+        }
     }
     printf("\n");
 }
