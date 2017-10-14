@@ -149,7 +149,6 @@ void scg_list_union(SCG * scg1, SCG * scg2)
 {
     /*  form the union of scg lists */
     /*  The output is in list2 */
-    /*  This is ugly! */
     int dim;
     for ( dim = 0; dim < MAXDIM; dim++) {
         struct simplex_list * list1d = scg1->x[dim];
@@ -160,6 +159,7 @@ void scg_list_union(SCG * scg1, SCG * scg2)
 
         struct simplex_list * l1 = list1d;
         struct simplex_list * l2 = list2d;
+
         /* Add each simplex from l1 to l2 */
         while (l1 != NULL) {
             add_simplex(l2, l1->s);
@@ -308,6 +308,7 @@ void print_simplex_list(struct simplex_list *sl)
     }
     printf("\n");
 }
+
 void print_SCG(SCG * scg)
 {
     printf("SCG\n");
@@ -320,6 +321,7 @@ void print_SCG(SCG * scg)
     }
     printf("\n");
 }
+
 void compute_chain_groups(struct Simplex ** max_simps,
                           int n_max_simps, SCG * scg_out)
 {
@@ -331,13 +333,11 @@ void compute_chain_groups(struct Simplex ** max_simps,
     for (int i=0; i<n_max_simps; i++) {
         maxdim = max_simps[i]->dim < maxdim ? maxdim : max_simps[i]->dim;
     }
+
     /* for each max simp, get the faces and add to the scg */
     for (int i=0; i<n_max_simps; i++) {
         SCG * faces = get_faces(max_simps[i]);
         /* take the union of face lists */
-        printf("Faces: \n");
-        print_SCG(faces);
-        printf("-------------------------\n");
         scg_list_union(faces, scg_out); 
     }
     

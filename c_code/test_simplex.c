@@ -28,7 +28,7 @@ static unsigned int v3[MAXDIM] = {1,2,4,8,6,10,0,0,0,0};
 
 int test_compute_chain_groups()
 {
-    struct Simplex *max_simps[2];
+    struct Simplex *max_simps[3];
 
     struct Simplex * s1 = create_empty_simplex();
     add_vertex(s1, 3);
@@ -41,12 +41,18 @@ int test_compute_chain_groups()
     add_vertex(s2, 5);
     add_vertex(s2, 6);
     add_vertex(s2, 7);
+
+    struct Simplex * s3 = create_empty_simplex();
+    for (int i=12; i>=1; i--) {
+        add_vertex(s3, i);
+    }
     
     max_simps[0] = s1;
     max_simps[1] = s2;
+    max_simps[2] = s3;
     SCG * scg1 = get_empty_SCG();
 
-    compute_chain_groups(max_simps, 2, scg1);
+    compute_chain_groups(max_simps, 3, scg1);
     print_SCG(scg1);
     return 0;
 }
@@ -63,7 +69,7 @@ int test_scg_list_union()
     struct Simplex * s1 = create_simplex(v1, dim);
     struct Simplex * s2 = create_simplex(v2, dim);
     struct Simplex * s3 = create_empty_simplex();
-    for (int i=9; i>=1; i--) {
+    for (int i=90; i>=1; i--) {
         add_vertex(s3, i);
     }
     
