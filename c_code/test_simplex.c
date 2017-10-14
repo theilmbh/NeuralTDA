@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 static unsigned int v1[MAXDIM] = {1,2,3,4,0,0,0,0,0,0};
 static unsigned int v2[MAXDIM] = {1,2,4,8,0,0,0,0,0,0};
@@ -43,7 +44,7 @@ int test_compute_chain_groups()
     add_vertex(s2, 7);
 
     struct Simplex * s3 = create_empty_simplex();
-    for (int i=12; i>=1; i--) {
+    for (int i=10; i>=0; i--) {
         add_vertex(s3, i);
     }
     
@@ -52,9 +53,15 @@ int test_compute_chain_groups()
     max_simps[2] = s3;
     SCG * scg1 = get_empty_SCG();
 
+    clock_t start, end;
+    double cpu_time;
+    start = clock();
     compute_chain_groups(max_simps, 3, scg1);
+    end = clock();
+    cpu_time = ((double)(end - start)) / CLOCKS_PER_SEC;
     print_SCG(scg1);
-    return 0;
+    printf("CPU Time: %f milliseconds\n", cpu_time*1000.);
+    return 1;
 }
 
 int test_scg_list_union()

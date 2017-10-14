@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "simplex.h"
+#include "hash_table.h" 
 
 unsigned int num_ones(unsigned int N)
 {
@@ -125,7 +126,10 @@ struct Simplex * create_simplex(unsigned int *vertices, int dim)
 int simplex_equals(struct Simplex * s1, struct Simplex * s2)
 {
     /* Returns 1 if the two simplices are identical */
-    
+    if ((!s1) || (!s2)) {
+        return 0;
+    } 
+
     /* easy case: dimensions not equal */
     if (s1->dim != s2->dim) {
         return 0;
@@ -165,6 +169,39 @@ void scg_list_union(SCG * scg1, SCG * scg2)
             add_simplex(l2, l1->s);
             l1 = l1->next;
         }
+    }
+}
+
+void scg_list_union_hash(SCG * scg1, SCG * scg2)
+{
+    int dim;
+    for (dim = 0; dim < MAXDIM; dim++) {
+        struct simplex_list * list1d = scg1->x[dim];
+        struct simplex_list * list2d = scg2->x[dim];
+
+        /*  Check and see if there is a null list */
+        if ((list1d->s == NULL) && (list2d->s) == NULL) continue;
+
+        struct simplex_list * l1 = list1d;
+        struct simplex_list * l2 = list2d;
+        
+        struct simplex_hash_entry **table = get_empty_hash_table();
+        /* add list1 to temp list */
+        while (l2 != NULL) {
+            if (l2->s) {
+                check_hash(table, l2->s);
+            }
+            l2 = l2->next;
+        }
+       
+        /* add list2 to temp list, checking hash table */ 
+        while (l1 != NULL) {
+            if (l1->s && !check_hash(table, l1->s)) {
+                add_simplex_nocheck(list2d, l1->s);
+            }
+            l1 = l1->next;
+        }
+        free_hash_table(table);
     }
 }
 
@@ -230,23 +267,25 @@ struct simplex_list * remove_simplex(struct simplex_list *slist,
 
 void add_simplex_nocheck(struct simplex_list *slist, struct Simplex *s)
 {
-	if (!slist->s) {
-		slist->s = s;
-		return;
-	}
+    if (!slist->s) {
+            slist->s = s;
+            return;
+    }
 
-	/* Advance to end of list */
-	if (slist != NULL) {
+    /* Add to second spot in list */
+    if (slist != NULL) {
+        struct simplex_list *s_new = get_empty_simplex_list();
+        struct simplex_list *eltwo = slist->next;
 
-		while (slist->next != NULL) {
-			slist = slist->next;
-		}
-		struct simplex_list *s_new = get_empty_simplex_list();
-		s_new->s = s;
-		s_new->prev = slist;
-		slist->next = s_new;
-	}
-	return;
+        s_new->s = s;
+        slist->next = s_new;
+        s_new->prev = slist;
+        s_new->next = eltwo;
+        if (eltwo) {
+            eltwo->prev = s_new;
+        }
+    }
+    return;
 }
 
 /* Adds a simplex to a simplex list if not already present */
@@ -367,7 +406,7 @@ void compute_chain_groups(struct Simplex ** max_simps,
     for (int i=0; i<n_max_simps; i++) {
         SCG * faces = get_faces(max_simps[i]);
         /* take the union of face lists */
-        scg_list_union(faces, scg_out); 
+        scg_list_union_hash(faces, scg_out); 
     }
     
 }
