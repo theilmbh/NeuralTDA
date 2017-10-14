@@ -64,7 +64,7 @@ void get_faces_common(unsigned int N, int *verts, int dim, SCG * scg_temp)
                     add_vertex(s_new, verts[j]);
                 }
             }
-            scg_add_simplex(scg_temp, s_new);
+            scg_add_simplex_nocheck(scg_temp, s_new);
        }
    } 
 }
@@ -228,6 +228,27 @@ struct simplex_list * remove_simplex(struct simplex_list *slist,
     return ret;
 }
 
+void add_simplex_nocheck(struct simplex_list *slist, struct Simplex *s)
+{
+	if (!slist->s) {
+		slist->s = s;
+		return;
+	}
+
+	/* Advance to end of list */
+	if (slist != NULL) {
+
+		while (slist->next != NULL) {
+			slist = slist->next;
+		}
+		struct simplex_list *s_new = get_empty_simplex_list();
+		s_new->s = s;
+		s_new->prev = slist;
+		slist->next = s_new;
+	}
+	return;
+}
+
 /* Adds a simplex to a simplex list if not already present */
 void add_simplex(struct simplex_list *slist, struct Simplex *s)
 {
@@ -273,6 +294,14 @@ void scg_add_simplex(SCG * scg, struct Simplex * s)
     int d = s->dim;
     if (d >= 0) {
         add_simplex(scg->x[d], s);
+    }
+}
+
+void scg_add_simplex_nocheck(SCG * scg, struct Simplex * s)
+{
+    int d = s->dim;
+    if (d >= 0) {
+        add_simplex_nocheck(scg->x[d], s);
     }
 }
 

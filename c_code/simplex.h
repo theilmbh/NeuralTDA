@@ -60,6 +60,7 @@ void add_vertex(struct Simplex * s, int v);
 void simplex_list_free(struct simplex_list * sl);
 struct simplex_list * get_empty_simplex_list();
 void add_simplex(struct simplex_list *slist, struct Simplex *s);
+void add_simplex_nocheck(struct simplex_list *slist, struct Simplex *s);
 struct simplex_list * remove_simplex(struct simplex_list *slist,
                                      struct Simplex *s);
 struct simplex_list * simplex_list_isin(struct simplex_list *slist,
@@ -70,6 +71,7 @@ SCG * get_empty_SCG();
 void free_SCG(SCG * scg);
 void scg_list_union(SCG * scg1, SCG * scg2);
 void scg_add_simplex(SCG * scg, struct Simplex * s);
+void scg_add_simplex_nocheck(SCG * scg, struct Simplex * s);
 
 /* print functions */
 void print_simplex(struct Simplex * s);
