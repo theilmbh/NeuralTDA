@@ -65,6 +65,9 @@ void free_hash_table(struct simplex_hash_entry **table)
 int check_hash(struct simplex_hash_entry **table, struct Simplex * sp)
 {
     /* Returns 1 if simplex found in hash table, 0 otherwise */
+    if (!sp) {
+        return 1;
+    }
     /* Compute simplex hash */
     unsigned int sp_hash = simplex_hash(sp);
 

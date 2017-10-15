@@ -16,7 +16,7 @@
  * =====================================================================================
  */
 
-#ifndef HASTABLE_H
+#ifndef HASHTABLE_H
 #define HASHTABLE_H
 
 #include "simplex.h"

@@ -100,12 +100,12 @@ int test_scg_list_union()
     printf("SCG2\n");
     print_SCG(scg2);
 
-    scg_list_union_hash(scg1, scg2);
+    scg_list_union_hash(scg1, scg2, NULL);
     if ((!simplex_list_isin(scg2->x[2], s1))) {
         retcode = 0;
     }
     print_SCG(scg2);
-    scg_list_union_hash(scg1, scg2);
+    scg_list_union_hash(scg1, scg2, NULL);
     print_SCG(scg2);
     return retcode;
 }
