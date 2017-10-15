@@ -46,6 +46,16 @@ struct simplex_hash_entry **get_empty_hash_table()
     return table;
 }
 
+struct simplex_hash_table * get_empty_hash_table_D()
+{
+    struct simplex_hash_table *out = malloc(sizeof(struct simplex_hash_table));
+
+    if (!out) {
+        printf("Unable to allocate table \n");
+    }
+    return out;
+}
+
 void free_hash_table(struct simplex_hash_entry **table) 
 {
     int i;
@@ -121,3 +131,35 @@ unsigned int simplex_hash(struct Simplex *s)
     }
     return hc;
 }
+
+int check_hash_D(struct simplex_hash_table *table, struct Simplex * sp)
+{
+    /* Linear probing.  Knuth V3 6.4 Alg. L */
+    if (!sp)
+        return 1;
+
+    unsigned int hash_p = simplex_hash(sp);
+    unsigned int index = hash_p % NR_HASH;
+    
+    unsigned int i = index;
+    while (i != index + 1) {
+        if (!(table->table[i])) break;
+
+        if (simplex_equals(table->table[i], sp)) return 1;
+
+        if (i == 0) {
+            i = NR_HASH - 1;
+        } else {
+            i -= 1;
+        }
+    }
+    if (table->N == (NR_HASH-1)) {
+        printf("Table Overflow!\n");
+        return 0;
+    } else {
+        table->N++;
+        table->table[i] = sp;
+    }
+    return 0;
+}
+

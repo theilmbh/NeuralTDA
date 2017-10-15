@@ -173,7 +173,7 @@ void scg_list_union(SCG * scg1, SCG * scg2)
 }
 
 void scg_list_union_hash(SCG * scg1, SCG * scg2,
-                         struct simplex_hash_entry **table)
+                         struct simplex_hash_table *table)
 {
     int dim;
     for (dim = 0; dim < MAXDIM; dim++) {
@@ -186,20 +186,20 @@ void scg_list_union_hash(SCG * scg1, SCG * scg2,
         struct simplex_list * l1 = list1d;
         struct simplex_list * l2 = list2d;
         
-        if (!table) {
-            table = get_empty_hash_table();
+        if (1) {
+            table = get_empty_hash_table_D();
         }
         /* add list1 to temp list */
         while (l2 != NULL) {
             if (l2->s) {
-                check_hash(table, l2->s);
+                check_hash_D(table, l2->s);
             }
             l2 = l2->next;
         }
        
         /* add list2 to temp list, checking hash table */ 
         while (l1 != NULL) {
-            if (l1->s && !check_hash(table, l1->s)) {
+            if (l1->s && !check_hash_D(table, l1->s)) {
                 add_simplex_nocheck(list2d, l1->s);
             }
             l1 = l1->next;
@@ -406,7 +406,7 @@ void compute_chain_groups(struct Simplex ** max_simps,
     }
 
     /* for each max simp, get the faces and add to the scg */
-    struct simplex_hash_entry **table = get_empty_hash_table();
+    struct simplex_hash_table *table = get_empty_hash_table_D();
     for (int i=0; i<n_max_simps; i++) {
         SCG * faces = get_faces(max_simps[i]);
         /* take the union of face lists */
