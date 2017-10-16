@@ -48,7 +48,7 @@ struct simplex_hash_entry **get_empty_hash_table()
 
 struct simplex_hash_table * get_empty_hash_table_D()
 {
-    struct simplex_hash_table *out = malloc(sizeof(struct simplex_hash_table));
+    struct simplex_hash_table *out = calloc(1, sizeof(struct simplex_hash_table));
 
     if (!out) {
         printf("Unable to allocate table \n");
@@ -69,6 +69,11 @@ void free_hash_table(struct simplex_hash_entry **table)
            nx = ny; 
         }
     }
+    free(table);
+}
+
+void free_hash_table_D(struct simplex_hash_table * table)
+{
     free(table);
 }
 

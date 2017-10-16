@@ -55,9 +55,11 @@ int test_compute_chain_groups()
     start = clock();
     compute_chain_groups(max_simps, 3, scg1);
     end = clock();
+    
     cpu_time = ((double)(end - start)) / CLOCKS_PER_SEC;
     print_SCG(scg1);
     printf("CPU Time: %f milliseconds\n", cpu_time*1000.);
+    free_SCG(scg1);
     return 1;
 }
 

@@ -173,9 +173,10 @@ void scg_list_union(SCG * scg1, SCG * scg2)
 }
 
 void scg_list_union_hash(SCG * scg1, SCG * scg2,
-                         struct simplex_hash_table *table)
+                         struct simplex_hash_table *table2)
 {
     int dim;
+    struct simplex_hash_table * table;
     for (dim = 0; dim < MAXDIM; dim++) {
         struct simplex_list * list1d = scg1->x[dim];
         struct simplex_list * list2d = scg2->x[dim];
@@ -186,9 +187,8 @@ void scg_list_union_hash(SCG * scg1, SCG * scg2,
         struct simplex_list * l1 = list1d;
         struct simplex_list * l2 = list2d;
         
-        if (1) {
-            table = get_empty_hash_table_D();
-        }
+        table = get_empty_hash_table_D();
+        
         /* add list1 to temp list */
         while (l2 != NULL) {
             if (l2->s) {
@@ -204,7 +204,7 @@ void scg_list_union_hash(SCG * scg1, SCG * scg2,
             }
             l1 = l1->next;
         }
-     //   free_hash_table(table);
+        free_hash_table_D(table);
     }
 }
 

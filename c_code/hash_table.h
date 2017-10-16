@@ -39,5 +39,6 @@ void add_to_hash_list(struct simplex_hash_entry *list, struct Simplex *sp);
 unsigned int simplex_hash(struct Simplex *s);
 int check_hash_D(struct simplex_hash_table *table, struct Simplex * sp);
 struct simplex_hash_table * get_empty_hash_table_D();
+void free_hash_table_D(struct simplex_hash_table * table);
 
 #endif
