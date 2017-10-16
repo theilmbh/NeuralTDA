@@ -26,7 +26,7 @@
 
 int test_compute_chain_groups()
 {
-    struct Simplex *max_simps[3];
+    struct Simplex *max_simps[4];
 
     struct Simplex * s1 = create_empty_simplex();
     add_vertex(s1, 3);
@@ -41,19 +41,24 @@ int test_compute_chain_groups()
     add_vertex(s2, 7);
 
     struct Simplex * s3 = create_empty_simplex();
-    for (int i=10; i>=0; i--) {
+    for (int i=15; i>=5; i--) {
         add_vertex(s3, i);
+    }
+    struct Simplex * s4 = create_empty_simplex();
+    for (int i=10; i>=0; i--) {
+        add_vertex(s4, i);
     }
     
     max_simps[0] = s1;
     max_simps[1] = s2;
     max_simps[2] = s3;
+    max_simps[3] = s4;
     SCG * scg1 = get_empty_SCG();
 
     clock_t start, end;
     double cpu_time;
     start = clock();
-    compute_chain_groups(max_simps, 3, scg1);
+    compute_chain_groups(max_simps, 4, scg1);
     end = clock();
     
     cpu_time = ((double)(end - start)) / CLOCKS_PER_SEC;
