@@ -19,8 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "hash_table.h"
 #include "simplex.h"
+#include "hash_table.h"
 
 int ncollisions = 0;
 
@@ -46,6 +46,16 @@ struct simplex_hash_entry **get_empty_hash_table()
     return table;
 }
 
+struct simplex_hash_table * get_empty_hash_table_D()
+{
+    struct simplex_hash_table *out = calloc(1, sizeof(struct simplex_hash_table));
+
+    if (!out) {
+        printf("Unable to allocate table \n");
+    }
+    return out;
+}
+
 void free_hash_table(struct simplex_hash_entry **table) 
 {
     int i;
@@ -62,9 +72,17 @@ void free_hash_table(struct simplex_hash_entry **table)
     free(table);
 }
 
+void free_hash_table_D(struct simplex_hash_table * table)
+{
+    free(table);
+}
+
 int check_hash(struct simplex_hash_entry **table, struct Simplex * sp)
 {
     /* Returns 1 if simplex found in hash table, 0 otherwise */
+    if (!sp) {
+        return 1;
+    }
     /* Compute simplex hash */
     unsigned int sp_hash = simplex_hash(sp);
 
@@ -118,3 +136,35 @@ unsigned int simplex_hash(struct Simplex *s)
     }
     return hc;
 }
+
+int check_hash_D(struct simplex_hash_table *table, struct Simplex * sp)
+{
+    /* Linear probing.  Knuth V3 6.4 Alg. L */
+    if (!sp)
+        return 1;
+
+    unsigned int hash_p = simplex_hash(sp);
+    unsigned int index = hash_p % NR_HASH;
+    
+    unsigned int i = index;
+    while (i != index + 1) {
+        if (!(table->table[i])) break;
+
+        if (simplex_equals(table->table[i], sp)) return 1;
+
+        if (i == 0) {
+            i = NR_HASH - 1;
+        } else {
+            i -= 1;
+        }
+    }
+    if (table->N == (NR_HASH-1)) {
+        printf("Table Overflow!\n");
+        return 0;
+    } else {
+        table->N++;
+        table->table[i] = sp;
+    }
+    return 0;
+}
+

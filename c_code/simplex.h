@@ -19,6 +19,8 @@
 #ifndef SIMPLEX_H
 #define SIMPLEX_H
 
+#include "hash_table.h"
+
 #define MAXNAME 128
 #define MAXMS 12
 #define MAXDIM 40
@@ -70,7 +72,8 @@ struct simplex_list * simplex_list_isin(struct simplex_list *slist,
 SCG * get_empty_SCG(); 
 void free_SCG(SCG * scg);
 void scg_list_union(SCG * scg1, SCG * scg2);
-void scg_list_union_hash(SCG * scg1, SCG * scg2);
+void scg_list_union_hash(SCG * scg1, SCG * scg2,
+                         struct simplex_hash_table *table);
 void scg_add_simplex(SCG * scg, struct Simplex * s);
 void scg_add_simplex_nocheck(SCG * scg, struct Simplex * s);
 

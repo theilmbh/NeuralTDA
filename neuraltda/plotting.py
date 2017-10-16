@@ -3,7 +3,7 @@
 ##### plotting.py : Routines for plotting topological measures #####
 ##### Brad Theilman 2017-10-11                                 #####
 ####################################################################
-
+import os
 import numpy as np
 import neuraltda.topology2 as tp2 
 
@@ -25,6 +25,11 @@ def plot_betti_curve(bc, t, stim, betti, ax):
     ax : matplotlib axes object 
         Plot on which to plot. 
 
+    Returns
+    -------
+    lines : matplotlib lines
+        the plot lines
+
     '''
     avg = bc[stim][0]
     stderr = bc[stim][1]
@@ -32,7 +37,12 @@ def plot_betti_curve(bc, t, stim, betti, ax):
     y = avg[betti, :]
     s = stderr[betti, :]
 
-    ax.plot(t/1000., y, linewidth=2)
+    lines = ax.plot(t/1000., y, linewidth=2)
     ax.fill_between(t/1000., y-s, y+s, alpha=0.5)
     ax.set_xticks(range(int(np.amax(t)/1000.) + 1))
+    return lines
 
+def save_fig(fig, fig_save_dir, figfname):
+
+    figsave = os.path.join(fig_save_dir, figfname + '.pdf')
+    fig.savefig(figsave, orientation='landscape')
