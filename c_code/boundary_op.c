@@ -130,6 +130,7 @@ int * compute_boundary_operator_matrix(SCG * scg, int dim)
     struct bdry_op_dict *bdry_op;
     int * bdry_vec;
     
+    int i, j=0;
     while (source) {
         bdry_op = compute_boundary_operator(source->s);
         bdry_vec = bdry_canonical_coordinates(bdry_op, targ, targ_dim);
