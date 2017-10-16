@@ -201,6 +201,7 @@ void scg_list_union_hash(SCG * scg1, SCG * scg2,
         while (l1 != NULL) {
             if (l1->s && !check_hash_D(table, l1->s)) {
                 add_simplex_nocheck(list2d, l1->s);
+                scg2->cg_dim[dim]++; /* Increment Chain Group Dimension */
             }
             l1 = l1->next;
         }
@@ -319,6 +320,7 @@ SCG * get_empty_SCG()
     for (int dim = 0; dim < MAXDIM; dim++)
     {
         out->x[dim] = get_empty_simplex_list();
+        out->cg_dim[dim] = 0;
     }
     return out;
 }
@@ -344,6 +346,7 @@ void scg_add_simplex_nocheck(SCG * scg, struct Simplex * s)
     int d = s->dim;
     if (d >= 0) {
         add_simplex_nocheck(scg->x[d], s);
+        scg->cg_dim[d]++;
     }
 }
 

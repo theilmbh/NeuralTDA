@@ -18,12 +18,50 @@
 
 #include "simplex.h"
 #include "hash_table.h"
+#include "boundary_op.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 
+int test_boundary_op()
+{
+    struct Simplex *max_simps[3];
+
+    struct Simplex * s1 = create_empty_simplex();
+    add_vertex(s1, 3);
+    add_vertex(s1, 110);
+    add_vertex(s1, 1);
+    add_vertex(s1, 7);
+
+    struct Simplex * s2 = create_empty_simplex();
+    add_vertex(s2, 3);
+    add_vertex(s2, 5);
+    add_vertex(s2, 6);
+    add_vertex(s2, 7);
+
+    struct Simplex * s3 = create_empty_simplex();
+    for (int i=7; i>=5; i--) {
+        add_vertex(s3, i);
+    }
+    max_simps[0] = s1;
+    max_simps[1] = s2;
+    max_simps[2] = s3;
+    SCG * scg1 = get_empty_SCG();
+    compute_chain_groups(max_simps, 3, scg1);
+    
+    struct bdry_op_dict * bdry_op_1 = compute_boundary_operator(s3);
+    int * out_vec = bdry_canonical_coordinates(bdry_op_1, scg1->x[1],
+                                          scg1->cg_dim[1]);
+    print_SCG(scg1);    
+    printf("BOUNDARY OPERATOR\n");
+    for (int i = 0; i < scg1->cg_dim[2]; i++) {
+        printf("%d ", out_vec[i]);
+    }
+    printf("\n");
+
+}
 int test_compute_chain_groups()
 {
     struct Simplex *max_simps[4];
@@ -41,11 +79,11 @@ int test_compute_chain_groups()
     add_vertex(s2, 7);
 
     struct Simplex * s3 = create_empty_simplex();
-    for (int i=15; i>=5; i--) {
+    for (int i=7; i>=5; i--) {
         add_vertex(s3, i);
     }
     struct Simplex * s4 = create_empty_simplex();
-    for (int i=10; i>=0; i--) {
+    for (int i=3; i>=0; i--) {
         add_vertex(s4, i);
     }
     
@@ -246,6 +284,7 @@ int main(int argc, char **argv)
         printf("compute chain groups fails\n");
         exit(-1);
     }
+    test_boundary_op();
     printf("Tests succeeded \n");
     printf("Ncollisions: %d\n", ncollisions);
     return 0;

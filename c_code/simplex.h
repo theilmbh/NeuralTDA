@@ -39,6 +39,7 @@ struct simplex_list {
 /* Array of simplex lists forms simplicial complex generators */
 typedef struct SCG {
     struct simplex_list *x[MAXDIM];
+    int cg_dim[MAXDIM]; /* Dimensions of the chain groups */
 }SCG;
 
 unsigned int num_ones(unsigned int N);

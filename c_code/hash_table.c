@@ -143,8 +143,16 @@ int check_hash_D(struct simplex_hash_table *table, struct Simplex * sp)
     if (!sp)
         return 1;
 
-    unsigned int hash_p = simplex_hash(sp);
-    unsigned int index = hash_p % NR_HASH;
+    /* Computes hash value for simplex s */
+    int j;
+    int dim = sp->dim;
+    unsigned int hc = dim + 1;
+    for (j=0; j<=dim; j++) {
+        hc = hc*314159 + sp->vertices[j];
+    }
+    //unsigned int hash_p = simplex_hash(sp);
+    //unsigned int index = hash_p % NR_HASH;
+    unsigned int index = hc % NR_HASH;
     
     unsigned int i = index;
     while (i != index + 1) {
