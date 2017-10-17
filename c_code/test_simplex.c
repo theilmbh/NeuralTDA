@@ -61,18 +61,22 @@ int test_boundary_op()
 
     }
     printf ("\nBOUNDARY MATRIX\n");
+    int srcd = scg1->cg_dim[2];
+    int trgd = scg1->cg_dim[1];
     int * out_mat = compute_boundary_operator_matrix(scg1, 2);
-    for (int i = 0; i < scg1->cg_dim[2]; i++) {
-        for (int j = 0; j < scg1->cg_dim[1]; j++) {
-            printf("%d, ", out_mat[i*scg1->cg_dim[1] + j]);
+    for (int i = 0; i < trgd; i++) {
+        for (int j = 0; j < srcd; j++) {
+            printf("%2d, ", out_mat[i*srcd + j]);
         }
         printf(";\n");
     }
-
+    printf("\n");
+    srcd = scg1->cg_dim[3];
+    trgd = scg1->cg_dim[2];
     out_mat = compute_boundary_operator_matrix(scg1, 3);
-    for (int i = 0; i < scg1->cg_dim[3]; i++) {
-        for (int j = 0; j < scg1->cg_dim[2]; j++) {
-            printf("%d, ", out_mat[i*scg1->cg_dim[2] + j]);
+    for (int i = 0; i < trgd; i++) {
+        for (int j = 0; j < srcd; j++) {
+            printf("%2d, ", out_mat[i*srcd + j]);
         }
         printf(";\n");
     }

@@ -3,7 +3,7 @@
  *
  *       Filename:  boundary_op.c
  *
- *    Description:  
+ *    Description:  Routines for computing boundary operators and laplacians
  *
  *        Version:  1.0
  *        Created:  10/16/2017 12:27:36 PM
@@ -130,14 +130,14 @@ int * compute_boundary_operator_matrix(SCG * scg, int dim)
     struct bdry_op_dict *bdry_op;
     int * bdry_vec;
     
-    int i, j=0;
+    int i=0, j=0;
     while (source) {
         bdry_op = compute_boundary_operator(source->s);
         bdry_vec = bdry_canonical_coordinates(bdry_op, targ, targ_dim);
-        for (i = 0; i < targ_dim; i++) {
-            bdry_mat[j*targ_dim + i] = bdry_vec[i];
+        for (j = 0; j < targ_dim; j++) {
+            bdry_mat[j*source_dim + i] = bdry_vec[j];
         }
-        j++;
+        i++;
         source = source->next;
     }
     return bdry_mat;
@@ -150,6 +150,7 @@ int * compute_simplicial_laplacian(SCG * scg, int dim)
     int * D_dim_1; /* \partial_{dim+1} */
     int * laplacian;
 
+    /* Check dimensions */
     int L_dim = scg->cg_dim[dim];
     int d_dim;
     if (dim > 0) {
@@ -159,6 +160,7 @@ int * compute_simplicial_laplacian(SCG * scg, int dim)
     }
     int d_1_dim = scg->cg_dim[dim+1];
 
+    /* Allocate result */
     if (L_dim > 0) {
         laplacian = calloc(L_dim*L_dim, sizeof(int));
     } else {
@@ -166,24 +168,26 @@ int * compute_simplicial_laplacian(SCG * scg, int dim)
         return laplacian;
     }
 
-    
+    /* Compute Boundary Operators */
     D_dim = compute_boundary_operator_matrix(scg, dim);
     D_dim_1 = compute_boundary_operator_matrix(scg, dim+1);
 
    /* Compute Laplacian */ 
     for (int i = 0; i < L_dim; i++) {
         for ( int j = 0; j < L_dim; j++ ) {
+            /* D^T * D */
             if (d_dim > 0) {
                 for (int k = 0; k < d_dim; k++) { 
-                    laplacian[j*L_dim + i] += D_dim[i*d_dim + k]
-                                              * D_dim[j*d_dim +k];
+                    laplacian[i*L_dim + j] += D_dim[k*L_dim + i]
+                                              * D_dim[k*L_dim +j];
                 }
             }
 
+            /* D2 * D2^T */
             if (d_1_dim > 0) {
                 for (int k = 0; k < d_1_dim; k++) {
-                    laplacian[j*L_dim + i] += D_dim_1[k*L_dim + i]
-                                              * D_dim_1[k*L_dim + j];
+                    laplacian[j*L_dim + i] += D_dim_1[i*d_1_dim + k]
+                                              * D_dim_1[j*d_1_dim + k];
                 }
             }
         }
