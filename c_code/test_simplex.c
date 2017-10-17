@@ -30,15 +30,16 @@ int test_boundary_op()
     struct Simplex *max_simps[3];
 
     struct Simplex * s1 = create_empty_simplex();
-    add_vertex(s1, 3);
-    add_vertex(s1, 110);
+    add_vertex(s1, 0);
     add_vertex(s1, 1);
-    add_vertex(s1, 7);
+    add_vertex(s1, 2);
+    add_vertex(s1, 3);
 
     struct Simplex * s2 = create_empty_simplex();
+    add_vertex(s2, 0);
     add_vertex(s2, 1);
-    add_vertex(s2, 3);
-    add_vertex(s2, 110);
+    add_vertex(s2, 4);
+    add_vertex(s2, 5);
 
     struct Simplex * s3 = create_empty_simplex();
     for (int i=7; i>=5; i--) {
@@ -48,7 +49,7 @@ int test_boundary_op()
     max_simps[1] = s2;
     max_simps[2] = s3;
     SCG * scg1 = get_empty_SCG();
-    compute_chain_groups(max_simps, 1, scg1);
+    compute_chain_groups(max_simps, 3, scg1);
     
     struct bdry_op_dict * bdry_op_1 = compute_boundary_operator(s2);
     int * out_vec = bdry_canonical_coordinates(bdry_op_1, scg1->x[1],
@@ -64,6 +65,14 @@ int test_boundary_op()
     for (int i = 0; i < scg1->cg_dim[2]; i++) {
         for (int j = 0; j < scg1->cg_dim[1]; j++) {
             printf("%d ", out_mat[i*scg1->cg_dim[1] + j]);
+        }
+        printf("\n");
+    }
+    printf("\n\nLAPLACIAN\n");
+    int * laplacian = compute_simplicial_laplacian(scg1, 2);
+    for (int i = 0; i<scg1->cg_dim[2]; i++) {
+        for (int j=0; j<scg1->cg_dim[2]; j++) {
+            printf("%2d ", laplacian[i*scg1->cg_dim[2] + j]);
         }
         printf("\n");
     }

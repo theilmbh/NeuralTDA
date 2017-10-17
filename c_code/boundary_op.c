@@ -143,3 +143,51 @@ int * compute_boundary_operator_matrix(SCG * scg, int dim)
     return bdry_mat;
 
 }
+
+int * compute_simplicial_laplacian(SCG * scg, int dim)
+{
+    int * D_dim;   /* \partial_{dim} */
+    int * D_dim_1; /* \partial_{dim+1} */
+    int * laplacian;
+
+    int L_dim = scg->cg_dim[dim];
+    int d_dim;
+    if (dim > 0) {
+        d_dim = scg->cg_dim[dim-1];
+    } else {
+        d_dim = 0;
+    }
+    int d_1_dim = scg->cg_dim[dim+1];
+
+    if (L_dim > 0) {
+        laplacian = calloc(L_dim*L_dim, sizeof(int));
+    } else {
+        laplacian = calloc(1, sizeof(int));
+        return laplacian;
+    }
+
+    
+    D_dim = compute_boundary_operator_matrix(scg, dim);
+    D_dim_1 = compute_boundary_operator_matrix(scg, dim+1);
+
+   /* Compute Laplacian */ 
+    for (int i = 0; i < L_dim; i++) {
+        for ( int j = 0; j < L_dim; j++ ) {
+            if (d_dim > 0) {
+                for (int k = 0; k < d_dim; k++) { 
+                    laplacian[j*L_dim + i] += D_dim[i*d_dim + k]
+                                              * D_dim[j*d_dim +k];
+                }
+            }
+
+            if (d_1_dim > 0) {
+                for (int k = 0; k < d_1_dim; k++) {
+                    laplacian[j*L_dim + i] += D_dim_1[k*d_1_dim + i]
+                                              * D_dim_1[k*d_1_dim + j];
+                }
+            }
+        }
+    }
+    return laplacian;
+
+}
