@@ -182,8 +182,8 @@ int * compute_simplicial_laplacian(SCG * scg, int dim)
 
             if (d_1_dim > 0) {
                 for (int k = 0; k < d_1_dim; k++) {
-                    laplacian[j*L_dim + i] += D_dim_1[k*d_1_dim + i]
-                                              * D_dim_1[k*d_1_dim + j];
+                    laplacian[j*L_dim + i] += D_dim_1[k*L_dim + i]
+                                              * D_dim_1[k*L_dim + j];
                 }
             }
         }

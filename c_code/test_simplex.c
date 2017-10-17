@@ -64,17 +64,25 @@ int test_boundary_op()
     int * out_mat = compute_boundary_operator_matrix(scg1, 2);
     for (int i = 0; i < scg1->cg_dim[2]; i++) {
         for (int j = 0; j < scg1->cg_dim[1]; j++) {
-            printf("%d ", out_mat[i*scg1->cg_dim[1] + j]);
+            printf("%d, ", out_mat[i*scg1->cg_dim[1] + j]);
         }
-        printf("\n");
+        printf(";\n");
+    }
+
+    out_mat = compute_boundary_operator_matrix(scg1, 3);
+    for (int i = 0; i < scg1->cg_dim[3]; i++) {
+        for (int j = 0; j < scg1->cg_dim[2]; j++) {
+            printf("%d, ", out_mat[i*scg1->cg_dim[2] + j]);
+        }
+        printf(";\n");
     }
     printf("\n\nLAPLACIAN\n");
     int * laplacian = compute_simplicial_laplacian(scg1, 2);
     for (int i = 0; i<scg1->cg_dim[2]; i++) {
         for (int j=0; j<scg1->cg_dim[2]; j++) {
-            printf("%2d ", laplacian[i*scg1->cg_dim[2] + j]);
+            printf("%2d, ", laplacian[i*scg1->cg_dim[2] + j]);
         }
-        printf("\n");
+        printf(";\n");
     }
     printf("\n");
 
