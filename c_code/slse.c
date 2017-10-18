@@ -97,7 +97,6 @@ double KL_divergence(gsl_matrix * L1, gsl_matrix * L2, double beta)
         tr2 += r2;
     }
 
-
     /* Compute divergence */
     for (i = 0; i < n; i++) {
         rval = gsl_vector_get(rhov, i) / tr1;
