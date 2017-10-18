@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <gsl/gsl_matrix.h>
+
 #include "boundary_op.h"
 #include "simplex.h"
 #include "hash_table.h"
@@ -194,4 +196,18 @@ int * compute_simplicial_laplacian(SCG * scg, int dim)
     }
     return laplacian;
 
+}
+
+gsl_matrix * to_gsl(int * L, size_t dim) 
+{
+    gsl_matrix * out = gsl_matrix_alloc(dim, dim);
+    size_t i, j;
+
+    for (i = 0; i < dim; i++) {
+        for (j = 0; j < dim; j++) {
+            gsl_matrix_set(out, i, j, (double)L[i*dim +j]);
+        }
+    }
+    return out;
+    
 }

@@ -1,7 +1,7 @@
 CC=gcc
-CFLAGS= -std=c99 -g -Wall -I.
+CFLAGS= -std=c99 -g -Wall -I. -I/usr/local/include -lgsl -lgslcblas -lm
 DEPS= simplex.h hash_table.h boundary_op.h
-OBJ = simplex.o hash_table.o test_simplex.o boundary_op.c
+OBJ = simplex.o hash_table.o test_simplex.o boundary_op.c slse.o
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)

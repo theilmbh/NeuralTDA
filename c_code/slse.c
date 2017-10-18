@@ -69,9 +69,21 @@ double KL_divergence(gsl_matrix * L1, gsl_matrix * L2, double beta)
     /* Allocate workspace for eigendecomposition */
     gsl_eigen_symm_workspace * w =  gsl_eigen_symm_alloc(n);
 
+    /* Copy the matrices */
+    /* We need this because GSL destroys matrices 
+     * during eigenvalue computation */
+    gsl_matrix * L1copy = gsl_matrix_alloc(n, n);
+    gsl_matrix * L2copy = gsl_matrix_alloc(n, n);
+    gsl_matrix_memcpy(L1copy, L1);
+    gsl_matrix_memcpy(L2copy, L2);
+
     /* Compute eigenvalues */ 
-    gsl_eigen_symm(L1, L1v, w);
-    gsl_eigen_symm(L2, L2v, w); 
+    gsl_eigen_symm(L1copy, L1v, w);
+    gsl_eigen_symm(L2copy, L2v, w); 
+
+    /* Sort eigenvalues */
+    gsl_sort_vector(L1v);
+    gsl_sort_vector(L2v);
 
     /* Compute density eigenvalues */
     double r1, r2;
@@ -85,9 +97,6 @@ double KL_divergence(gsl_matrix * L1, gsl_matrix * L2, double beta)
         tr2 += r2;
     }
 
-    /* Sort eigenvalues */
-    gsl_sort_vector(rhov);
-    gsl_sort_vector(sigmav);
 
     /* Compute divergence */
     for (i = 0; i < n; i++) {

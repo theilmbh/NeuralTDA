@@ -18,6 +18,8 @@
 #ifndef BOUNDARY_OP_H
 #define BOUNDARY_OP_H
 
+#include <gsl/gsl_matrix.h>
+
 #include "simplex.h"
 #include "hash_table.h"
 
@@ -42,5 +44,7 @@ int * bdry_canonical_coordinates(struct bdry_op_dict * bdry_op,
         struct simplex_list *basis, int targ_dim);
 int * compute_boundary_operator_matrix(SCG * scg, int dim);
 int * compute_simplicial_laplacian(SCG * scg, int dim);
+
+gsl_matrix * to_gsl(int * L, size_t dim);
 
 #endif

@@ -392,9 +392,9 @@ def Entropy(rho):
 
 def KLdivergence_lap(LA, LB, beta):
     r, w = np.linalg.eig(LA)
-    s = np.linalg.eig(LB)
-    r = np.real(sorted(r))
-    s = np.real(sorted(s))
+    s, w = np.linalg.eig(LB)
+    r = (np.real(sorted(r)))
+    s = (np.real(sorted(s)))
 
     r = np.exp(beta*r)
     s = np.exp(beta*s)

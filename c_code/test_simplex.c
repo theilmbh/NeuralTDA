@@ -19,11 +19,14 @@
 #include "simplex.h"
 #include "hash_table.h"
 #include "boundary_op.h"
+#include "slse.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+
+#include <gsl/gsl_matrix.h>
 
 int test_boundary_op()
 {
@@ -89,6 +92,10 @@ int test_boundary_op()
         printf(";\n");
     }
     printf("\n");
+    
+    gsl_matrix * L = to_gsl(laplacian, trgd);
+    double div = KL_divergence(L, L, 0.15);
+    printf("Div: %f\n", div);
 
 }
 int test_compute_chain_groups()
