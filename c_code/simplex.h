@@ -19,6 +19,8 @@
 #ifndef SIMPLEX_H
 #define SIMPLEX_H
 
+#include <Python.h>
+
 #include "hash_table.h"
 
 #define MAXNAME 128
@@ -77,6 +79,8 @@ void scg_list_union_hash(SCG * scg1, SCG * scg2,
                          struct simplex_hash_table *table);
 void scg_add_simplex(SCG * scg, struct Simplex * s);
 void scg_add_simplex_nocheck(SCG * scg, struct Simplex * s);
+
+void scg_add_max_simplex(SCG * scg, struct Simplex * max_s);
 
 /* print functions */
 void print_simplex(struct Simplex * s);

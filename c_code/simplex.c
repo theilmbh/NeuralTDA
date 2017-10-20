@@ -417,3 +417,9 @@ void compute_chain_groups(struct Simplex ** max_simps,
     }
     
 }
+
+void scg_add_max_simplex(SCG * scg, struct Simplex * max_s)
+{
+    SCG * faces = get_faces(max_s);
+    scg_list_union_hash(faces, scg, NULL);
+}
