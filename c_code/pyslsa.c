@@ -19,12 +19,17 @@
 
 #include <Python.h>
 
+#include <string.h>
+
 #include "simplex.h"
+#include "boundary_op.h"
+#include "slse.h"
 
 /* Simplex Object */
 typedef struct {
     PyObject_HEAD
     struct Simplex * s;
+
 } pyslsa_SimplexObject;
 
 static PyObject * Simplex_new(PyTypeObject * type,
@@ -149,6 +154,7 @@ static PyObject * PySCG_add_max_simplex(pyslsa_SCGObject * self,
     pyslsa_SimplexObject * maxsimp;
     if (!PyArg_ParseTuple(args, "O", &maxsimp))
         return NULL;
+
     scg_add_max_simplex(self->scg, maxsimp->s);
     Py_RETURN_NONE;
 }
@@ -209,11 +215,32 @@ static PyObject * helloworld(PyObject * self)
     return Py_BuildValue("s", "Hello, Python!");
 }
 
+static PyObject * KL(PyObject * self, PyObject * args)
+{
+    double beta;
+    int dim;
+    pyslsa_SCGObject *scg1, *scg2;
+
+    if (!PyArg_ParseTuple(args, "OOif", &scg1, &scg2, &dim, &beta))
+        return NULL;
+    int * L1 = compute_simplicial_laplacian(scg1->scg, (size_t)dim);
+    int * L2 = compute_simplicial_laplacian(scg2->scg, (size_t)dim);
+
+    gsl_matrix * L1g = to_gsl(L1, scg1->scg->cg_dim[dim]);
+    gsl_matrix * L2g = to_gsl(L2, scg2->scg->cg_dim[dim]);
+
+    double div;
+    div = KL_divergence(L1g, L2g, beta);
+    return Py_BuildValue("d", div);
+    
+}
+
 static char helloworld_docs[] = "Any Message Brad Theilman";
 
 static PyMethodDef pyslsa_funcs[] = {
     {"helloworld", (PyCFunction)helloworld,
     METH_NOARGS, helloworld_docs},
+    {"KL", (PyCFunction)KL, METH_VARARGS, NULL},
     {NULL}
 };
 
