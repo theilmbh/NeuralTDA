@@ -117,7 +117,7 @@ static PyTypeObject pyslsa_SimplexType = {
     0,
     0,
     Simplex_new,
-    Simplex_free,      
+    (freefunc)Simplex_free,      
 };
 
 /* SCG Object */
@@ -126,14 +126,14 @@ typedef struct {
     SCG * scg;
 } pyslsa_SCGObject;
 
-static void SCG_dealloc(pyslsa_SimplexObject * self)
+static void SCG_dealloc(pyslsa_SCGObject * self)
 {
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-static void SCG_free(pyslsa_SimplexObject * self)
+static void SCG_free(pyslsa_SCGObject * self)
 {
-    free_SCG(self->s);     
+    free_SCG(self->scg);     
 }
 
 static PyObject * SCG_new(PyTypeObject * type,
@@ -159,10 +159,19 @@ static PyObject * PySCG_add_max_simplex(pyslsa_SCGObject * self,
     Py_RETURN_NONE;
 }
 
+static PyObject * PySCG_print(pyslsa_SCGObject * self)
+{
+    print_SCG(self->scg);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef SCG_methods[] = {
     {"add_max_simplex", (PyCFunction)PySCG_add_max_simplex, METH_VARARGS,
         "Add a max simplex to the simplicial complex"
     },
+    {"print", (PyCFunction)PySCG_print, METH_NOARGS,
+        "Print the simplicial complex"
+    },  
     {NULL}
 };
 
@@ -205,7 +214,7 @@ static PyTypeObject pyslsa_SCGType = {
     0,
     0,
     SCG_new,
-    SCG_free,
+    (freefunc)SCG_free,
 };
 
 /* MODULE METHODS AND DEFINITIONS */
@@ -221,13 +230,14 @@ static PyObject * KL(PyObject * self, PyObject * args)
     int dim;
     pyslsa_SCGObject *scg1, *scg2;
 
-    if (!PyArg_ParseTuple(args, "OOif", &scg1, &scg2, &dim, &beta))
+    if (!PyArg_ParseTuple(args, "OOid", &scg1, &scg2, &dim, &beta))
         return NULL;
     int * L1 = compute_simplicial_laplacian(scg1->scg, (size_t)dim);
     int * L2 = compute_simplicial_laplacian(scg2->scg, (size_t)dim);
 
     gsl_matrix * L1g = to_gsl(L1, scg1->scg->cg_dim[dim]);
     gsl_matrix * L2g = to_gsl(L2, scg2->scg->cg_dim[dim]);
+    reconcile_laplacians(L1g, L2g, &L1g, &L2g); 
 
     double div;
     div = KL_divergence(L1g, L2g, beta);

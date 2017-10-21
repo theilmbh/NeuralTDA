@@ -211,3 +211,31 @@ gsl_matrix * to_gsl(int * L, size_t dim)
     return out;
     
 }
+
+void reconcile_laplacians(gsl_matrix * L1, gsl_matrix * L2,
+                          gsl_matrix **L1new, gsl_matrix **L2new)
+{
+    gsl_matrix * temp;
+
+    if (L1->size1 > L2->size1) {
+        temp = gsl_matrix_calloc(L1->size1, L1->size2);
+        for (int i = 0; i<L2->size1; i++) {
+            for (int j = 0; j<L2->size2; j++) {
+                gsl_matrix_set(temp, i, j, gsl_matrix_get(L2, i, j));
+            }
+        }
+        *L1new = L1;
+        *L2new = temp;
+    }
+
+    if (L2->size1 > L1->size1) {
+        temp = gsl_matrix_calloc(L2->size1, L2->size2);
+        for (int i = 0; i<L1->size1; i++) {
+            for (int j = 0; j<L1->size2; j++) {
+                gsl_matrix_set(temp, i, j, gsl_matrix_get(L1, i, j));
+            }
+        }
+        *L1new = temp;
+        *L2new = L2;
+    }
+}

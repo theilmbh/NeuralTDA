@@ -35,7 +35,7 @@ struct bdry_op_dict {
     unsigned int size;
 };
 
-struct bdry_op_dict * get_empty_bdry_op_dict();
+struct bdry_op_dict * get_empty_bdry_op_dict(void);
 struct bdry_op_dict * compute_boundary_operator(struct Simplex * sp);
 void add_bdry_simplex(struct bdry_op_dict * tab, struct Simplex * sp, int sgn);
 unsigned int bdry_check_hash(struct bdry_op_dict * tab, struct Simplex *sp,
@@ -44,6 +44,9 @@ int * bdry_canonical_coordinates(struct bdry_op_dict * bdry_op,
         struct simplex_list *basis, int targ_dim);
 int * compute_boundary_operator_matrix(SCG * scg, int dim);
 int * compute_simplicial_laplacian(SCG * scg, int dim);
+
+void reconcile_laplacians(gsl_matrix * L1, gsl_matrix * L2,    
+                          gsl_matrix **L1new, gsl_matrix **L2new);
 
 gsl_matrix * to_gsl(int * L, size_t dim);
 
