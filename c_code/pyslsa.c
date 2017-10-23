@@ -173,10 +173,10 @@ static PyObject * PySCG_print_laplacian(pyslsa_SCGObject * self,
         return NULL;
 
     int Ldim = self->scg->cg_dim[d];
-    int * Lap = compute_simplicial_laplacian(self->scg, d);
+    gsl_matrix * Lap = compute_simplicial_laplacian(self->scg, d);
     for (int i=0; i<Ldim; i++) {
         for (int j=0; j<Ldim; j++) {
-            printf("%d ", Lap[i*Ldim + j]);
+            printf("%f ", gsl_matrix_get(Lap, i, j));
         }
         printf("\n");
     }
@@ -245,23 +245,49 @@ static PyObject * helloworld(PyObject * self)
     return Py_BuildValue("s", "Hello, Python!");
 }
 
+static PyObject * build_SCG(PyObject * self, PyObject * args)
+{
+    PyListObject * max_simps;
+    struct Simplex * new_sp;
+
+    if (!PyArg_ParseTuple(args, "O", &max_simps))
+        return NULL;
+
+    pyslsa_SCGObject * out = SCG_new(&pyslsa_SCGType, NULL, NULL);
+
+    for (Py_ssize_t ind = 0; ind < PyList_Size(max_simps); ind++) {
+        new_sp = create_empty_simplex();
+        PyTupleObject * simp_verts = PyList_GetItem(max_simps, ind);
+        for (Py_ssize_t vert_ind = 0; vert_ind < PyTuple_Size(simp_verts); vert_ind++) {
+            add_vertex(new_sp, (int)PyLong_AsLong(PyTuple_GetItem(simp_verts, vert_ind)));
+        }
+        scg_add_max_simplex(out->scg, new_sp); 
+    }
+    return (PyObject *)out;
+
+}
+
 static PyObject * KL(PyObject * self, PyObject * args)
 {
     double beta;
     int dim;
     pyslsa_SCGObject *scg1, *scg2;
+    gsl_matrix * L1g;
+    gsl_matrix * L2g;
 
     if (!PyArg_ParseTuple(args, "OOid", &scg1, &scg2, &dim, &beta))
         return NULL;
-    int * L1 = compute_simplicial_laplacian(scg1->scg, (size_t)dim);
-    int * L2 = compute_simplicial_laplacian(scg2->scg, (size_t)dim);
+    gsl_matrix * L1 = compute_simplicial_laplacian(scg1->scg, (size_t)dim);
+    gsl_matrix * L2 = compute_simplicial_laplacian(scg2->scg, (size_t)dim);
 
-    gsl_matrix * L1g = to_gsl(L1, scg1->scg->cg_dim[dim]);
-    gsl_matrix * L2g = to_gsl(L2, scg2->scg->cg_dim[dim]);
-    reconcile_laplacians(L1g, L2g, &L1g, &L2g); 
+    /*  gsl_matrix * L1g = to_gsl(L1, scg1->scg->cg_dim[dim]);
+    gsl_matrix * L2g = to_gsl(L2, scg2->scg->cg_dim[dim]);*/
+    reconcile_laplacians(L1, L2, &L1, &L2); 
 
     double div;
-    div = KL_divergence(L1g, L2g, beta);
+    div = KL_divergence(L1, L2, beta);
+    gsl_matrix_free(L1);
+    gsl_matrix_free(L2);
     return Py_BuildValue("d", div);
     
 }
@@ -272,6 +298,7 @@ static PyMethodDef pyslsa_funcs[] = {
     {"helloworld", (PyCFunction)helloworld,
     METH_NOARGS, helloworld_docs},
     {"KL", (PyCFunction)KL, METH_VARARGS, NULL},
+    {"build_SCG", (PyCFunction)build_SCG, METH_VARARGS, NULL},
     {NULL}
 };
 

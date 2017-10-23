@@ -42,8 +42,8 @@ unsigned int bdry_check_hash(struct bdry_op_dict * tab, struct Simplex *sp,
         unsigned int *indx);
 int * bdry_canonical_coordinates(struct bdry_op_dict * bdry_op,
         struct simplex_list *basis, int targ_dim);
-int * compute_boundary_operator_matrix(SCG * scg, int dim);
-int * compute_simplicial_laplacian(SCG * scg, int dim);
+gsl_matrix * compute_boundary_operator_matrix(SCG * scg, int dim);
+gsl_matrix * compute_simplicial_laplacian(SCG * scg, int dim);
 
 void reconcile_laplacians(gsl_matrix * L1, gsl_matrix * L2,    
                           gsl_matrix **L1new, gsl_matrix **L2new);

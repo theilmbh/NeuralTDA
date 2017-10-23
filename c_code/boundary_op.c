@@ -19,6 +19,7 @@
 #include <stdio.h>
 
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_blas.h>
 
 #include "boundary_op.h"
 #include "simplex.h"
@@ -122,12 +123,20 @@ int * bdry_canonical_coordinates(struct bdry_op_dict * bdry_op,
     return out_vec;
 }
 
-int * compute_boundary_operator_matrix(SCG * scg, int dim)
+gsl_matrix * compute_boundary_operator_matrix(SCG * scg, int dim)
 {
     int targ_dim = scg->cg_dim[dim-1];
     int source_dim = scg->cg_dim[dim];
 
-    int *bdry_mat = calloc(targ_dim*source_dim, sizeof(int));
+    gsl_matrix *bdry_mat;
+
+    if ((targ_dim == 0) || (source_dim == 0)) {
+        bdry_mat = gsl_matrix_calloc(1, 1);
+        return bdry_mat;
+    }
+
+    /* int *bdry_mat = calloc(targ_dim*source_dim, sizeof(int));*/
+    bdry_mat = gsl_matrix_alloc(targ_dim, source_dim);
 
     struct simplex_list * source;
     struct simplex_list * targ;
@@ -142,7 +151,8 @@ int * compute_boundary_operator_matrix(SCG * scg, int dim)
         bdry_op = compute_boundary_operator(source->s);
         bdry_vec = bdry_canonical_coordinates(bdry_op, targ, targ_dim);
         for (j = 0; j < targ_dim; j++) {
-            bdry_mat[j*source_dim + i] = bdry_vec[j];
+            gsl_matrix_set(bdry_mat, j, i, bdry_vec[j]);
+            /* bdry_mat[j*source_dim + i] = bdry_vec[j];*/
         }
         i++;
         source = source->next;
@@ -151,11 +161,11 @@ int * compute_boundary_operator_matrix(SCG * scg, int dim)
 
 }
 
-int * compute_simplicial_laplacian(SCG * scg, int dim)
+gsl_matrix * compute_simplicial_laplacian(SCG * scg, int dim)
 {
-    int * D_dim;   /* \partial_{dim} */
-    int * D_dim_1; /* \partial_{dim+1} */
-    int * laplacian;
+    gsl_matrix * D_dim;   /* \partial_{dim} */
+    gsl_matrix * D_dim_1; /* \partial_{dim+1} */
+    gsl_matrix * laplacian;
 
     /* Check dimensions */
     int L_dim = scg->cg_dim[dim];
@@ -169,9 +179,12 @@ int * compute_simplicial_laplacian(SCG * scg, int dim)
 
     /* Allocate result */
     if (L_dim > 0) {
-        laplacian = calloc(L_dim*L_dim, sizeof(int));
+        //laplacian = calloc(L_dim*L_dim, sizeof(int));
+        laplacian = gsl_matrix_calloc(L_dim, L_dim);
     } else {
-        laplacian = calloc(1, sizeof(int));
+        //laplacian = calloc(1, sizeof(int));
+        laplacian = gsl_matrix_alloc(1, 1);
+        gsl_matrix_set(laplacian, 0, 0, 0.0);
         return laplacian;
     }
 
@@ -180,9 +193,15 @@ int * compute_simplicial_laplacian(SCG * scg, int dim)
     D_dim_1 = compute_boundary_operator_matrix(scg, dim+1);
 
    /* Compute Laplacian */ 
-    for (int i = 0; i < L_dim; i++) {
+    if (d_dim > 0) {
+        gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, D_dim, D_dim, 0.0, laplacian);
+    }
+    if (d_1_dim > 0) {
+        gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, D_dim_1, D_dim_1, 1.0, laplacian);
+    }
+    /* /for (int i = 0; i < L_dim; i++) {
+
         for ( int j = 0; j < L_dim; j++ ) {
-            /* D^T * D */
             if (d_dim > 0) {
                 for (int k = 0; k < d_dim; k++) { 
                     laplacian[i*L_dim + j] += D_dim[k*L_dim + i]
@@ -190,7 +209,6 @@ int * compute_simplicial_laplacian(SCG * scg, int dim)
                 }
             }
 
-            /* D2 * D2^T */
             if (d_1_dim > 0) {
                 for (int k = 0; k < d_1_dim; k++) {
                     laplacian[j*L_dim + i] += D_dim_1[i*d_1_dim + k]
@@ -198,7 +216,7 @@ int * compute_simplicial_laplacian(SCG * scg, int dim)
                 }
             }
         }
-    }
+    }*/
     return laplacian;
 
 }

@@ -5,7 +5,7 @@ v = pyslsa.Simplex()
 for i in range(4):
     t.add_vertex(i)
 
-for i in range(5, 20):
+for i in range(5, 10):
     v.add_vertex(i)
 
 s = pyslsa.SCG()
