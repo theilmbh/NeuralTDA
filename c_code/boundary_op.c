@@ -26,7 +26,8 @@
 
 struct bdry_op_dict * get_empty_bdry_op_dict()
 {
-    struct bdry_op_dict * out  = malloc(sizeof(struct bdry_op_dict));
+    /* We need to make sure that the hash is clear */
+    struct bdry_op_dict * out  = calloc(1, sizeof(struct bdry_op_dict));
     out->N = 0;
     return out;
 }
@@ -36,6 +37,10 @@ struct bdry_op_dict * compute_boundary_operator(struct Simplex * sp)
     struct bdry_op_dict * out = get_empty_bdry_op_dict();
     int i, j;
     int sgn = 1;
+
+    if (!sp) {
+        return out;
+    }
 
     for (i = 0; i <= sp->dim; i++) {
         struct Simplex * sub = create_empty_simplex();
@@ -200,7 +205,13 @@ int * compute_simplicial_laplacian(SCG * scg, int dim)
 
 gsl_matrix * to_gsl(int * L, size_t dim) 
 {
-    gsl_matrix * out = gsl_matrix_alloc(dim, dim);
+    gsl_matrix * out;
+    if (!dim) {
+        out = gsl_matrix_alloc(1, 1);
+        gsl_matrix_set(out, 0, 0, 0.0);
+        return out;
+    }
+    out = gsl_matrix_alloc(dim, dim);
     size_t i, j;
 
     for (i = 0; i < dim; i++) {

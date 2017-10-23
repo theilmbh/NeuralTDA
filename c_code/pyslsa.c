@@ -165,6 +165,24 @@ static PyObject * PySCG_print(pyslsa_SCGObject * self)
     Py_RETURN_NONE;
 }
 
+static PyObject * PySCG_print_laplacian(pyslsa_SCGObject * self, 
+                                        PyObject *args)
+{
+    int d;
+    if (!PyArg_ParseTuple(args, "i", &d)) 
+        return NULL;
+
+    int Ldim = self->scg->cg_dim[d];
+    int * Lap = compute_simplicial_laplacian(self->scg, d);
+    for (int i=0; i<Ldim; i++) {
+        for (int j=0; j<Ldim; j++) {
+            printf("%d ", Lap[i*Ldim + j]);
+        }
+        printf("\n");
+    }
+    Py_RETURN_NONE; 
+}
+
 static PyMethodDef SCG_methods[] = {
     {"add_max_simplex", (PyCFunction)PySCG_add_max_simplex, METH_VARARGS,
         "Add a max simplex to the simplicial complex"
@@ -172,6 +190,9 @@ static PyMethodDef SCG_methods[] = {
     {"print", (PyCFunction)PySCG_print, METH_NOARGS,
         "Print the simplicial complex"
     },  
+    {"print_L", (PyCFunction)PySCG_print_laplacian, METH_VARARGS, 
+        "Print the laplacian of dimension d"
+    }, 
     {NULL}
 };
 

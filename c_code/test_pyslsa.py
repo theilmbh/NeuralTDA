@@ -17,4 +17,7 @@ r.add_max_simplex(t)
 s.print()
 r.print()
 
+s.print_L(1);
+r.print_L(1);
+
 print(pyslsa.KL(s,r, 1, -0.15))
