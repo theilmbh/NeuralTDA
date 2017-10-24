@@ -226,6 +226,7 @@ void simplex_list_free(struct simplex_list * sl)
     /* TODO: Check for beginning of list */
     struct simplex_list * nx = sl->next;
     while(nx) {
+        free_simplex(sl->s);   
         free(sl);
         sl = nx;
         nx = sl->next;

@@ -33,6 +33,15 @@ struct bdry_op_dict * get_empty_bdry_op_dict()
     return out;
 }
 
+void free_bdry_op_dict(struct bdry_op_dict * d)
+{
+    int i;
+    for (i = 0; i < NR_BDRY_HASH; i++) {
+        free_simplex(d->table[i].sp);
+    }
+    free(d);
+}
+
 struct bdry_op_dict * compute_boundary_operator(struct Simplex * sp)
 {
     struct bdry_op_dict * out = get_empty_bdry_op_dict();
@@ -156,6 +165,8 @@ gsl_matrix * compute_boundary_operator_matrix(SCG * scg, int dim)
         }
         i++;
         source = source->next;
+        free_bdry_op_dict(bdry_op);
+        free(bdry_vec);
     }
     return bdry_mat;
 
@@ -217,6 +228,9 @@ gsl_matrix * compute_simplicial_laplacian(SCG * scg, int dim)
             }
         }
     }*/
+
+    gsl_matrix_free(D_dim);
+    gsl_matrix_free(D_dim_1);
     return laplacian;
 
 }
@@ -245,6 +259,7 @@ void reconcile_laplacians(gsl_matrix * L1, gsl_matrix * L2,
                           gsl_matrix **L1new, gsl_matrix **L2new)
 {
     gsl_matrix * temp;
+    gsl_matrix * extra;
 
     if (L1->size1 > L2->size1) {
         temp = gsl_matrix_calloc(L1->size1, L1->size2);
@@ -255,6 +270,8 @@ void reconcile_laplacians(gsl_matrix * L1, gsl_matrix * L2,
         }
         *L1new = L1;
         *L2new = temp;
+        gsl_matrix_free(L2);
+        return;
     }
 
     if (L2->size1 > L1->size1) {
@@ -266,5 +283,7 @@ void reconcile_laplacians(gsl_matrix * L1, gsl_matrix * L2,
         }
         *L1new = temp;
         *L2new = L2;
+        gsl_matrix_free(L1);
+        return; 
     }
 }

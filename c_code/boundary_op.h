@@ -36,6 +36,7 @@ struct bdry_op_dict {
 };
 
 struct bdry_op_dict * get_empty_bdry_op_dict(void);
+void free_bdry_op_dict(struct bdry_op_dict * d);
 struct bdry_op_dict * compute_boundary_operator(struct Simplex * sp);
 void add_bdry_simplex(struct bdry_op_dict * tab, struct Simplex * sp, int sgn);
 unsigned int bdry_check_hash(struct bdry_op_dict * tab, struct Simplex *sp,

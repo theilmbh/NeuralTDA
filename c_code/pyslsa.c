@@ -25,7 +25,10 @@
 #include "boundary_op.h"
 #include "slse.h"
 
-/* Simplex Object */
+/* ************************************************************************* */
+/* Simplex Object Definition                                                 */
+/* ************************************************************************* */
+
 typedef struct {
     PyObject_HEAD
     struct Simplex * s;
@@ -107,7 +110,7 @@ static PyTypeObject pyslsa_SimplexType = {
     0,
     0,
     Simplex_methods, /* tp_methods */
-    0, /* tp_members */
+    0,               /* tp_members */
     0,
     0,
     0,
@@ -120,7 +123,10 @@ static PyTypeObject pyslsa_SimplexType = {
     (freefunc)Simplex_free,      
 };
 
-/* SCG Object */
+/* ************************************************************************* */
+/* Simplicial Complex Object Definitions                                     */
+/* ************************************************************************* */
+
 typedef struct {
     PyObject_HEAD
     SCG * scg;
@@ -137,7 +143,7 @@ static void SCG_free(pyslsa_SCGObject * self)
 }
 
 static PyObject * SCG_new(PyTypeObject * type,
-                              PyObject * args, PyObject * kwds)
+                          PyObject * args, PyObject * kwds)
 {
     pyslsa_SCGObject * self;
     self = (pyslsa_SCGObject *)type->tp_alloc(type, 0);
@@ -183,6 +189,7 @@ static PyObject * PySCG_print_laplacian(pyslsa_SCGObject * self,
     Py_RETURN_NONE; 
 }
 
+/* Simplicial Complex Methods */
 static PyMethodDef SCG_methods[] = {
     {"add_max_simplex", (PyCFunction)PySCG_add_max_simplex, METH_VARARGS,
         "Add a max simplex to the simplicial complex"
@@ -196,6 +203,7 @@ static PyMethodDef SCG_methods[] = {
     {NULL}
 };
 
+/* Simplicial Complex Type Definition */
 static PyTypeObject pyslsa_SCGType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pyslsa.SCG",
@@ -238,38 +246,52 @@ static PyTypeObject pyslsa_SCGType = {
     (freefunc)SCG_free,
 };
 
-/* MODULE METHODS AND DEFINITIONS */
+/* ************************************************************************* */
+/* PySLSA Module Definitions                                                 */
+/* ************************************************************************* */
 
 static char pyslsa_docs[] = "PySLSA: Simplicial Laplacian Spectral Analyzer";
 
 static PyObject * build_SCG(PyObject * self, PyObject * args)
 {
-    PyListObject * max_simps;
+    Py_ssize_t ind, vert_ind;
+    PyObject * max_simps;
+    PyObject * simp_verts;
     struct Simplex * new_sp;
+    pyslsa_SCGObject * out;
 
     if (!PyArg_ParseTuple(args, "O", &max_simps))
         return NULL;
-    int n_max_simp = PyList_Size(max_simps);
-    pyslsa_SCGObject * out = SCG_new(&pyslsa_SCGType, NULL, NULL);
-    struct Simplex **max_simp_list = malloc(n_max_simp*sizeof(struct Simplex *));
 
-    for (Py_ssize_t ind = 0; ind < n_max_simp; ind++) {
+    int n_max_simp = PyList_Size(max_simps);
+
+    /* Get a new SCG and allocate max simp list */
+    out = SCG_new(&pyslsa_SCGType, NULL, NULL);
+    struct Simplex **max_simp_list = malloc(n_max_simp * 
+                                            sizeof(struct Simplex *));
+
+    for (ind = 0; ind < n_max_simp; ind++) {
         new_sp = create_empty_simplex();
-        PyTupleObject * simp_verts = (PyTupleObject *)PyList_GetItem(max_simps, ind);
-        for (Py_ssize_t vert_ind = 0; vert_ind < PyTuple_Size(simp_verts); vert_ind++) {
-            add_vertex(new_sp, (int)PyLong_AsLong(PyTuple_GetItem(simp_verts, vert_ind)));
+        simp_verts = PyList_GetItem(max_simps, ind);
+
+        for (vert_ind = 0; vert_ind < PyTuple_Size(simp_verts); vert_ind++) {
+            add_vertex(new_sp, (int)PyLong_AsLong(PyTuple_GetItem(simp_verts,
+                                                                  vert_ind)));
         }
         max_simp_list[ind] = new_sp;
-        //scg_add_max_simplex(out->scg, new_sp); 
     }
+    
     compute_chain_groups(max_simp_list, n_max_simp, out->scg);
-    return (PyObject *)out;
 
+    free(max_simp_list);
+    return (PyObject *)out;
 }
 
+/* Computes the KL divergence between two Simplicial Complexes in dimension
+ * dim and with beta */
 static PyObject * KL(PyObject * self, PyObject * args)
 {
-    double beta;
+    double beta, div;
     int dim;
     pyslsa_SCGObject *scg1, *scg2;
 
@@ -278,16 +300,14 @@ static PyObject * KL(PyObject * self, PyObject * args)
     gsl_matrix * L1 = compute_simplicial_laplacian(scg1->scg, (size_t)dim);
     gsl_matrix * L2 = compute_simplicial_laplacian(scg2->scg, (size_t)dim);
 
-    /*  gsl_matrix * L1g = to_gsl(L1, scg1->scg->cg_dim[dim]);
-    gsl_matrix * L2g = to_gsl(L2, scg2->scg->cg_dim[dim]);*/
     reconcile_laplacians(L1, L2, &L1, &L2); 
 
-    double div;
     div = KL_divergence(L1, L2, beta);
+    
     gsl_matrix_free(L1);
     gsl_matrix_free(L2);
+
     return Py_BuildValue("d", div);
-    
 }
 
 static PyMethodDef pyslsa_funcs[] = {

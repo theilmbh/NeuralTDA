@@ -80,6 +80,7 @@ double __attribute__((optimize("O0"))) KL_divergence(gsl_matrix * L1, gsl_matrix
     /* Compute eigenvalues */ 
     gsl_eigen_symm(L1copy, L1v, w);
     gsl_eigen_symm(L2copy, L2v, w); 
+    gsl_eigen_symm_free(w);
 
     /* Compute density eigenvalues */
     double r1, r2;
@@ -103,5 +104,12 @@ double __attribute__((optimize("O0"))) KL_divergence(gsl_matrix * L1, gsl_matrix
         sval = gsl_vector_get(sigmav, i) / tr2;
         div += rval*(log(rval) - log(sval))/log(2.0);
     }
+    /* Free Memory */
+    gsl_matrix_free(L1copy);
+    gsl_matrix_free(L2copy);
+    gsl_vector_free(rhov);
+    gsl_vector_free(sigmav);
+    gsl_vector_free(L1v);
+    gsl_vector_free(L2v);       
     return div;
 }
