@@ -252,17 +252,20 @@ static PyObject * build_SCG(PyObject * self, PyObject * args)
 
     if (!PyArg_ParseTuple(args, "O", &max_simps))
         return NULL;
-
+    int n_max_simp = PyList_Size(max_simps);
     pyslsa_SCGObject * out = SCG_new(&pyslsa_SCGType, NULL, NULL);
+    struct Simplex **max_simp_list = malloc(n_max_simp*sizeof(struct Simplex *));
 
-    for (Py_ssize_t ind = 0; ind < PyList_Size(max_simps); ind++) {
+    for (Py_ssize_t ind = 0; ind < n_max_simp; ind++) {
         new_sp = create_empty_simplex();
         PyTupleObject * simp_verts = PyList_GetItem(max_simps, ind);
         for (Py_ssize_t vert_ind = 0; vert_ind < PyTuple_Size(simp_verts); vert_ind++) {
             add_vertex(new_sp, (int)PyLong_AsLong(PyTuple_GetItem(simp_verts, vert_ind)));
         }
-        scg_add_max_simplex(out->scg, new_sp); 
+        max_simp_list[ind] = new_sp;
+        //scg_add_max_simplex(out->scg, new_sp); 
     }
+    compute_chain_groups(max_simp_list, n_max_simp, out->scg);
     return (PyObject *)out;
 
 }
