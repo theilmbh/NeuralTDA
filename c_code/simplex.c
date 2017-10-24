@@ -56,7 +56,7 @@ struct Simplex *get_simplex_from_integer(unsigned int N)
 
 void get_faces_common(unsigned int N, int *verts, int dim, SCG * scg_temp)
 {
-    struct Simplex * s_new;
+   struct Simplex * s_new;
    for (int k = 0; k <= N; k++) {
        if ( (k & N) == k ) {
             s_new = create_empty_simplex();
@@ -100,6 +100,10 @@ void free_simplex(struct Simplex *s)
 struct Simplex * create_empty_simplex()
 {
     struct Simplex * s_out = malloc(sizeof(struct Simplex));
+    if (!s_out) {
+        return NULL;
+    }
+
     for (int i=0; i < MAXDIM; i++) {
         s_out->vertices[i] = -1;
     }
@@ -218,7 +222,6 @@ struct simplex_list * get_empty_simplex_list()
     out->prev = NULL;
     out->next = NULL;
     return out;
-
 }
 
 void simplex_list_free(struct simplex_list * sl)

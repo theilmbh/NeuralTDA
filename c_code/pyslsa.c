@@ -57,7 +57,8 @@ static void Simplex_free(pyslsa_SimplexObject * self)
     free_simplex(self->s);     
 }
 
-static PyObject * Simplex_add_vertex(pyslsa_SimplexObject * self, PyObject *args)
+static PyObject * Simplex_add_vertex(pyslsa_SimplexObject * self,
+                                     PyObject *args)
 {
     int i;
     if (!PyArg_ParseTuple(args, "i", &i)) {

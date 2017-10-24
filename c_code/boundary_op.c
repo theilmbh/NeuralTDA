@@ -1,5 +1,5 @@
 /*
- * =====================================================================================
+ * ============================================================================
  *
  *       Filename:  boundary_op.c
  *
@@ -13,8 +13,9 @@
  *         Author:  Brad Theilman (BHT), bradtheilman@gmail.com
  *   Organization:  
  *
- * =====================================================================================
+ * ============================================================================
  */
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -47,8 +48,10 @@ struct bdry_op_dict * compute_boundary_operator(struct Simplex * sp)
     struct bdry_op_dict * out = get_empty_bdry_op_dict();
     int i, j;
     int sgn = 1;
-
-    if (!sp) {
+    
+    /* Null Simplex - Return the empty boundary operator */
+    /* Null boundary operator - just return NULL */
+    if (!sp || !out) {
         return out;
     }
 
@@ -65,11 +68,16 @@ struct bdry_op_dict * compute_boundary_operator(struct Simplex * sp)
     }
 
     return out;
-    
 }
 
 void add_bdry_simplex(struct bdry_op_dict * tab, struct Simplex * sp, int sgn)
 {
+    /* If Table or Simplex is NULL, Do nothing */
+    if ((!tab) || (!sp)) {
+        printf("Null pointer encountered in add_bdry_simplex\n");
+        return;
+    }
+
     /* Check to see if simplex is already in table.. Do nothing! */
     unsigned int indx;
     if ((bdry_check_hash(tab, sp, &indx))) {
@@ -94,7 +102,7 @@ unsigned int bdry_check_hash(struct bdry_op_dict * tab, struct Simplex *sp,
         if (!tab->table[i2].sp) break;
 
         if (simplex_equals(tab->table[i2].sp, sp)) {
-            /* found! */
+            /* Found! */
             *indx = i2; /* Set index of table entry where found */
             return 1;
         } 
@@ -110,7 +118,6 @@ unsigned int bdry_check_hash(struct bdry_op_dict * tab, struct Simplex *sp,
     } 
     *indx = i2;
     return 0;
-
 }
 
 int * bdry_canonical_coordinates(struct bdry_op_dict * bdry_op,
@@ -118,6 +125,10 @@ int * bdry_canonical_coordinates(struct bdry_op_dict * bdry_op,
 {
     /* Create result vector */
     int * out_vec = calloc(targ_dim, sizeof(int));
+    if (!out_vec) {
+        printf("Unable to allocate boundary canonical coordinate vector\n");
+        return out_vec;
+    }
 
     /* Loop through simplex list, extracting sign */
     int pos = 0;
@@ -134,12 +145,18 @@ int * bdry_canonical_coordinates(struct bdry_op_dict * bdry_op,
 
 gsl_matrix * compute_boundary_operator_matrix(SCG * scg, int dim)
 {
+    gsl_matrix *bdry_mat;
+    if (dim <= 0) {
+        /* Boundary operator in dimension zero is zero map */
+        bdry_mat = gsl_matrix_calloc(1, 1);
+        return bdry_mat;
+    }
+
     int targ_dim = scg->cg_dim[dim-1];
     int source_dim = scg->cg_dim[dim];
 
-    gsl_matrix *bdry_mat;
-
     if ((targ_dim == 0) || (source_dim == 0)) {
+        /* empty chain groups */
         bdry_mat = gsl_matrix_calloc(1, 1);
         return bdry_mat;
     }
@@ -169,7 +186,6 @@ gsl_matrix * compute_boundary_operator_matrix(SCG * scg, int dim)
         free(bdry_vec);
     }
     return bdry_mat;
-
 }
 
 gsl_matrix * compute_simplicial_laplacian(SCG * scg, int dim)
@@ -190,12 +206,9 @@ gsl_matrix * compute_simplicial_laplacian(SCG * scg, int dim)
 
     /* Allocate result */
     if (L_dim > 0) {
-        //laplacian = calloc(L_dim*L_dim, sizeof(int));
         laplacian = gsl_matrix_calloc(L_dim, L_dim);
     } else {
-        //laplacian = calloc(1, sizeof(int));
-        laplacian = gsl_matrix_alloc(1, 1);
-        gsl_matrix_set(laplacian, 0, 0, 0.0);
+        laplacian = gsl_matrix_calloc(1, 1);
         return laplacian;
     }
 
@@ -203,36 +216,19 @@ gsl_matrix * compute_simplicial_laplacian(SCG * scg, int dim)
     D_dim = compute_boundary_operator_matrix(scg, dim);
     D_dim_1 = compute_boundary_operator_matrix(scg, dim+1);
 
-   /* Compute Laplacian */ 
+    /* Compute Laplacian */ 
     if (d_dim > 0) {
-        gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, D_dim, D_dim, 0.0, laplacian);
+        gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0,
+                       D_dim, D_dim, 0.0, laplacian);
     }
     if (d_1_dim > 0) {
-        gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, D_dim_1, D_dim_1, 1.0, laplacian);
+        gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0,
+                       D_dim_1, D_dim_1, 1.0, laplacian);
     }
-    /* /for (int i = 0; i < L_dim; i++) {
-
-        for ( int j = 0; j < L_dim; j++ ) {
-            if (d_dim > 0) {
-                for (int k = 0; k < d_dim; k++) { 
-                    laplacian[i*L_dim + j] += D_dim[k*L_dim + i]
-                                              * D_dim[k*L_dim +j];
-                }
-            }
-
-            if (d_1_dim > 0) {
-                for (int k = 0; k < d_1_dim; k++) {
-                    laplacian[j*L_dim + i] += D_dim_1[i*d_1_dim + k]
-                                              * D_dim_1[j*d_1_dim + k];
-                }
-            }
-        }
-    }*/
 
     gsl_matrix_free(D_dim);
     gsl_matrix_free(D_dim_1);
     return laplacian;
-
 }
 
 gsl_matrix * to_gsl(int * L, size_t dim) 
@@ -252,14 +248,12 @@ gsl_matrix * to_gsl(int * L, size_t dim)
         }
     }
     return out;
-    
 }
 
 void reconcile_laplacians(gsl_matrix * L1, gsl_matrix * L2,
                           gsl_matrix **L1new, gsl_matrix **L2new)
 {
     gsl_matrix * temp;
-    gsl_matrix * extra;
 
     if (L1->size1 > L2->size1) {
         temp = gsl_matrix_calloc(L1->size1, L1->size2);
