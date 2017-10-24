@@ -240,10 +240,7 @@ static PyTypeObject pyslsa_SCGType = {
 
 /* MODULE METHODS AND DEFINITIONS */
 
-static PyObject * helloworld(PyObject * self) 
-{
-    return Py_BuildValue("s", "Hello, Python!");
-}
+static char pyslsa_docs[] = "PySLSA: Simplicial Laplacian Spectral Analyzer";
 
 static PyObject * build_SCG(PyObject * self, PyObject * args)
 {
@@ -258,7 +255,7 @@ static PyObject * build_SCG(PyObject * self, PyObject * args)
 
     for (Py_ssize_t ind = 0; ind < n_max_simp; ind++) {
         new_sp = create_empty_simplex();
-        PyTupleObject * simp_verts = PyList_GetItem(max_simps, ind);
+        PyTupleObject * simp_verts = (PyTupleObject *)PyList_GetItem(max_simps, ind);
         for (Py_ssize_t vert_ind = 0; vert_ind < PyTuple_Size(simp_verts); vert_ind++) {
             add_vertex(new_sp, (int)PyLong_AsLong(PyTuple_GetItem(simp_verts, vert_ind)));
         }
@@ -275,8 +272,6 @@ static PyObject * KL(PyObject * self, PyObject * args)
     double beta;
     int dim;
     pyslsa_SCGObject *scg1, *scg2;
-    gsl_matrix * L1g;
-    gsl_matrix * L2g;
 
     if (!PyArg_ParseTuple(args, "OOid", &scg1, &scg2, &dim, &beta))
         return NULL;
@@ -295,11 +290,7 @@ static PyObject * KL(PyObject * self, PyObject * args)
     
 }
 
-static char helloworld_docs[] = "Any Message Brad Theilman";
-
 static PyMethodDef pyslsa_funcs[] = {
-    {"helloworld", (PyCFunction)helloworld,
-    METH_NOARGS, helloworld_docs},
     {"KL", (PyCFunction)KL, METH_VARARGS, NULL},
     {"build_SCG", (PyCFunction)build_SCG, METH_VARARGS, NULL},
     {NULL}
@@ -308,11 +299,10 @@ static PyMethodDef pyslsa_funcs[] = {
 static struct PyModuleDef pyslsa_module = {
     PyModuleDef_HEAD_INIT,
     "pyslsa",
-    helloworld_docs,
+    pyslsa_docs,
     -1,
     pyslsa_funcs
 };
-
 
 PyMODINIT_FUNC
 PyInit_pyslsa(void)
