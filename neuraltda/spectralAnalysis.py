@@ -12,6 +12,19 @@ import os
 import pickle
 import numpy as np
 from joblib import Parallel, delayed
+import pyslsa
+
+def pyslsa_compute_chain_group(poptens, thresh, trial):
+    '''
+    Computes the chain complex using PySLSA
+
+    '''
+    popmat = poptens[:, :, trial]
+    popmat_binary = sc.binnedtobinary(popmat, thresh)
+    maxsimps = sc.binarytomaxsimplex(popmat_binary, rDup=True)
+    maxsimps = sorted(maxsimps, key=len)
+    scgGens = pyslsa.build_SCG(maxsimps)
+    return scgGens
 
 def computeChainGroup(poptens, thresh, trial):
     '''
@@ -42,6 +55,71 @@ def parallel_compute_chain_group(bdf, stim, thresh):
     scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)
                                      (poptens, thresh, trial)
                                      for trial in range(ntrial))
+
+def pyslsa_compute_chain_groups_binned(blockPath, binned_datafile,
+                       thresh, comment='',
+                       shuffle=False, clusters=None,
+                       nperms=None, ncellsperm=30):
+    ''' Takes a binned data file and computes the chain group 
+        generators and saves them
+        Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg
+    '''
+    print('Computing Chain Groups...')
+    with h5py.File(binned_datafile, 'r') as bdf:
+        stims = bdf.keys()
+        print(stims)
+        stimGenSave = dict()
+        for ind, stim in enumerate(stims):
+            binned_clusters = np.array(bdf[stim]['clusters'])
+            poptens = np.array(bdf[stim]['pop_tens'])
+            print('Stim: {}, Clusters:{}'.format(stim, str(clusters)))
+            try:
+                if clusters is not None:
+                    poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
+                    print("Selecting Clusters: poptens:" 
+                            + str(np.shape(poptens)))
+                (ncell, nwin, ntrial) = np.shape(poptens)
+            except (ValueError, IndexError):
+                print('Poptens Error')
+                continue
+            if shuffle:
+                poptens = tp2.build_shuffled_data_tensor(poptens, 1)
+                poptens = poptens[:, :, :, 0]
+            if nperms:
+                print('Permuting Poptens')
+                poptens = tp2.build_permuted_data_tensor(poptens,
+                                                         ncellsperm,
+                                                         nperms)
+                poptens = np.reshape(poptens,
+                        (ncellsperm, nwin, ntrial*nperms))
+                ntrial = ntrial*nperms
+            if  nwin == 0:
+                continue
+            print('Calling PySLSA...')
+            scgGenSave = []
+            for trial in range(ntrial):
+                 scgGenSave.append(pyslsa_compute_chain_group(poptens, thresh, trial))
+            stimGenSave[stim] = scgGenSave
+    return stimGenSave
+    # Create output filename
+    #(binFold, binFile) = os.path.split(binned_datafile)
+    #(binFileName, binExt) = os.path.splitext(binFile)
+    #scg_prefix = '-{}'.format(thresh)
+    #if not (comment == ''):
+    #    scg_prefix = scg_prefix + '-{}'.format(comment)
+    #scgGenFile = binFileName + scg_prefix + '.scg'
+
+    # Create scg Folder
+    #scgFold = os.path.join(blockPath, 'scg/')
+    #if not os.path.exists(scgFold):
+    #    os.makedirs(scgFold)
+
+    # Create output file
+    #scgGenFile = os.path.join(scgFold, scgGenFile)
+    #with open(scgGenFile, 'wb') as scggf:
+    #    #print(stimGenSave)
+    #    pickle.dump(stimGenSave, scggf)
+    #return scgGenFile
 
 def computeChainGroups(blockPath, binned_datafile,
                        thresh, comment='',
