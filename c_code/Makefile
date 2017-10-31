@@ -1,13 +1,12 @@
 CC=gcc
-CFLAGS= -std=c99 -g -Wall -I. -I/usr/local/include -lgsl -lgslcblas -lm
+CFLAGS= -fPIC -std=c99 -g -Wall -I. -I/usr/local/include -lc -lgsl -lgslcblas -lm
 DEPS= simplex.h hash_table.h boundary_op.h
-OBJ = simplex.o hash_table.o test_simplex.o boundary_op.c slse.o
+OBJ = simplex.o hash_table.o boundary_op.c slse.o
+TARGET = libslsa.so
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-test_simplex:  $(OBJ)
-	gcc -o $@ $^ $(CFLAGS)
+$(TARGET):  $(OBJ)
+	gcc -o $@ $^ $(CFLAGS) -shared
 
-prof: $(OBJ)
-	gcc -pg -o test_simplex $^ $(CFLAGS)

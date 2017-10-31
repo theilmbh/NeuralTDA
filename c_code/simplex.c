@@ -23,6 +23,7 @@
 #include "simplex.h"
 #include "hash_table.h" 
 
+
 unsigned int num_ones(unsigned int N)
 {
     unsigned int count = 0;
@@ -57,7 +58,7 @@ struct Simplex *get_simplex_from_integer(unsigned int N)
 void get_faces_common(unsigned int N, int *verts, int dim, SCG * scg_temp)
 {
    struct Simplex * s_new;
-   for (int k = 0; k <= N; k++) {
+   for (int k = 1; k <= N; k++) {
        if ( (k & N) == k ) {
             s_new = create_empty_simplex();
             for ( int j = 0; j < dim+1; j++) {
@@ -94,6 +95,9 @@ int int_cmp(const void * a, const void * b)
 
 void free_simplex(struct Simplex *s)
 {
+#ifdef DEBUG_S_MEM
+    printf("freeing simplex: %x\n", s);
+#endif
     free(s);
 }
 
@@ -108,6 +112,9 @@ struct Simplex * create_empty_simplex()
         s_out->vertices[i] = -1;
     }
     s_out->dim = -1;
+#ifdef DEBUG_S_MEM
+    printf("Creating simplex: %x\n", s_out);
+#endif
     return s_out;
 }
 
@@ -204,11 +211,17 @@ void scg_list_union_hash(SCG * scg1, SCG * scg2,
        
         /* add list2 to temp list, checking hash table */ 
         while (l1 != NULL) {
-            if (l1->s && !check_hash_D(table, l1->s)) {
+            int present = check_hash_D(table, l1->s);
+            if (l1->s && !present) {
                 add_simplex_nocheck(list2d, l1->s);
                 scg2->cg_dim[dim]++; /* Increment Chain Group Dimension */
             }
+            if (present) {
+                /* simplex is already present, remove from l1 */
+                free_simplex(l1->s);
+            }
             l1 = l1->next;
+            /* taking a guess */
         }
         //free_hash_table_D(table);
     }
@@ -227,13 +240,48 @@ struct simplex_list * get_empty_simplex_list()
 void simplex_list_free(struct simplex_list * sl)
 {
     /* TODO: Check for beginning of list */
+    while (sl->prev != NULL) {
+        sl = sl->prev;
+    }
+#ifdef DEBUG_MEM
+    printf("freeing simplexlist: %d\n", sl);
+#endif
     struct simplex_list * nx = sl->next;
+    if (!nx) {
+        free_simplex(sl->s);
+        free(sl);
+        return;
+    }
     while(nx) {
         free_simplex(sl->s);   
         free(sl);
         sl = nx;
         nx = sl->next;
     }
+    free_simplex(sl->s);
+    free(sl);
+}
+
+void simplex_list_free_lite(struct simplex_list * sl)
+{
+    /*  Frees a simplex list without freeing simplices */
+    while (sl->prev != NULL) {
+        sl = sl->prev;
+    }
+#ifdef DEBUG_MEM
+    printf("freeing simplexlist lite: %d\n", sl);
+#endif
+    struct simplex_list *nx = sl->next;
+    if (!nx) {
+        free(sl);
+        return;
+    }
+    while(nx) {
+        free(sl);
+        sl = nx;
+        nx = sl->next;
+    }
+    free(sl);
 }
 
 /* Checks if a simplex is already in a simplex list */
@@ -286,6 +334,10 @@ void add_simplex_nocheck(struct simplex_list *slist, struct Simplex *s)
         struct simplex_list *s_new = get_empty_simplex_list();
         struct simplex_list *eltwo = slist->next;
 
+#ifdef DEBUG_MEM
+        printf("add_simplex_nocheck: s_new = %d\n", s_new);
+        print_simplex(s);
+#endif
         s_new->s = s;
         slist->next = s_new;
         s_new->prev = slist;
@@ -321,7 +373,7 @@ void add_simplex(struct simplex_list *slist, struct Simplex *s)
 
 SCG * get_empty_SCG() 
 {
-    SCG * out = malloc(sizeof(SCG));
+    SCG * out = calloc(1, sizeof(SCG));
     for (int dim = 0; dim < MAXDIM; dim++)
     {
         out->x[dim] = get_empty_simplex_list();
@@ -334,6 +386,15 @@ void free_SCG(SCG * scg)
 {
     for (int dim = 0; dim < MAXDIM; dim++) {
         simplex_list_free(scg->x[dim]);
+    }
+    free(scg);
+}
+
+void free_SCG_lite(SCG * scg)
+{
+    /* frees the SCG without freeing the simplices */
+    for (int dim =0; dim < MAXDIM; dim++) {
+        simplex_list_free_lite(scg->x[dim]);
     }
     free(scg);
 }
@@ -419,6 +480,7 @@ void compute_chain_groups(struct Simplex ** max_simps,
         SCG * faces = get_faces(max_simps[i]);
         /* take the union of face lists */
         scg_list_union_hash(faces, scg_out, table); 
+        free_SCG_lite(faces);
     }
     free_hash_table_D(table);
 }

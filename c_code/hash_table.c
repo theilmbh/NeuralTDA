@@ -140,6 +140,8 @@ unsigned int simplex_hash(struct Simplex *s)
 int check_hash_D(struct simplex_hash_table *table, struct Simplex * sp)
 {
     /* Linear probing.  Knuth V3 6.4 Alg. L */
+    /* Returns 1 if simplex is in hash table */
+    /* if not, it adds the simplex */
     if (!sp)
         return 1;
 

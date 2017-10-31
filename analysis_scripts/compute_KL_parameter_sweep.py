@@ -28,7 +28,7 @@ bps = {'B1083': '/home/brad/krista/B1083/P03S03/', 'B1075': '/home/brad/krista/B
        'B1235': '/home/brad/krista/B1235/P02S01/', 'B1056': '/home/brad/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
        'B1056': '/home/brad/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/'}
 
-birds = ['B1083']
+birds = ['B1056']
 
 # Binning parameters
 windt = 10.0                      # milliseconds
@@ -68,10 +68,11 @@ scg_data = scgfs[bird]
 # we compute the KL divergence between all pairs of trials.
 # so we need an Nstim x Nstim x (Ntrials*Ntrials) matrix to store all the values
 dims = [1,2,3]
-betas = [-0.95,  -0.65, -0.15 ]
+betas = [-1.5, -0.95,  -0.65]
 stims = list(scg_data.keys())   # Get list of stimuli
 Nstim = len(stims)              # Get number of stimuli
-Ntrials = 5                     # Hard coded for now...
+Ntrials = 10
+                     # Hard coded for now...
 
 # Create result array
 # Stimulus x Stimulus x TrialPairs x Dimension x Beta
@@ -91,5 +92,5 @@ for k, beta in enumerate(betas):
                     scg2 = scg2_dat[trial2]
                     KL = pyslsa.KL(scg1, scg2, dim, beta)
                     KL_divs[i, j, trial1*Ntrials + trial2, l, k] = KL
-with open(os.path.join(figsavepth, 'X101_KL_divs_{}_parameter_sweep.pkl'.format(bird)), 'wb') as f:
+with open(os.path.join(figsavepth, 'X102_KL_divs_{}_parameter_sweep.pkl'.format(bird)), 'wb') as f:
     pickle.dump(KL_divs, f)
