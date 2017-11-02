@@ -65,9 +65,10 @@ def loss_C(a, beta, dim, ncells, nsamples2):
 
 # Generate binary matrix with given probabilities for each "cell"
 ncellss = [10, 20, 50, 100]
+ncellss = np.arange(10, 110, 10)
 nwin = 1000
 a_s = [600.0/(x*1000) for x in ncellss] # conserve number of spikes at target FR
-betas = np.linspace(-0.15, -2, 25)
+betas = np.linspace(-0.15, -2, 10)
 dims = [1,2,3,4]
 KL = np.zeros((100, len(ncellss), len(betas), len(dims)))
 KLerr = np.zeros((100, len(ncellss), len(betas), len(dims)))
