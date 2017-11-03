@@ -43,7 +43,9 @@ int check_square_matrix(gsl_matrix * a)
 /* Computes the KL divergence between two density matrices.
  * Computes eigenvalues independently, sorts them, then 
  * computes divergence */
-double __attribute__((optimize("O0"))) KL_divergence(gsl_matrix * L1, gsl_matrix * L2, double beta)
+double __attribute__((optimize("O0"))) KL_divergence(gsl_matrix * L1, 
+                                                     gsl_matrix * L2,
+                                                     double beta)
 {
     double div = 0.0;
     double rval, sval;

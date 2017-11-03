@@ -36,6 +36,9 @@ struct bdry_op_dict * get_empty_bdry_op_dict()
 
 void free_bdry_op_dict(struct bdry_op_dict * d)
 {
+    /* Free all the simplices in the table and then free the table */
+    /* All the simplices in the table are copies, so freeing them 
+     * doesn't destroy the original simplex */
     int i;
     for (i = 0; i < NR_BDRY_HASH; i++) {
         free_simplex(d->table[i].sp);
@@ -55,10 +58,18 @@ struct bdry_op_dict * compute_boundary_operator(struct Simplex * sp)
         return out;
     }
 
+    /* for an n-simplex, we have n+1 faces */
     for (i = 0; i <= sp->dim; i++) {
+
+        /* Create the face simplex */
         struct Simplex * sub = create_empty_simplex();
+
+        /* For each vertex.. */
         for (j = 0; j <= sp->dim; j++) {
+            /* Skip over this particular vertex */
             if (j == i) continue; /* skip */
+
+            /* Add vertex to the face */
             add_vertex(sub, sp->vertices[j]);
         }
         /* We have filled in face vertices into sub */
@@ -72,6 +83,8 @@ struct bdry_op_dict * compute_boundary_operator(struct Simplex * sp)
 
 void add_bdry_simplex(struct bdry_op_dict * tab, struct Simplex * sp, int sgn)
 {
+    /* Adds a boundary simplex to the boundary op hast table */
+
     /* If Table or Simplex is NULL, Do nothing */
     if ((!tab) || (!sp)) {
         printf("Null pointer encountered in add_bdry_simplex\n");
@@ -90,15 +103,25 @@ void add_bdry_simplex(struct bdry_op_dict * tab, struct Simplex * sp, int sgn)
     tab->N++;
 }
 
-unsigned int bdry_check_hash(struct bdry_op_dict * tab, struct Simplex *sp,
-        unsigned int *indx)
+unsigned int bdry_check_hash(struct bdry_op_dict * tab,
+                             struct Simplex *sp,
+                             unsigned int *indx)
 {
     /* Check hash table for simplex */
+    /* Returns 0 if not found 
+     * Returns 1 if found
+     * Places index of found simplex in var indx */
+
+    /* Compute the hash value for the simplex */
     unsigned int hash_p = simplex_hash(sp);
     unsigned int i = hash_p % NR_BDRY_HASH;
 
+    /* Linear Search the table for the hash */
+    /* From Knuth Vol 3 */
     unsigned int i2 = i;
     while ( i2 != i+1) {
+
+        /* Hash table entry is empty - simplex is not in hash table */
         if (!tab->table[i2].sp) break;
 
         if (simplex_equals(tab->table[i2].sp, sp)) {
@@ -108,11 +131,15 @@ unsigned int bdry_check_hash(struct bdry_op_dict * tab, struct Simplex *sp,
         } 
 
         if (i2 == 0) {
+            /* Wrap around end of the table */
             i2 = NR_BDRY_HASH - 1;
         } else {
+            /* Move to the previous entry in the table */
             i2 -= 1;
         }
     }
+
+    /* Check for a full table! That's bad! Probably won't happen though */
     if (tab->N == (NR_BDRY_HASH - 1)) {
         printf("BDRYHASH table overflow\n");
     } 
@@ -121,8 +148,12 @@ unsigned int bdry_check_hash(struct bdry_op_dict * tab, struct Simplex *sp,
 }
 
 int * bdry_canonical_coordinates(struct bdry_op_dict * bdry_op,
-        struct simplex_list *basis, int targ_dim)
+                                 struct simplex_list *basis, int targ_dim)
 {
+    /* Return the components of the boundary chain vector in
+     * canonical coordinates, that is, in the basis given by 
+     * the variable basis */
+
     /* Create result vector */
     int * out_vec = calloc(targ_dim, sizeof(int));
     if (!out_vec) {
@@ -145,7 +176,11 @@ int * bdry_canonical_coordinates(struct bdry_op_dict * bdry_op,
 
 gsl_matrix * compute_boundary_operator_matrix(SCG * scg, int dim)
 {
+    /* Returns the boundary operator matrix for the simplicial complex scg
+     * in dimension dim */
+
     gsl_matrix *bdry_mat;
+
     if (dim <= 0) {
         /* Boundary operator in dimension zero is zero map */
         bdry_mat = gsl_matrix_calloc(1, 1);
@@ -190,6 +225,9 @@ gsl_matrix * compute_boundary_operator_matrix(SCG * scg, int dim)
 
 gsl_matrix * compute_simplicial_laplacian(SCG * scg, int dim)
 {
+    /* Computes the simplicial laplacian for the simplicial complex scg
+     * in dimension dim */
+
     gsl_matrix * D_dim;   /* \partial_{dim} */
     gsl_matrix * D_dim_1; /* \partial_{dim+1} */
     gsl_matrix * laplacian;
@@ -233,6 +271,7 @@ gsl_matrix * compute_simplicial_laplacian(SCG * scg, int dim)
 
 gsl_matrix * to_gsl(int * L, size_t dim) 
 {
+    /* DEPRECATED */
     gsl_matrix * out;
     if (!dim) {
         out = gsl_matrix_alloc(1, 1);
@@ -253,6 +292,9 @@ gsl_matrix * to_gsl(int * L, size_t dim)
 void reconcile_laplacians(gsl_matrix * L1, gsl_matrix * L2,
                           gsl_matrix **L1new, gsl_matrix **L2new)
 {
+    /* Expands the basis of the smaller of two laplacian matrices with zeros
+     * so that they have the same size.  */
+
     gsl_matrix * temp;
 
     if (L1->size1 > L2->size1) {

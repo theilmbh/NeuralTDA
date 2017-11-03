@@ -19,7 +19,9 @@
 #ifndef SIMPLEX_H
 #define SIMPLEX_H
 
+#ifndef NOPYTHON
 #include <Python.h>
+#endif
 
 #include "hash_table.h"
 

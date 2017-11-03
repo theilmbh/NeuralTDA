@@ -48,7 +48,8 @@ struct simplex_hash_entry **get_empty_hash_table()
 
 struct simplex_hash_table * get_empty_hash_table_D()
 {
-    struct simplex_hash_table *out = calloc(1, sizeof(struct simplex_hash_table));
+    struct simplex_hash_table *out = calloc(1,
+            sizeof(struct simplex_hash_table));
 
     if (!out) {
         printf("Unable to allocate table \n");
@@ -58,6 +59,7 @@ struct simplex_hash_table * get_empty_hash_table_D()
 
 void free_hash_table(struct simplex_hash_entry **table) 
 {
+    /* Free all entries, then free the table */
     int i;
     struct simplex_hash_entry *nx, *ny;
 
@@ -152,8 +154,6 @@ int check_hash_D(struct simplex_hash_table *table, struct Simplex * sp)
     for (j=0; j<=dim; j++) {
         hc = hc*314159 + sp->vertices[j];
     }
-    //unsigned int hash_p = simplex_hash(sp);
-    //unsigned int index = hash_p % NR_HASH;
     unsigned int index = hc % NR_HASH;
     
     unsigned int i = index;
