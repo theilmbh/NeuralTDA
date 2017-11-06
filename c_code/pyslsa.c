@@ -311,8 +311,40 @@ static PyObject * KL(PyObject * self, PyObject * args)
     return Py_BuildValue("d", div);
 }
 
+static PyObject * JS(PyObject * self, PyObject * args)
+{
+    /* Compute the JS divergence between two simplices */
+    double beta, div, div1, div2;
+    int dim;
+    pyslsa_SCGObject *scg1, *scg2;
+
+    if (!PyArg_ParseTuple(args, "OOid", &scg1, &scg2, &dim, &beta))
+        return NULL;
+    gsl_matrix * L1 = compute_simplicial_laplacian(scg1->scg, (size_t)dim);
+    gsl_matrix * L2 = compute_simplicial_laplacian(scg2->scg, (size_t)dim);
+
+    reconcile_laplacians(L1, L2, &L1, &L2); 
+    gsl_matrix * M = gsl_matrix_alloc(L1->size1, L1->size2);
+    gsl_matrix_memcpy(M, L1);
+
+    /* Compute P + Q */
+    gsl_matrix_add(M, L2);
+    gsl_matrix_scale(M, 0.5);
+
+    div1 = KL_divergence(L1, M, beta);
+    div2 = KL_divergence(L2, M, beta);
+    div = 0.5*div1 + 0.5*div2;
+    
+    gsl_matrix_free(L1);
+    gsl_matrix_free(L2);
+    gsl_matrix_free(M);
+
+    return Py_BuildValue("d", div);
+}
+
 static PyMethodDef pyslsa_funcs[] = {
     {"KL", (PyCFunction)KL, METH_VARARGS, NULL},
+    {"JS", (PyCFunction)JS, METH_VARARGS, NULL},
     {"build_SCG", (PyCFunction)build_SCG, METH_VARARGS, NULL},
     {NULL}
 };
