@@ -18,6 +18,8 @@ import pyslsa
 # file save path
 daystr = datetime.datetime.now().strftime('%Y%m%d')
 figsavepth = '/home/brad/DailyLog/'+daystr+'/'
+if not os.path.exists(figsavepth):
+    os.makedirs(figsavepth)
 print(figsavepth)
 
 # The goal is to compute the pairwise distances using the JS divergence between all trials of each stimuli.
