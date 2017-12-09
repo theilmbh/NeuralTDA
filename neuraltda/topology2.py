@@ -594,7 +594,7 @@ def build_binned_file_quick(spikes, trials, clusters, win_size, fs,
         nclus = len(clusters_to_use.index)
 
         # Extract spikes
-        spikes = spikes[spikes['cluster'].isin(clusters_list)]
+        spikes = spikes[spikes['cluster'].isin(list(clusters_list))]
 
         # Set binned file attributes
         popvec_f.attrs['win_size'] = win_size
