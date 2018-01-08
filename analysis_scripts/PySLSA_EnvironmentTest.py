@@ -1,3 +1,11 @@
+##
+## This script generates simulated environments with holes,
+## generates simulated place fields, simulates an animal walking through tese environments,
+## and simulates the resulting spike trains.  Then, it computes the simplicial complexes for these spike trains
+## and computes the JS divergence betweenspike trains of the different trials
+## The script then saves the results
+
+
 import numpy as np
 import pyslsa
 import matplotlib.pyplot as plt
@@ -10,7 +18,7 @@ import pickle
 
 import tqdm
 
-
+# Class to define environments with holes
 class TPEnv:
     
     def __init__(self, n_holes, hole_rad):
@@ -27,18 +35,30 @@ class TPEnv:
         self.hole_rad = hole_rad # radius of holes
         
     def in_hole(self, x, y):
+        '''
+        Check to see if a point is in a hole
+        '''
         for hole in self.holes:
             if np.linalg.norm(np.subtract([x, y], hole)) < self.hole_rad:
                 return True
         return False
         
     def hole_collide(self, c):
+        '''
+        Check to see if a hole will collide with already existing holes 
+        '''
+
         for h in self.holes:
             if np.sqrt((h[0] - c[0])**2 + (h[1] - c[1])**2) <= 2*self.hole_rad:
                 return True
         return False
  
 def generate_environments(N, h, numrepeats=1):
+    ''' Generates environments 
+    N : maximum number of holes 
+    h : hole radius 
+    numrepeats: number of environments for each number of holes 
+    '''
     envs = []
     for nholes in range(N):
         for r in range(numrepeats):
@@ -46,6 +66,9 @@ def generate_environments(N, h, numrepeats=1):
     return envs
 
 def convert_env_to_img(env,  NSQ):
+    ''' 
+    Converts an environment to an NSQxNSQ image by sampling a grid of points. 
+    '''
     img = np.ones((NSQ, NSQ))
     X, Y = np.meshgrid(np.linspace(-1, 1, NSQ), np.linspace(-1, 1, NSQ))
     
@@ -60,6 +83,10 @@ def convert_env_to_img(env,  NSQ):
     return img 
 
 def compute_env_img_correlations(imgs):
+    ''' 
+    Computes the pairwise correlation matrix from a set of images 
+    '''
+
     nsq, _ = np.shape(imgs[0])
     dat_mat = np.zeros((len(imgs), nsq*nsq))
     for ind,img in enumerate(imgs):
@@ -70,6 +97,14 @@ def compute_env_img_correlations(imgs):
     
 
 def generate_paths(space, n_steps, ntrials, dl):
+    ''' 
+    Generate random walk paths in a space 
+    space:  A TPEnv
+    n_steps: number of points 
+    ntrials: number of paths to generate
+    dl: length to travel in one step 
+    '''
+
     # pick a starting point
     final_pts = np.zeros((ntrials, n_steps, 2))
     for trial in range(ntrials):
@@ -103,11 +138,17 @@ def generate_paths(space, n_steps, ntrials, dl):
     return final_pts
 
 def generate_place_fields_random(n_fields, rad):
+    ''' Generate randomly-placed place fields '''
     
     centers =2*np.random.rand(n_fields, 2) - 1
     return (centers, rad)
 
 def generate_place_fields(n_fields, rad):
+    ''' Generate place fields in a grid throughout the environment
+    n_fields: number of fields 
+    rad: place field radius 
+    '''
+
     
     nf = np.round(np.sqrt(n_fields))
     cx = np.linspace(-1, 1, nf)
@@ -135,6 +176,11 @@ def generate_spikes_gaussian(paths, fields, max_rate, sigma):
     return np.einsum('ijk->kji', spikes)
 
 def generate_spikes(paths, fields, max_rate, sigma):
+    ''' 
+    Generate spikes corresponding to paths.  
+    Spikes are poisson at max_rate inside place field, 0 outside 
+    output spikes are (Ncells, Nwin, Ntrial)
+    '''
     
     ncell, dim = fields.shape
     ntrial, nwin, _ = paths.shape
@@ -156,6 +202,10 @@ def generate_spikes(paths, fields, max_rate, sigma):
     return np.einsum('ijk->kji', spikes)
 
 def spikes_to_dataframe(spikes, fs, nsecs):
+    '''
+    Convert the spikes tensor to the dataframe format required by the binning and topology algorithms
+    '''
+
     (ncells, nwin, ntrial) = spikes.shape
     spikes_frame = pd.DataFrame(columns=['cluster', 'time_samples', 'recording'])
     trials_frame = pd.DataFrame(columns=['stimulus', 'time_samples', 'stimulus_end'])
@@ -198,6 +248,11 @@ num_envs = max_hole*nrepeats
 
 NSQ = 100
 
+windt = 100.0
+thresh = 6.0
+period = [0,0]
+dtovr = 5.0
+
 # Generate environments
 print('Generating environments...')
 envs = generate_environments(max_hole, hole_rad, nrepeats)
@@ -233,7 +288,7 @@ for ind, spikes1 in enumerate(spikes):
     print('Binning data...')
     E1s = []  # storing simplicial complexes for each trial for an environment
     tspikes, ttrials, tclust = spikes_to_dataframe(spikes1, fs=fs, nsecs=nsecs)
-    tp2.build_binned_file_quick(tspikes, ttrials, tclust, 100.0, fs, ['Good'], [0, 0], '/home/brad/placecellsimdat{}.binned'.format(ind), dt_overlap=5.0)
+    tp2.build_binned_file_quick(tspikes, ttrials, tclust, windt, fs, ['Good'], period, '/home/brad/placecellsimdat{}.binned'.format(ind), dt_overlap=dtovr)
 
 # compute simplicial complexes
     print('Computing simplicial complexes...')
@@ -241,7 +296,7 @@ for ind, spikes1 in enumerate(spikes):
         poptens = np.array(bf['joe']['pop_tens'])
         ncell, nwin, ntrial = poptens.shape
         for trial in range(ntrial):
-            binmat = sc.binnedtobinary(poptens[:, :, trial], 6.0)
+            binmat = sc.binnedtobinary(poptens[:, :, trial], thresh)
             print(np.amax(np.sum(binmat, axis = 0)))
             maxsimps = sc.binarytomaxsimplex(binmat, rDup=True)
             E1 = pyslsa.build_SCG(maxsimps)
