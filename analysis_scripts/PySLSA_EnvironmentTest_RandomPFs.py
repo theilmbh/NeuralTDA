@@ -246,7 +246,7 @@ dl = vel/fs
 dl = vel/1
 ntrials = 10
 
-max_rate_hz = 3 # spikes/ second
+max_rate_hz = 2 # spikes/ second
 max_rate_phys = fs # spikes / second
 max_rate = max_rate_hz / max_rate_phys
 sigma = 0.1*L
@@ -281,7 +281,7 @@ corrmat = compute_env_img_correlations(imgs)
 
 # Run Simulations
 print('Generating placefields...')
-(fields, rads) = generate_place_fields(ncells, [sigma, 0.2*L])
+(fields, rads) = generate_place_fields_CI(ncells, [sigma, 0.2*L])
 
 spikes = []
 
