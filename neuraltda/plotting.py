@@ -7,7 +7,7 @@ import os
 import numpy as np
 import neuraltda.topology2 as tp2 
 
-def plot_betti_curve(bc, t, stim, betti, ax):
+def plot_betti_curve(bc, t, stim, betti, ax, **kwargs):
     '''
     Plots a betti curve for a fixed stimulus and betti number
     on the given axis.
@@ -37,8 +37,8 @@ def plot_betti_curve(bc, t, stim, betti, ax):
     y = avg[betti, :]
     s = stderr[betti, :]
 
-    lines = ax.plot(t/1000., y, linewidth=2)
-    ax.fill_between(t/1000., y-s, y+s, alpha=0.5)
+    lines = ax.plot(t/1000., y, linewidth=2, **kwargs)
+    ax.fill_between(t/1000., y-s, y+s, alpha=0.5, **kwargs)
     ax.set_xticks(range(int(np.amax(t)/1000.) + 1))
     return lines
 
