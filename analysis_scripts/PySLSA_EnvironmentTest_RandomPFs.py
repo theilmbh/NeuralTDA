@@ -300,11 +300,11 @@ for ind, spikes1 in enumerate(spikes):
     print('Binning data...')
     E1s = []  # storing simplicial complexes for each trial for an environment
     tspikes, ttrials, tclust = spikes_to_dataframe(spikes1, fs=fs, nsecs=nsecs)
-    tp2.build_binned_file_quick(tspikes, ttrials, tclust, windt, fs, ['Good'], period, '/home/brad/placecellsimdat{}.binned'.format(ind), dt_overlap=dtovr)
+    tp2.build_binned_file_quick(tspikes, ttrials, tclust, windt, fs, ['Good'], period, '/home/brad/pcsim/placecellsimdat{}.binned'.format(ind), dt_overlap=dtovr)
 
 # compute simplicial complexes
     print('Computing simplicial complexes...')
-    with h5.File('/home/brad/placecellsimdat{}.binned'.format(ind), 'r') as bf:
+    with h5.File('/home/brad/pcsim/placecellsimdat{}.binned'.format(ind), 'r') as bf:
         poptens = np.array(bf['joe']['pop_tens'])
         ncell, nwin, ntrial = poptens.shape
         for trial in range(ntrial):
