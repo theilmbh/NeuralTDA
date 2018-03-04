@@ -18,6 +18,10 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <cuda_runtime.h>
+#include <cusolverDn.h>
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_vector.h>
@@ -46,9 +50,11 @@ gsl_vector * cuda_get_eigenvalues(gsl_matrix *L1, size_t n)
 
     cusolverDnHandle_t cusolverH = NULL;
     cusolverStatus_t cusolver_status = CUSOLVER_STATUS_SUCCESS;
+    cudaError_t err;
 
     /* Copy Matrices to double arrays */
-    double *L1mat = malloc(L1->size1*L1->size2*sizeof(double));
+    int i,j;
+    double *L1mat = (double *)malloc(L1->size1*L1->size2*sizeof(double));
     for(i=0; i<n; i++)
     {
         for(j=0; j<n; j++)
@@ -57,10 +63,9 @@ gsl_vector * cuda_get_eigenvalues(gsl_matrix *L1, size_t n)
         }
     }
 
+
     // Allocate space for eigenvalues
-    double *L1v = malloc(n*sizeof(double));
-
-
+    double *L1v = (double *)malloc(n*sizeof(double));
     // declare device variables
     double *d_A = NULL;
     double *d_W = NULL;
@@ -87,21 +92,36 @@ gsl_vector * cuda_get_eigenvalues(gsl_matrix *L1, size_t n)
     assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
 
     // compute spectrum
-    cusolver_status = cusolverDnDsyevd(cusolverH,jobz,plo, m, d_A, lda, d_W, d_work, lwork, devInfo);
+    cusolver_status = cusolverDnDsyevd(cusolverH,jobz, uplo, n, d_A, n, d_W, d_work, lwork, devInfo);
     err = cudaDeviceSynchronize();
     assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);
     assert(cudaSuccess == err);
 
+    // copy eigenvalues
+    cudaMemcpy(L1v, d_W, sizeof(double)*n, cudaMemcpyDeviceToHost);
 
+    gsl_vector *res = gsl_vector_alloc(n);
+    for(i = 0; i<n; i++)
+    {
+        gsl_vector_set(res, i, L1v[i]);
+    }
+
+    cudaFree(d_A);
+    cudaFree(d_W);
+    cudaFree(devInfo);
+    cudaFree(d_work);
+    free(L1v);
+    free(L1mat);
+    cusolverDnDestroy(cusolverH);
+
+    return res;
 
 }
 
 /* Computes the KL divergence between two density matrices.
  * Computes eigenvalues independently, sorts them, then 
  * computes divergence */
-double __attribute__((optimize("O0"))) KL_divergence_cuda(gsl_matrix * L1, 
-                                                     gsl_matrix * L2,
-                                                     double beta)
+double KL_divergence_cuda(gsl_matrix * L1, gsl_matrix * L2, double beta)
 {
     double div = 0.0;
     double rval, sval;
@@ -119,30 +139,13 @@ double __attribute__((optimize("O0"))) KL_divergence_cuda(gsl_matrix * L1,
     }
 
 
-
-
-
-    gsl_vector * L1v = gsl_vector_alloc(n);
-    gsl_vector * L2v = gsl_vector_alloc(n);
+    /* compute eigenvalues */
+    gsl_vector * L1v = cuda_get_eigenvalues(L1, n);
+    gsl_vector * L2v = cuda_get_eigenvalues(L2, n);
 
     gsl_vector * rhov = gsl_vector_alloc(n);
     gsl_vector * sigmav = gsl_vector_alloc(n);
 
-    /* Allocate workspace for eigendecomposition */
-    gsl_eigen_symm_workspace * w =  gsl_eigen_symm_alloc(n);
-
-    /* Copy the matrices */
-    /* We need this because GSL destroys matrices 
-     * during eigenvalue computation */
-    gsl_matrix * L1copy = gsl_matrix_alloc(n, n);
-    gsl_matrix * L2copy = gsl_matrix_alloc(n, n);
-    gsl_matrix_memcpy(L1copy, L1);
-    gsl_matrix_memcpy(L2copy, L2);
-
-    /* Compute eigenvalues */ 
-    gsl_eigen_symm(L1copy, L1v, w);
-    gsl_eigen_symm(L2copy, L2v, w); 
-    gsl_eigen_symm_free(w);
 
     /* Compute density eigenvalues */
     double r1, r2;
@@ -167,8 +170,6 @@ double __attribute__((optimize("O0"))) KL_divergence_cuda(gsl_matrix * L1,
         div += rval*(log(rval) - log(sval))/log(2.0);
     }
     /* Free Memory */
-    gsl_matrix_free(L1copy);
-    gsl_matrix_free(L2copy);
     gsl_vector_free(rhov);
     gsl_vector_free(sigmav);
     gsl_vector_free(L1v);
