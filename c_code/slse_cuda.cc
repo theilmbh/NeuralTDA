@@ -30,6 +30,7 @@
 #include <gsl/gsl_sort_vector.h>
 #include <gsl/gsl_eigen.h>
 
+
 int check_square_matrix(gsl_matrix * a)
 {
     int ret = 0;
@@ -75,25 +76,30 @@ gsl_vector * cuda_get_eigenvalues(gsl_matrix *L1, size_t n)
 
     // Create solver handle
     cusolver_status = cusolverDnCreate(&cusolverH);
-    assert(cusolver_status = CUSOLVER_STATUS_SUCCESS);
+   //printf("cusolver_status: %d\n", cusolver_status);
+    assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
 
     // Copy variables to device
     err = cudaMalloc((void**)&d_A, n*n*sizeof(double));
     assert(err == cudaSuccess);
     err = cudaMalloc((void**)&d_W, n*sizeof(double));
     assert(err == cudaSuccess);
+    err = cudaMalloc ((void**)&devInfo, sizeof(int));
+    assert(err == cudaSuccess);
 
 
     // Get eigenvalues for matrix 1
     cudaMemcpy(d_A, L1mat, sizeof(double)*n*n, cudaMemcpyHostToDevice);
-    cusolverEigMode_t jobz = CUSOLVER_EIG_MODE_VECTOR;
+    cusolverEigMode_t jobz = CUSOLVER_EIG_MODE_NOVECTOR;
     cublasFillMode_t uplo = CUBLAS_FILL_MODE_LOWER;
     cusolver_status = cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, n, d_A, n, d_W, &lwork);
     assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
+    cudaMalloc((void**)&d_work, sizeof(double)*lwork);
 
     // compute spectrum
     cusolver_status = cusolverDnDsyevd(cusolverH,jobz, uplo, n, d_A, n, d_W, d_work, lwork, devInfo);
     err = cudaDeviceSynchronize();
+    //printf("stat: %d\n", cusolver_status);
     assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);
     assert(cudaSuccess == err);
 
@@ -121,7 +127,7 @@ gsl_vector * cuda_get_eigenvalues(gsl_matrix *L1, size_t n)
 /* Computes the KL divergence between two density matrices.
  * Computes eigenvalues independently, sorts them, then 
  * computes divergence */
-double KL_divergence_cuda(gsl_matrix * L1, gsl_matrix * L2, double beta)
+extern "C" double KL_divergence_cuda(gsl_matrix * L1, gsl_matrix * L2, double beta)
 {
     double div = 0.0;
     double rval, sval;

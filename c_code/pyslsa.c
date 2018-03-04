@@ -190,6 +190,25 @@ static PyObject * PySCG_print_laplacian(pyslsa_SCGObject * self,
     Py_RETURN_NONE; 
 }
 
+static PyObject * PySCG_print_boundary_op(pyslsa_SCGObject * self, 
+                                        PyObject *args)
+{
+    int d;
+    if (!PyArg_ParseTuple(args, "i", &d)) 
+        return NULL;
+
+    int Ddimr = self->scg->cg_dim[d-1];
+    int Ddimc = self->scg->cg_dim[d];
+    gsl_matrix * D = compute_boundary_operator_matrix(self->scg, d);
+    for (int i=0; i<Ddimr; i++) {
+        for (int j=0; j<Ddimc; j++) {
+            printf("%f ", gsl_matrix_get(D, i, j));
+        }
+        printf("\n");
+    }
+    Py_RETURN_NONE; 
+}
+
 /* Simplicial Complex Methods */
 static PyMethodDef SCG_methods[] = {
     {"add_max_simplex", (PyCFunction)PySCG_add_max_simplex, METH_VARARGS,
@@ -201,6 +220,9 @@ static PyMethodDef SCG_methods[] = {
     {"print_L", (PyCFunction)PySCG_print_laplacian, METH_VARARGS, 
         "Print the laplacian of dimension d"
     }, 
+    {"print_D", (PyCFunction)PySCG_print_boundary_op, METH_VARARGS,
+        "Print the boundary operator of dimension d"
+    },
     {NULL}
 };
 

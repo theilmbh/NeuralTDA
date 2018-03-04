@@ -23,7 +23,7 @@
 
 int check_square_matrix(gsl_matrix * a);
 double KL_divergence(gsl_matrix * L1, gsl_matrix * L2, double beta);
-double KL_divergence_cuda(gsl_matrix * L1, gsl_matrix * L2, double beta);
+extern double KL_divergence_cuda(gsl_matrix * L1, gsl_matrix * L2, double beta);
 
 
 #endif

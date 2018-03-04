@@ -76,6 +76,7 @@ struct bdry_op_dict * compute_boundary_operator(struct Simplex * sp)
         /* Compute sign, add to bdry table */
         add_bdry_simplex(out, sub, sgn);
         sgn *= -1;
+        // printf("Compute Boundary Operator sgn: %d\n", sgn);
     }
 
     return out;
@@ -119,11 +120,14 @@ unsigned int bdry_check_hash(struct bdry_op_dict * tab,
     /* Linear Search the table for the hash */
     /* From Knuth Vol 3 */
     unsigned int i2 = i;
+    int eq;
     while ( i2 != i+1) {
 
         /* Hash table entry is empty - simplex is not in hash table */
         if (!tab->table[i2].sp) break;
 
+        eq = simplex_equals(tab->table[i2].sp, sp);
+        // printf("bdry_check_hash: simplex_equals: %d\n", eq);
         if (simplex_equals(tab->table[i2].sp, sp)) {
             /* Found! */
             *indx = i2; /* Set index of table entry where found */
@@ -165,8 +169,10 @@ int * bdry_canonical_coordinates(struct bdry_op_dict * bdry_op,
     int pos = 0;
     unsigned int indx;
     while (basis) {
+        // printf("bdry_canonical_coordinates: interating over basis\n");
         if (bdry_check_hash(bdry_op, basis->s, &indx)) {
-            out_vec[pos] = bdry_op->table[indx].sgn;        
+            out_vec[pos] = bdry_op->table[indx].sgn; 
+            // printf("bdry_canonical_coordinates: %d\n", bdry_op->table[indx].sgn);      
         }
         basis = basis->next;
         pos++;
@@ -214,6 +220,7 @@ gsl_matrix * compute_boundary_operator_matrix(SCG * scg, int dim)
         for (j = 0; j < targ_dim; j++) {
             gsl_matrix_set(bdry_mat, j, i, bdry_vec[j]);
             /* bdry_mat[j*source_dim + i] = bdry_vec[j];*/
+            // printf("bdry_vec: %d, %f\n", j, bdry_vec[j]);
         }
         i++;
         source = source->next;

@@ -40,6 +40,7 @@ int check_square_matrix(gsl_matrix * a)
     return ret;
 }
 
+
 /* Computes the KL divergence between two density matrices.
  * Computes eigenvalues independently, sorts them, then 
  * computes divergence */
