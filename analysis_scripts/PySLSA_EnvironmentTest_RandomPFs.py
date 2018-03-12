@@ -7,7 +7,7 @@
 
 
 import numpy as np
-import pyslsa
+import pycuslsa as pyslsa
 import matplotlib.pyplot as plt
 import neuraltda.topology2 as tp2
 import neuraltda.simpComp as sc
@@ -244,7 +244,7 @@ ncells = 70
 
 dl = vel/fs
 dl = vel/1
-ntrials = 10
+ntrials = 1 #10 orig
 
 max_rate_hz = 2 # spikes/ second
 max_rate_phys = fs # spikes / second
@@ -255,7 +255,7 @@ beta = -1.0
 dim = 1
 
 max_hole = 5
-nrepeats = 5
+nrepeats = 1 #5 orig
 num_envs = max_hole*nrepeats 
 
 NSQ = 100
@@ -321,13 +321,15 @@ dists = np.zeros((num_envs*ntrials, num_envs*ntrials))
 
 print('Computing JS Divergences...')
 for d1 in tqdm.tqdm(range(num_envs*ntrials)):
-    for d2 in range(d1, num_envs*ntrials):
+    for d2 in tqdm.tqdm(range(d1, num_envs*ntrials)):
         #print(d1, d2)
         #envA = int(d1 / ntrials)
         #envB = int(d2 / ntrials)
         #trialA = d1 % ntrials
         #trialB = d2 % ntrials
         #dists[d1, d2] = pyslsa.JS(SCGs[envA][trialA], SCGs[envB][trialB], dim, beta)
+        # print(SCGs_trials[d1].L_dim(dim))
+        # print(SCGs_trials[d2].L_dim(dim))
         dists[d1, d2] = pyslsa.JS(SCGs_trials[d1], SCGs_trials[d2], dim, beta)
 
 print('Saving...')
