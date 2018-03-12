@@ -1,0 +1,108 @@
+# Brad's Custom Matplotlib style
+
+### LINES
+# See http://matplotlib.org/api/artist_api.html#module-matplotlib.lines for more
+# information on line properties.
+lines.linewidth   : 2     # line width in points
+#lines.linestyle   : -       # solid line
+#lines.color       : C0      # has no affect on plot(); see axes.prop_cycle
+#lines.marker      : None    # the default marker
+#lines.markeredgewidth  : 1.0     # the line width around the marker symbol
+#lines.markersize  : 6            # markersize, in points
+#lines.dash_joinstyle : miter        # miter|round|bevel
+#lines.dash_capstyle : butt          # butt|round|projecting
+#lines.solid_joinstyle : miter       # miter|round|bevel
+#lines.solid_capstyle : projecting   # butt|round|projecting
+#lines.antialiased : True         # render lines in antialiased (no jaggies)
+
+# The three standard dash patterns.  These are scaled by the linewidth.
+#lines.dashed_pattern : 2.8, 1.2
+#lines.dashdot_pattern : 4.8, 1.2, 0.8, 1.2
+#lines.dotted_pattern : 1.1, 1.1
+#lines.scale_dashes : True
+
+font.family : sans-serif
+font.sans-serif : Helvetica
+
+text.color : black
+
+axes.facecolor : white
+axes.edgecolor : black
+axes.linewidth : 1.75
+axes.grid : False
+axes.titlesize : 22
+axes.labelsize : 20
+axes.labelcolor : black
+
+### TICKS
+# see http://matplotlib.org/api/axis_api.html#matplotlib.axis.Tick
+xtick.top            : False   # draw ticks on the top side
+xtick.bottom         : True   # draw ticks on the bottom side
+xtick.major.size     : 2      # major tick size in points
+xtick.minor.size     : 1      # minor tick size in points
+xtick.major.width    : 1    # major tick width in points
+xtick.minor.width    : 0.6    # minor tick width in points
+xtick.major.pad      : 2      # distance to major tick label in points
+xtick.minor.pad      : 2      # distance to the minor tick label in points
+xtick.color          : k      # color of the tick labels
+xtick.labelsize      : 18 # fontsize of the tick labels
+xtick.direction      : out    # direction: in, out, or inout
+xtick.minor.visible  : False  # visibility of minor ticks on x-axis
+xtick.major.top      : False   # draw x axis top major ticks
+xtick.major.bottom   : True   # draw x axis bottom major ticks
+xtick.minor.top      : False   # draw x axis top minor ticks
+xtick.minor.bottom   : True   # draw x axis bottom minor ticks
+
+ytick.left           : True   # draw ticks on the left side
+ytick.right          : False  # draw ticks on the right side
+ytick.major.size     : 2      # major tick size in points
+ytick.minor.size     : 1      # minor tick size in points
+ytick.major.width    : 1    # major tick width in points
+ytick.minor.width    : 0.6    # minor tick width in points
+ytick.major.pad      : 2      # distance to major tick label in points
+ytick.minor.pad      : 2      # distance to the minor tick label in points
+ytick.color          : k      # color of the tick labels
+ytick.labelsize      : 18 # fontsize of the tick labels
+ytick.direction      : out    # direction: in, out, or inout
+ytick.minor.visible  : False  # visibility of minor ticks on y-axis
+ytick.major.left     : True   # draw y axis left major ticks
+ytick.major.right    : False   # draw y axis right major ticks
+ytick.minor.left     : True   # draw y axis left minor ticks
+ytick.minor.right    : False   # draw y axis right minor ticks
+
+### SAVING FIGURES
+path.simplify : True   # When True, simplify paths by removing "invisible"
+                        # points to reduce file size and increase rendering
+                        # speed
+path.simplify_threshold : 0.1  # The threshold of similarity below which
+                                # vertices will be removed in the simplification
+                                # process
+#path.snap : True # When True, rectilinear axis-aligned paths will be snapped to
+                  # the nearest pixel when certain criteria are met.  When False,
+                  # paths will never be snapped.
+#path.sketch : None # May be none, or a 3-tuple of the form (scale, length,
+                    # randomness).
+                    # *scale* is the amplitude of the wiggle
+                    # perpendicular to the line (in pixels).  *length*
+                    # is the length of the wiggle along the line (in
+                    # pixels).  *randomness* is the factor by which
+                    # the length is randomly scaled.
+
+# the default savefig params can be different from the display params
+# e.g., you may want a higher resolution, or to make the figure
+# background white
+#savefig.dpi         : figure   # figure dots per inch or 'figure'
+#savefig.facecolor   : white    # figure facecolor when saving
+#savefig.edgecolor   : white    # figure edgecolor when saving
+savefig.format      : ps      # png, ps, pdf, svg
+#savefig.bbox        : standard # 'tight' or 'standard'.
+                                # 'tight' is incompatible with pipe-based animation
+                                # backends but will workd with temporary file based ones:
+                                # e.g. setting animation.writer to ffmpeg will not work,
+                                # use ffmpeg_file instead
+#savefig.pad_inches  : 0.1      # Padding to be used when bbox is set to 'tight'
+#savefig.jpeg_quality: 95       # when a jpeg is saved, the default quality parameter.
+#savefig.directory   : ~        # default directory in savefig dialog box,
+                                # leave empty to always use current working directory
+savefig.transparent : True    # setting that controls whether figures are saved with a
+                                # transparent background by default

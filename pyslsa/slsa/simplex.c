@@ -136,6 +136,8 @@ struct Simplex * create_simplex(unsigned int *vertices, int dim)
 
 int simplex_equals(struct Simplex * s1, struct Simplex * s2)
 {
+    // print_simplex(s1);
+    // print_simplex(s2);
     /* Returns 1 if the two simplices are identical */
     if ((!s1) || (!s2)) {
         return 0;
@@ -151,7 +153,8 @@ int simplex_equals(struct Simplex * s1, struct Simplex * s2)
     qsort(s2->vertices, s2->dim+1, sizeof(int), int_cmp);
 
     /* Check if arrays are equal */
-    for (int i = 0; i <= MAXDIM; i++) {
+    for (int i = 0; i <= s1->dim; i++) {
+        // printf("Simplex equals: s1 - %d  s2 - %d\n", s1->vertices[i], s2->vertices[i]);
         if (s1->vertices[i] != s2->vertices[i]) {
             return 0;
         }
