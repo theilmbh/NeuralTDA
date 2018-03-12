@@ -7,7 +7,6 @@ TARGET = libslsa.so
 slse_cuda.o: slse_cuda.cc $(DEPS)
 	nvcc -c -Xcompiler -fPIC -I/usr/local/cuda/include -I. slse_cuda.cc
 
-
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
