@@ -3,7 +3,8 @@
  *
  *       Filename:  pyslsa.c
  *
- *    Description:  PySLSA (Py salsa)  Python simplicial laplacian spectral 
+ *    Description:  PyCuSLSA (Py salsa)  CUDA-Accelerated 
+ *                  Python simplicial laplacian spectral 
  *                  analysis.
  *
  *        Version:  1.0
@@ -18,7 +19,6 @@
  */
 
 #include <Python.h>
-
 #include <string.h>
 
 #include "simplex.h"
@@ -287,7 +287,7 @@ static PyTypeObject pyslsa_SCGType = {
 /* PySLSA Module Definitions                                                 */
 /* ************************************************************************* */
 
-static char pyslsa_docs[] = "PySLSA: Simplicial Laplacian Spectral Analyzer";
+static char pyslsa_docs[] = "PyCuSLSA: CUDA-Accelerated Simplicial Laplacian Spectral Analyzer";
 
 static PyObject * build_SCG(PyObject * self, PyObject * args)
 {
