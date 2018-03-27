@@ -8,6 +8,7 @@
 
 import numpy as np
 import scipy.linalg as spla
+import networkx as nx
 
 def maxEnt(scg, dim):
     '''
@@ -465,6 +466,31 @@ def spectralEntropies(rhos):
 ###############################################
 #### Graph and Population Tensor Functions ####
 ###############################################
+
+def mu_k(k, Ncells):
+    return 1 - np.pi*np.sqrt(float(k-1)/float(Ncells))
+
+def add_cellgroups(graph, cg, Ncells, depth):
+    # for each neighbor:
+    cg_orig = tuple(cg)
+    cg_list = list(cg)
+    if len(cg_list) <= 1:
+        return
+    k = len(cg) - 1
+    muk = mu_k(k, Ncells)
+    for ind in range(len(cg)):
+        a = cg_list.pop(ind)
+        graph.add_edge(tuple(cg_list), cg_orig, weight=muk)
+        add_cellgroups(graph, cg_list, Ncells, depth+1)
+        cg_list.insert(ind, a)
+    return
+
+def stimspacegraph_nx(maxsimps, Ncells):
+    g = nx.Graph()
+    depth = 0
+    for maxsimp in maxsimps:
+        add_cellgroups(g, maxsimp, Ncells, depth)
+    return g
 
 def stimSpaceGraph(E, D):
     ''' Takes a set of generators for the chain groups

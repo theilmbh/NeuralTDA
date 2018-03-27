@@ -19,3 +19,7 @@ test_simplex: test_simplex.c $(DEPS) $(OBJ)
 
 libslsa.a: $(OBJ)
 	ar rcs $@ $^
+
+install: libslsa.so
+	install -d /usr/local/
+	install -m 644 libslsa.so /usr/local/lib 
