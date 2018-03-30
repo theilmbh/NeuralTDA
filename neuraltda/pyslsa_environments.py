@@ -1,15 +1,19 @@
 import numpy as np
-import pyslsa
+import pycuslsa as pyslsa
 import matplotlib.pyplot as plt
 import neuraltda.topology2 as tp2
-import neuraltda.simpComp as sc
-import neuraltda.spectralAnalysis as sa
+import neuraltda.stimulus_space as ss
 import pandas as pd
 import h5py as h5
 import pickle
 
 import tqdm
 
+import os
+import datetime
+daystr = datetime.datetime.now().strftime('%Y%m%d')
+figsavepth = '/home/brad/DailyLog/'+daystr+'/'
+print(figsavepth)
 
 # Class to define environments with holes
 class TPEnv:
@@ -47,11 +51,6 @@ class TPEnv:
         return False
  
 def generate_environments(N, h, numrepeats=1):
-    ''' Generates environments 
-    N : maximum number of holes 
-    h : hole radius 
-    numrepeats: number of environments for each number of holes 
-    '''
     envs = []
     for nholes in range(N):
         for r in range(numrepeats):
@@ -59,9 +58,6 @@ def generate_environments(N, h, numrepeats=1):
     return envs
 
 def convert_env_to_img(env,  NSQ):
-    ''' 
-    Converts an environment to an NSQxNSQ image by sampling a grid of points. 
-    '''
     img = np.ones((NSQ, NSQ))
     X, Y = np.meshgrid(np.linspace(-1, 1, NSQ), np.linspace(-1, 1, NSQ))
     
@@ -76,10 +72,6 @@ def convert_env_to_img(env,  NSQ):
     return img 
 
 def compute_env_img_correlations(imgs):
-    ''' 
-    Computes the pairwise correlation matrix from a set of images 
-    '''
-
     nsq, _ = np.shape(imgs[0])
     dat_mat = np.zeros((len(imgs), nsq*nsq))
     for ind,img in enumerate(imgs):
@@ -90,14 +82,6 @@ def compute_env_img_correlations(imgs):
     
 
 def generate_paths(space, n_steps, ntrials, dl):
-    ''' 
-    Generate random walk paths in a space 
-    space:  A TPEnv
-    n_steps: number of points 
-    ntrials: number of paths to generate
-    dl: length to travel in one step 
-    '''
-
     # pick a starting point
     final_pts = np.zeros((ntrials, n_steps, 2))
     for trial in range(ntrials):
@@ -131,24 +115,65 @@ def generate_paths(space, n_steps, ntrials, dl):
     return final_pts
 
 def generate_place_fields_random(n_fields, rad):
-    ''' Generate randomly-placed place fields '''
     
     centers =2*np.random.rand(n_fields, 2) - 1
     return (centers, rad)
 
 def generate_place_fields(n_fields, rad):
-    ''' Generate place fields in a grid throughout the environment
-    n_fields: number of fields 
-    rad: place field radius 
-    '''
-
     
     nf = np.round(np.sqrt(n_fields))
     cx = np.linspace(-1, 1, nf)
     cy = np.linspace(-1, 1, nf)
     centers = np.array([np.array((x, y)) for x in cx for y in cy])
+    rads = rad*np.ones(n_fields)
+    return (centers, rads)
+
+def generate_place_fields_perturbed_lattice(n_fields, rad, stddev=0.1):
+    ''' generates place fields with centers normally perturbed around a lattice'''
+    nf = np.round(np.sqrt(n_fields))
+    cx = np.linspace(-1, 1, nf)
+    cy = np.linspace(-1, 1, nf)
+    cx = cx + stddev*np.random.randn(len(cx))
+    cy = cy + stddev*np.random.randn(len(cy))
+    centers = np.array([np.array((x, y)) for x in cx for y in cy])
     return (centers, rad)
 
+def generate_place_fields_CI(n_fields, rad_range,exclusion_param):
+    radii = (rad_range[1] - rad_range[0])*np.random.random_sample(n_fields) + rad_range[0]
+    field_c = []
+    for field in range(n_fields):
+        #print('field = ', field)
+        # pick a center in range -1, 1
+        c = 2*np.random.rand(2) - 1
+        if field == 0:
+            field_c.append(c)
+            continue
+        added = False
+        collision = False
+        trie = 0
+        maxtries = 100
+        #print('field c', field_c)
+        while trie < maxtries and added == False:
+            #print('trie', trie)
+            for cbar_ind, cbar in enumerate(field_c):
+                #print('cbar', cbar)
+                if np.linalg.norm(c-cbar) < exclusion_param*radii[cbar_ind]:
+                    # already a field there, try again
+                    #print('collision')
+                    c = 2*np.random.rand(2) - 1
+                    collision = True
+                    break
+            if collision:
+                trie+=1
+                collision = False
+                continue
+            else:
+                field_c.append(c)
+                added = True
+        if not added:
+            field_c.append(c)
+    return (np.array(field_c), radii)
+            
 def generate_spikes_gaussian(paths, fields, max_rate, sigma):
     
     ncell, dim = fields.shape
@@ -168,12 +193,7 @@ def generate_spikes_gaussian(paths, fields, max_rate, sigma):
     spikes = 1*np.greater(probs, np.random.random(np.shape(probs)))
     return np.einsum('ijk->kji', spikes)
 
-def generate_spikes(paths, fields, max_rate, sigma):
-    ''' 
-    Generate spikes corresponding to paths.  
-    Spikes are poisson at max_rate inside place field, 0 outside 
-    output spikes are (Ncells, Nwin, Ntrial)
-    '''
+def generate_spikes(paths, fields, max_rate, rads):
     
     ncell, dim = fields.shape
     ntrial, nwin, _ = paths.shape
@@ -188,17 +208,14 @@ def generate_spikes(paths, fields, max_rate, sigma):
 
     S = P1 - C1
     M = np.einsum('ijkl, ijkl->ijk', S, S)
-    SIGMA = sigma*np.ones(M.shape)
+    #SIGMA = sigma*np.ones(M.shape)
+    SIGMA = np.tile(rads[np.newaxis, np.newaxis, :], (ntrial, nwin, 1))
     # if distance is less than sigma, then p = max_rate
     probs = max_rate*np.less(M, SIGMA)
     spikes = 1*np.greater(probs, np.random.random(np.shape(probs)))
     return np.einsum('ijk->kji', spikes)
 
 def spikes_to_dataframe(spikes, fs, nsecs):
-    '''
-    Convert the spikes tensor to the dataframe format required by the binning and topology algorithms
-    '''
-    
     (ncells, nwin, ntrial) = spikes.shape
     spikes_frame = pd.DataFrame(columns=['cluster', 'time_samples', 'recording'])
     trials_frame = pd.DataFrame(columns=['stimulus', 'time_samples', 'stimulus_end'])
@@ -212,4 +229,3 @@ def spikes_to_dataframe(spikes, fs, nsecs):
         trials_frame = trials_frame.append(trial_frame, ignore_index=True)
     clusters_frame = pd.DataFrame({'cluster': range(ncells), 'quality': ncells*['Good']})
     return (spikes_frame.sort_values(by='time_samples'), trials_frame, clusters_frame)
-

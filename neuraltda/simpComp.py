@@ -6,6 +6,10 @@
 ## Bradley Theilman 2 February 2017                                           ##
 ################################################################################
 
+
+####  Basically all of this deprecated by PySLSA, and the useful functions
+####  Have been moved to stimulus_space.py
+
 import numpy as np
 import scipy.linalg as spla
 import networkx as nx
@@ -468,6 +472,16 @@ def spectralEntropies(rhos):
 ###############################################
 
 def mu_k(k, Ncells):
+    '''
+    Cell group distance parameter from Curto Itskov 2008
+
+    Parameters
+    ----------
+    k : int
+        number of cells in cell group 
+    Ncells : int 
+        Total number of cells in population 
+    '''
     return 1 - np.pi*np.sqrt(float(k-1)/float(Ncells))
 
 def add_cellgroups(graph, cg, Ncells, depth):
@@ -486,6 +500,17 @@ def add_cellgroups(graph, cg, Ncells, depth):
     return
 
 def stimspacegraph_nx(maxsimps, Ncells):
+    ''' 
+    Construct the weighted graph of cell groups as defined in Curto Itskov 2008 
+
+    Parameters 
+    ----------
+    maxsimps : list of tuples 
+        The max simplices for the simplicial complex 
+    Ncells : int 
+        The total number of cells in the population (for computing metric)
+    '''
+    
     g = nx.Graph()
     depth = 0
     for maxsimp in maxsimps:

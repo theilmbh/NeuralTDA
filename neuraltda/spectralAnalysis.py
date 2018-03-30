@@ -5,14 +5,17 @@
 ## Bradley Theilman 6 February 2017                                                    ##
 #########################################################################################
 
-import neuraltda.simpComp as sc
+
+#### Deprecated
+
+import neuraltda.stimulus_space as ss 
 import neuraltda.topology2 as tp2
 import h5py
 import os
 import pickle
 import numpy as np
 from joblib import Parallel, delayed
-import pyslsa
+import pycuslsa as pyslsa
 
 def pyslsa_compute_chain_group(poptens, thresh, trial):
     '''
@@ -20,8 +23,8 @@ def pyslsa_compute_chain_group(poptens, thresh, trial):
 
     '''
     popmat = poptens[:, :, trial]
-    popmat_binary = sc.binnedtobinary(popmat, thresh)
-    maxsimps = sc.binarytomaxsimplex(popmat_binary, rDup=True)
+    popmat_binary = ss.binnedtobinary(popmat, thresh)
+    maxsimps = ss.binarytomaxsimplex(popmat_binary, rDup=True)
     maxsimps = sorted(maxsimps, key=len)
     scgGens = pyslsa.build_SCG(maxsimps)
     return scgGens
@@ -33,13 +36,13 @@ def computeChainGroup(poptens, thresh, trial):
 
     #print(trial)
     popmat = poptens[:, :, trial]
-    popmatbinary = sc.binnedtobinary(popmat, thresh)
-    maxsimps = sc.binarytomaxsimplex(popmatbinary, rDup=True)
+    popmatbinary = ss.binnedtobinary(popmat, thresh)
+    maxsimps = ss.binarytomaxsimplex(popmatbinary, rDup=True)
     # filter max simplices
     maxsimps = sorted(maxsimps, key=len)
     newms = maxsimps
     r = 1
-    scgGens = sc.simplicialChainGroups(newms)
+    scgGens = ss.simplicialChainGroups(newms)
     return scgGens
 
 def parallel_compute_chain_group(bdf, stim, thresh):
@@ -207,8 +210,8 @@ def computeSimplicialLaplacians(scgf):
         for trial in stimSCGs.keys():
             print('Stim: {}  Trial: {}'.format(stim, trial))
             scg = stimSCGs[trial]
-            D = sc.boundaryOperatorMatrix(scg)
-            trialDict[trial] = sc.laplacians(D)
+            D = ss.boundaryOperatorMatrix(scg)
+            trialDict[trial] = ss.laplacians(D)
         LapDict[stim] = trialDict
 
     LapFile = os.path.join(scgFold, LapFile)
@@ -223,13 +226,13 @@ def compute_JS_expanded(scgA, scgB, d, beta):
     The bases are expanded according to reconcile_laplacians
     '''
     # print('Computing Boundary Operators')
-    # DA = sc.boundaryOperatorMatrix(scgA)
-    # DB = sc.boundaryOperatorMatrix(scgB)
+    # DA = ss.boundaryOperatorMatrix(scgA)
+    # DB = ss.boundaryOperatorMatrix(scgB)
     #print('Computing Laplacians')
 
     # Compute Laplacian Matrices in dimension d
-    LA = sc.compute_laplacian(scgA, d)
-    LB = sc.compute_laplacian(scgB, d)
+    LA = ss.compute_laplacian(scgA, d)
+    LB = ss.compute_laplacian(scgB, d)
 
     # Reconcile Laplacians
     (LA, LB) = sc.reconcile_laplacians(LA, LB)
