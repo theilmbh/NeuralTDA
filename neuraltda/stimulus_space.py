@@ -201,7 +201,7 @@ def prepare_affine_data(binmat, stim, embed_pts, sorted_node_list):
 
         y[:, ptind] = stim[:, ind]
         x[:, ptind] = get_mds_position_of_cg(cg, embed_pts, sorted_node_list)
-        return (x, y)
+    return (x, y)
 
 def mds_embed(graph):
 
@@ -222,12 +222,35 @@ def prepare_stimulus(stimfile):
 
 def affine_loss(affine, x, y, stimdim, embeddim):
 
-    A = affine(0:stimdim*embeddim)
-    b = affine(stimdim*embeddim:)
+    A = np.array(affine[0:stimdim*embeddim])
+    b = np.array(affine[stimdim*embeddim:])
     A = np.reshape(A, (stimdim, embeddim))
+    yhat = np.dot(A, x)
+    yhat += np.tile(b[:, np.newaxis], (1, np.shape(x)[1]))
 
-    yhat = np.dot(A, x) + np.tile(b[:, np.newaxis], (1, np.shape(x)[1]))
     s = np.power(yhat - y, 2)
     s = np.sum(s, axis=0)
-    s = np.sqrt(s)
     return np.sum(s)
+
+def decompose_matrix(m):
+    ''' 
+    decomposes a matrix into:
+    - isotropic
+    - symmetric traceless
+    - antisymmetric 
+    '''
+    n, n1 = np.shape(m)
+    assert n1 == n
+    tr = np.trace(m)
+    tr = tr*np.eye(n) / n
+
+    symm = (1/2)*((m-tr) + (m-tr).T)
+    asymm = (1/2)*(m - m.T)
+
+    return (tr, symm, asymm)
+
+def affine_transform(affine, x, sd, ed):
+    A = np.reshape(affine[0:sd*ed], (sd, ed))
+    b = affine[sd*ed:]
+    yhat = np.dot(A, x) + np.tile(b[:, np.newaxis], (1, np.shape(x)[1]))
+    return yhat
