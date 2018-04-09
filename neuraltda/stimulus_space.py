@@ -7,6 +7,7 @@
 import numpy as np
 import scipy.linalg as spla
 import networkx as nx
+from sklearn.manifold import MDS 
 
 ###############################################
 #### Graph and Population Tensor Functions ####
@@ -170,3 +171,63 @@ def adjacency2maxsimp(adjmat, basis):
             if val > 0:
                 maxsimps.append(tuple(sorted((basis[ind], basis[targ]))))
     return maxsimps
+
+def prepare_affine_data(binmat, stim, embed_pts, sorted_node_list):
+
+    '''
+    Prepare the data for training an affine transformation
+    x -> y where x is MDS point of embedded stimulus space and 
+    y is the actual stimulus
+    '''
+
+    stimdim, nwin = np.shape(stim)
+    _, embeddim = np.shape(embed_pts)
+    # make sure we have same number of windows in stim as neural data
+    assert np.shape(binmat)[1] == nwin 
+
+
+    maxsimps = binarytomaxsimplex(binmat)
+    inds = np.nonzero((np.sum(binmat, axis=0) > 0))[0]
+    y = np.zeros((stimdim, len(inds)))
+    x = np.zeros((embeddim, len(inds)))
+    
+    cg_stims = {}
+
+    for ptind, (cg, ind) in enumerate(zip(maxsimps, inds)):
+        if cg not in cg_stims.keys():
+            cg_stims[cg] = [stim[:, ind]]
+        else:
+            cg_stims[cg].append(stim[:, ind])
+
+        y[:, ptind] = stim[:, ind]
+        x[:, ptind] = get_mds_position_of_cg(cg, embed_pts, sorted_node_list)
+        return (x, y)
+
+def mds_embed(graph):
+
+    sorted_node_list = sorted(list(graph.nodes()), key=len)
+    dmat = nx.floyd_warshall_numpy(graph, nodelist=sorted_node_list)
+
+    gmds = MDS(n_jobs=-2, dissimilarity='precomputed')
+    embed_pts = gmds.fit_transform(dmat)
+
+    return (embed_pts, dmat, sorted_node_list)
+
+def get_mds_position_of_cg(cg, embed_pts, sorted_node_list):
+
+    return embed_pts[sorted_node_list.index(cg), :]
+
+def prepare_stimulus(stimfile):
+    pass
+
+def affine_loss(affine, x, y, stimdim, embeddim):
+
+    A = affine(0:stimdim*embeddim)
+    b = affine(stimdim*embeddim:)
+    A = np.reshape(A, (stimdim, embeddim))
+
+    yhat = np.dot(A, x) + np.tile(b[:, np.newaxis], (1, np.shape(x)[1]))
+    s = np.power(yhat - y, 2)
+    s = np.sum(s, axis=0)
+    s = np.sqrt(s)
+    return np.sum(s)
