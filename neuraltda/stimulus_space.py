@@ -40,7 +40,7 @@ def add_cellgroups(graph, cg, Ncells, depth):
         cg_list.insert(ind, a)
     return
 
-def stimspacegraph_nx(maxsimps, Ncells):
+def stimspacegraph_nx(maxsimps, Ncells, stimuli=None):
     ''' 
     Construct the weighted graph of cell groups as defined in Curto Itskov 2008 
 
@@ -51,11 +51,18 @@ def stimspacegraph_nx(maxsimps, Ncells):
     Ncells : int 
         The total number of cells in the population (for computing metric)
     '''
-    
     g = nx.Graph()
+
+    
     depth = 0
     for maxsimp in maxsimps:
         add_cellgroups(g, maxsimp, Ncells, depth)
+
+    if stimuli is not None:
+        vals = dict()
+        for ind, cg, in enumerate(maxsimps):
+            vals[cg] = stimuli[ind, :]
+        nx.set_node_attributes(g, 'stimulus', vals)
     return g
 
 def binnedtobinary(popvec, thresh):
@@ -80,7 +87,8 @@ def binnedtobinary(popvec, thresh):
     activeUnits = np.greater(popvec, meanthr).astype(int)
     return activeUnits
 
-def binarytomaxsimplex(binMat, rDup=False, clus=None):
+
+def binarytomaxsimplex(binMat, rDup=False, clus=None, ):
     '''
     Takes a binary matrix and computes maximal simplices according to CI 2008
 
@@ -98,16 +106,55 @@ def binarytomaxsimplex(binMat, rDup=False, clus=None):
         binMat = binMat[:, ui]
 
     Ncells, Nwin = np.shape(binMat)
+
     if not clus:
         clus = np.arange(Ncells)
     MaxSimps = []
-    MaxSimps = [tuple(clus[list(np.nonzero(t)[0])]) for t in binMat.T]
+    MaxSimps = [tuple(clus[list(np.nonzero(t)[0])]) for t in binMat.T if list(np.nonzero(t)[0])]
     #for win in range(Nwin):
     #    if binMat[:, win].any():
     #        verts = np.arange(Ncells)[binMat[:, win] == 1]
     #        verts = np.sort(verts)
     #        MaxSimps.append(tuple(verts))
+
+
     return MaxSimps
+
+# def binarytomaxsimplex_withstim(binMat, rDup=False, clus=None, stimulus=None):
+#     '''
+#     Takes a binary matrix and computes maximal simplices according to CI 2008
+
+#     Parameters
+#     ----------
+#     binMat : numpy array
+#         An Ncells x Nwindows array
+#     '''
+#     if rDup:
+#         lexInd = np.lexsort(binMat)
+#         binMat = binMat[:, lexInd]
+#         diff = np.diff(binMat, axis=1)
+#         ui = np.ones(len(binMat.T), 'bool')
+#         ui[1:] = (diff != 0).any(axis=0)
+#         binMat = binMat[:, ui]
+
+#     Ncells, Nwin = np.shape(binMat)
+#     stims = dict()
+#     if not clus:
+#         clus = np.arange(Ncells)
+#     MaxSimps = []
+#     MaxSimps = [tuple(clus[list(np.nonzero(t)[0])]) for t in binMat.T if list(np.nonzero(t)[0])]
+#     #for win in range(Nwin):
+#     #    if binMat[:, win].any():
+#     #        verts = np.arange(Ncells)[binMat[:, win] == 1]
+#     #        verts = np.sort(verts)
+#     #        MaxSimps.append(tuple(verts))
+
+#     if stimulus is not None:
+        
+#         inds = np.nonzero((np.sum(binMat, axis=0) > 0)[0]
+#         for cg, ind in zip(MaxSimps, inds):
+#             stims[cg] = stimulus[ind, :]
+#     return (MaxSimps, stims)
 
 def adjacency2maxsimp(adjmat, basis):
     '''
