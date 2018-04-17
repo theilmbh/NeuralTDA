@@ -675,6 +675,12 @@ def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
         print('Activity Tensor: Duration <= 0')
         return []
     nwins = int(np.round(float(dur)/float(skip)))
+
+    # print tensor properties
+    print("Nreps = {}".format(nreps))
+    print("skip = {}".format(skip))
+    print("dur = {}".format(dur))
+    print("nwins = {}".format(nwins))
     poptens = np.zeros((nclus, nwins, nreps))
     for rep in range(nreps):
         trial_start = stim_trials.iloc[rep]['time_samples']
@@ -690,6 +696,32 @@ def build_activity_tensor_quick(stim_trials, spikes, clusters_list, nclus,
     poptens /= (win_size/1000.0)
     return poptens
 
+def build_poptens_given_windows(stim_trials, spikes, windows,
+                                clusters_list, segment):
+    nreps = len(stim_trials.index)
+    nclus = len(clusters_list)
+    stim_recs = stim_trials['recording'].values 
+    nwins = len(windows)
+    poptens = np.zeros((nclus, nwins, nreps))
+    for rep in range(nreps):
+        trial_start = stim_trials.iloc[rep]['time_samples']
+        trial_end = stim_trials.iloc[rep]['stimulus_end']
+        samp_period = (trial_start + segment[0], 
+                       trial_start + segment[1])
+        rec = stim_recs[rep]
+        stim_rec_spikes = get_spikes_in_window(spikes, samp_period, rec)
+        clusters = stim_rec_spikes['cluster'].values 
+        sptimes = stim_rec_spikes['time_samples'].values - samp_period[0]
+        clusters = stim_rec_spikes['cluster'].values
+        sptclur = np.tile(sptimes[:, np.newaxis], (1, nwins))
+        swin = np.tile(windows[np.newaxis, :], (len(sptimes), 1))
+        upper = (sptclur <= swin)[:, 1:]
+        lower = (sptclur > swin)[:, 0:-1]
+        binss = np.logical_and(upper, lower)
+        for clu in clusters_list:
+            poptens[clusters_list==clu, 1:, rep] = np.sum(binss[clusters==clu, :], axis=0)
+    return poptens
+    
 def scramble(a, axis=-1):
     b = np.random.random(a.shape)
     idx = np.argsort(b, axis=axis)

@@ -8,6 +8,7 @@ import numpy as np
 import scipy.linalg as spla
 import networkx as nx
 from sklearn.manifold import MDS 
+from sklearn.decomposition import PCA
 
 ###############################################
 #### Graph and Population Tensor Functions ####
@@ -34,11 +35,12 @@ def add_cellgroups(graph, cg, Ncells, depth):
         return
     k = len(cg) - 1
     muk = mu_k(k, Ncells)
-    for ind in range(len(cg)):
-        a = cg_list.pop(ind)
-        graph.add_edge(tuple(cg_list), cg_orig, weight=muk)
-        add_cellgroups(graph, cg_list, Ncells, depth+1)
-        cg_list.insert(ind, a)
+    if (len(cg_list) > 1):
+        for ind in range(len(cg)):
+            a = cg_list.pop(ind)
+            graph.add_edge(tuple(cg_list), cg_orig, weight=muk)
+            add_cellgroups(graph, cg_list, Ncells, depth+1)
+            cg_list.insert(ind, a)
     return
 
 def stimspacegraph_nx(maxsimps, Ncells, stimuli=None):
@@ -194,6 +196,8 @@ def prepare_affine_data(binmat, stim, embed_pts, sorted_node_list):
     cg_stims = {}
 
     for ptind, (cg, ind) in enumerate(zip(maxsimps, inds)):
+        if cg not in sorted_node_list:
+            continue
         if cg not in cg_stims.keys():
             cg_stims[cg] = [stim[:, ind]]
         else:
@@ -230,7 +234,22 @@ def affine_loss(affine, x, y, stimdim, embeddim):
 
     s = np.power(yhat - y, 2)
     s = np.sum(s, axis=0)
-    return np.sum(s)
+    return (1/2)*np.sum(s)
+
+def affine_loss_jac(affine, x, y, stimdim, embeddim):
+
+    A = np.array(affine[0:stimdim*embeddim])
+    b = np.array(affine[stimdim*embeddim:])
+    A = np.reshape(A, (stimdim, embeddim))
+    yhat = np.dot(A,x)
+    yhat += np.tile(b[:, np.newaxis], (1, np.shape(x)[1]))
+    da = np.einsum('ia, ja->ij', (yhat-y), x)
+    db = np.sum(yhat-y, axis=1)
+    da = np.reshape(da, stimdim*embeddim)
+    jac_affine = np.zeros((stimdim*embeddim+stimdim))
+    jac_affine[0:stimdim*embeddim] = da 
+    jac_affine[stimdim*embeddim:] = db 
+    return jac_affine
 
 def decompose_matrix(m):
     ''' 
@@ -251,6 +270,13 @@ def decompose_matrix(m):
 
 def affine_transform(affine, x, sd, ed):
     A = np.reshape(affine[0:sd*ed], (sd, ed))
-    b = affine[sd*ed:]
+    b = np.array(affine[sd*ed:])
     yhat = np.dot(A, x) + np.tile(b[:, np.newaxis], (1, np.shape(x)[1]))
     return yhat
+
+def h_mds(dmat):
+    ''' From DeSa, Gu, Re, Sala
+        1804:03329
+    '''
+    Y = np.cosh(dmat)
+    
