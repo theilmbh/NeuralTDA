@@ -244,7 +244,7 @@ def affine_loss_jac(affine, x, y, stimdim, embeddim):
     yhat = np.dot(A,x)
     yhat += np.tile(b[:, np.newaxis], (1, np.shape(x)[1]))
     da = np.einsum('ia, ja->ij', (yhat-y), x)
-    db = np.sum(yhat-y, axis=1)
+    db = np.sum(yhaty, axis=1)
     da = np.reshape(da, stimdim*embeddim)
     jac_affine = np.zeros((stimdim*embeddim+stimdim))
     jac_affine[0:stimdim*embeddim] = da 
