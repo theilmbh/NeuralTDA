@@ -120,13 +120,13 @@ unsigned int bdry_check_hash(struct bdry_op_dict * tab,
     /* Linear Search the table for the hash */
     /* From Knuth Vol 3 */
     unsigned int i2 = i;
-    int eq;
+    //int eq;
     while ( i2 != i+1) {
 
         /* Hash table entry is empty - simplex is not in hash table */
         if (!tab->table[i2].sp) break;
 
-        eq = simplex_equals(tab->table[i2].sp, sp);
+        //eq = simplex_equals(tab->table[i2].sp, sp);
         // printf("bdry_check_hash: simplex_equals: %d\n", eq);
         if (simplex_equals(tab->table[i2].sp, sp)) {
             /* Found! */

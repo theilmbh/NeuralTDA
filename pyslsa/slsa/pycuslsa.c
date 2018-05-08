@@ -369,7 +369,7 @@ static PyObject * build_SCG(PyObject * self, PyObject * args)
     int n_max_simp = PyList_Size(max_simps);
 
     /* Get a new SCG and allocate max simp list */
-    out = SCG_new(&pyslsa_SCGType, NULL, NULL);
+    out = (pyslsa_SCGObject *)SCG_new(&pyslsa_SCGType, NULL, NULL);
     struct Simplex **max_simp_list = malloc(n_max_simp * 
                                             sizeof(struct Simplex *));
 
@@ -388,6 +388,26 @@ static PyObject * build_SCG(PyObject * self, PyObject * args)
 
     free(max_simp_list);
     return (PyObject *)out;
+}
+
+/*
+ *  Compute the union of two python simplicial complexes
+ */
+static PyObject * SCG_union(PyObject * self, PyObject * args)
+{
+    pyslsa_SCGObject *pyslsa_scg1, *pyslsa_scg2;
+
+    if (!PyArg_ParseTuple(args, "OO", &pyslsa_scg1, &pyslsa_scg2))
+        return NULL;
+
+    SCG * scg1 = pyslsa_scg1->scg;
+    SCG * scg2 = pyslsa_scg2->scg;
+
+    struct simplex_hash_table *table = get_empty_hash_table_D();
+    scg_list_union_hash(scg1, scg2, table);
+    free_hash_table_D(table);
+
+    return (PyObject *)pyslsa_scg2;
 }
 
 /*
@@ -523,6 +543,7 @@ static PyMethodDef pyslsa_funcs[] = {
     {"cuKL", (PyCFunction)cuKL, METH_VARARGS, NULL},
     {"cuJS", (PyCFunction)cuJS, METH_VARARGS, NULL},
     {"build_SCG", (PyCFunction)build_SCG, METH_VARARGS, NULL},
+    {"union", (PyCFunction)SCG_union, METH_VARARGS, NULL},
     {NULL}
 };
 
