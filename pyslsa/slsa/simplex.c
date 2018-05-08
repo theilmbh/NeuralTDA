@@ -304,6 +304,10 @@ void scg_list_union_hash(SCG * scg1, SCG * scg2,
     }
 }
 
+/*
+ *  Create an empty simplex list.  
+ *  A simplex list is a double-linked-list of simplexes
+ */
 struct simplex_list * get_empty_simplex_list() 
 {
     /*  returns an empty simplex list */
@@ -314,6 +318,10 @@ struct simplex_list * get_empty_simplex_list()
     return out;
 }
 
+/* 
+ *  Destroy a simplex list
+ *  Destroys every simplex in the list and then destroys the list
+ */
 void simplex_list_free(struct simplex_list * sl)
 {
     /* TODO: Check for beginning of list */
@@ -339,6 +347,9 @@ void simplex_list_free(struct simplex_list * sl)
     free(sl);
 }
 
+/* 
+ *  Destroy a simplex list without destroying the simplices
+ */
 void simplex_list_free_lite(struct simplex_list * sl)
 {
     /*  Frees a simplex list without freeing simplices */
@@ -361,8 +372,10 @@ void simplex_list_free_lite(struct simplex_list * sl)
     free(sl);
 }
 
-/* Checks if a simplex is already in a simplex list */
-/* If so, returns a pointer to the list entry */
+/*
+ *  Checks if a simplex is already in a simplex list
+ *  If so, it returns a pointer to the list entry 
+ */
 struct simplex_list * simplex_list_isin(struct simplex_list *slist,
                                         struct Simplex *s)
 {
@@ -377,6 +390,9 @@ struct simplex_list * simplex_list_isin(struct simplex_list *slist,
     return retcode;
 }
 
+/*
+ *  Removes a simplex from a simplex list 
+ */
 struct simplex_list * remove_simplex(struct simplex_list *slist,
                                      struct Simplex *s)
 {
@@ -399,6 +415,10 @@ struct simplex_list * remove_simplex(struct simplex_list *slist,
     return ret;
 }
 
+/*
+ *  Adds a simplex to a simplex list without checking whether
+ *  the simplex is already in the list 
+ */
 void add_simplex_nocheck(struct simplex_list *slist, struct Simplex *s)
 {
     if (!slist->s) {
@@ -426,7 +446,11 @@ void add_simplex_nocheck(struct simplex_list *slist, struct Simplex *s)
     return;
 }
 
-/* Adds a simplex to a simplex list if not already present */
+
+/*
+ *  Add a simplex to a simplex list if the simplex is not already present
+ *  in the list 
+ */
 void add_simplex(struct simplex_list *slist, struct Simplex *s)
 {
     if (slist->s == NULL) {
@@ -448,6 +472,9 @@ void add_simplex(struct simplex_list *slist, struct Simplex *s)
     }
 }
 
+/*
+ *  Return pointer to an empty simplicial complex (SCG)
+ */
 SCG * get_empty_SCG() 
 {
     SCG * out = calloc(1, sizeof(SCG));
@@ -459,6 +486,9 @@ SCG * get_empty_SCG()
     return out;
 }
 
+/*
+ *  Destroy a simplicial complex, destroying all simplices within
+ */
 void free_SCG(SCG * scg)
 {
     for (int dim = 0; dim < MAXDIM; dim++) {
@@ -467,6 +497,9 @@ void free_SCG(SCG * scg)
     free(scg);
 }
 
+/*
+ *  Destroy a simplicial complex without destroying the simplices within
+ */
 void free_SCG_lite(SCG * scg)
 {
     /* frees the SCG without freeing the simplices */
@@ -476,6 +509,9 @@ void free_SCG_lite(SCG * scg)
     free(scg);
 }
 
+/* 
+ *  Add a simplex to a simplicial complex 
+ */
 void scg_add_simplex(SCG * scg, struct Simplex * s)
 {
     int d = s->dim;
@@ -484,6 +520,10 @@ void scg_add_simplex(SCG * scg, struct Simplex * s)
     }
 }
 
+/*
+ *  Add a simplex to a simplicial complex without checking if it's
+ *  already present 
+ */
 void scg_add_simplex_nocheck(SCG * scg, struct Simplex * s)
 {
     int d = s->dim;
@@ -539,11 +579,12 @@ void print_SCG(SCG * scg)
     printf("\n");
 }
 
+/* Compute the chain group generators for the complex
+ * defined by the max_simps 
+ */
 void compute_chain_groups(struct Simplex ** max_simps,
                           int n_max_simps, SCG * scg_out)
 {
-    /* Compute the chain group generators for the complex
-     * defined by the max_simps */
 
     /* Find the maximum dimension */
     int maxdim = 0;
