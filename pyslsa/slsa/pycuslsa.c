@@ -1,5 +1,5 @@
 /*
- * =====================================================================================
+ * =============================================================================
  *
  *       Filename:  pyslsa.c
  *
@@ -13,28 +13,32 @@
  *       Compiler:  gcc
  *
  *         Author:  Brad Theilman (BHT), bradtheilman@gmail.com
- *   Organization:  
+ *   Organization:  Gentner Lab
  *
- * =====================================================================================
+ * =============================================================================
  */
 
 #include <Python.h>
+
 #include <string.h>
 
 #include "simplex.h"
 #include "boundary_op.h"
 #include "slse.h"
 
-/* ************************************************************************* */
-/* Simplex Object Definition                                                 */
-/* ************************************************************************* */
-
+/* 
+ *  Python Simplex object definition
+ *  A python simplex consists of simply a simplex as defined in simplex.c
+ */
 typedef struct {
     PyObject_HEAD
     struct Simplex * s;
 
 } pyslsa_SimplexObject;
 
+/*  
+ *  Create an empty simplex and return it wrapped in a python Simplex object
+ */
 static PyObject * Simplex_new(PyTypeObject * type,
                               PyObject * args, PyObject * kwds)
 {
@@ -47,16 +51,28 @@ static PyObject * Simplex_new(PyTypeObject * type,
     return (PyObject *)self;
 }
 
+/*
+ *  Destroy a python simplex by calling the appropriate "free" method
+ *  as defined in the pyslsa_SimplexType structure
+ */
 static void Simplex_dealloc(pyslsa_SimplexObject * self)
 {
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
+/*
+ *  Free the C simplex stored in the python simplex object
+ */
 static void Simplex_free(pyslsa_SimplexObject * self)
 {
     free_simplex(self->s);     
 }
 
+/*
+ *  Add a vertex to a simplex, increasing its dimension.  
+ *  This function implements the add_vertex method called from Python
+ *  It expects an integer label for the vertex
+ */
 static PyObject * Simplex_add_vertex(pyslsa_SimplexObject * self,
                                      PyObject *args)
 {
@@ -68,11 +84,18 @@ static PyObject * Simplex_add_vertex(pyslsa_SimplexObject * self,
     Py_RETURN_NONE;
 }
 
+/*
+ *  Return the dimension of the simplex as an integer, 
+ *  namely, the number of vertices - 1
+ */
 static PyObject * Simplex_dimension(pyslsa_SimplexObject * self)
 {
     return Py_BuildValue("i", self->s->dim);
 }
 
+/*
+ *  Define the methods available from Python to manipulate simplex objects
+ */
 static PyMethodDef Simplex_methods[] = {
     {"add_vertex", (PyCFunction)Simplex_add_vertex, METH_VARARGS,
         "Add a vertex to the simplex"
@@ -82,6 +105,9 @@ static PyMethodDef Simplex_methods[] = {
     {NULL}
 };
 
+/*
+ *  Define the Python Simplex type
+ */
 static PyTypeObject pyslsa_SimplexType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pyslsa.Simplex",
@@ -128,21 +154,34 @@ static PyTypeObject pyslsa_SimplexType = {
 /* Simplicial Complex Object Definitions                                     */
 /* ************************************************************************* */
 
+/*
+ *  Define the Simplicial Complex (SCG - "Simplicial Chain Group") python object
+ *  A Python SCG consists of a C SCG wrapped in python stuff
+ */
 typedef struct {
     PyObject_HEAD
     SCG * scg;
 } pyslsa_SCGObject;
 
+/*
+ *  Destroy a Python SCG object
+ */
 static void SCG_dealloc(pyslsa_SCGObject * self)
 {
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
+/*
+ *  Free the SCG stored in a Python SCG object
+ */
 static void SCG_free(pyslsa_SCGObject * self)
 {
     free_SCG(self->scg);     
 }
 
+/*
+ *  Create a new Python SCG object by creating an empty C SCG
+ */
 static PyObject * SCG_new(PyTypeObject * type,
                           PyObject * args, PyObject * kwds)
 {
@@ -155,6 +194,10 @@ static PyObject * SCG_new(PyTypeObject * type,
     return (PyObject *)self;
 }
 
+/*
+ *  Adds a top-level simplex to the SCG, recomputing the chain groups of each
+ * dimension
+ */
 static PyObject * PySCG_add_max_simplex(pyslsa_SCGObject * self,
                                       PyObject * args, PyObject *kwds)
 {
@@ -166,12 +209,20 @@ static PyObject * PySCG_add_max_simplex(pyslsa_SCGObject * self,
     Py_RETURN_NONE;
 }
 
+/*
+ *  Disply the internal structure of the SCG by 
+ *  printing the generators in each dimension
+ */
 static PyObject * PySCG_print(pyslsa_SCGObject * self)
 {
     print_SCG(self->scg);
     Py_RETURN_NONE;
 }
 
+/*
+ *  Print the matrix of the simplicial laplacian in dimension d
+ *  *** Need to check for bounds on dimension! ***
+ */
 static PyObject * PySCG_print_laplacian(pyslsa_SCGObject * self, 
                                         PyObject *args)
 {
@@ -190,6 +241,10 @@ static PyObject * PySCG_print_laplacian(pyslsa_SCGObject * self,
     Py_RETURN_NONE; 
 }
 
+/*
+ *  Return the size of the laplacian matrix (dim x dim) in SCG dimension d
+ *  *** Check Dimension Bounds ***
+ */
 static PyObject * PySCG_get_laplacian_dim(pyslsa_SCGObject * self,
                                           PyObject *args)
 {
@@ -201,6 +256,9 @@ static PyObject * PySCG_get_laplacian_dim(pyslsa_SCGObject * self,
     return Py_BuildValue("i", dim);
 }
 
+/*
+ *  Print the matrix associated with the SCG boundary operator in dimension d
+ */
 static PyObject * PySCG_print_boundary_op(pyslsa_SCGObject * self, 
                                         PyObject *args)
 {
@@ -220,27 +278,31 @@ static PyObject * PySCG_print_boundary_op(pyslsa_SCGObject * self,
     Py_RETURN_NONE; 
 }
 
-/* Simplicial Complex Methods */
+/*
+ *  Python methods available for manipulating SCG objects
+ */
 static PyMethodDef SCG_methods[] = {
     {"add_max_simplex", (PyCFunction)PySCG_add_max_simplex, METH_VARARGS,
-        "Add a max simplex to the simplicial complex"
+        "Adds a top-level simplex to the simplicial complex"
     },
     {"print", (PyCFunction)PySCG_print, METH_NOARGS,
         "Print the simplicial complex"
     },  
     {"print_L", (PyCFunction)PySCG_print_laplacian, METH_VARARGS, 
-        "Print the laplacian of dimension d"
+        "Print the simplicial laplacian of dimension d"
     }, 
     {"print_D", (PyCFunction)PySCG_print_boundary_op, METH_VARARGS,
         "Print the boundary operator of dimension d"
     },
     {"L_dim", (PyCFunction)PySCG_get_laplacian_dim, METH_VARARGS,
-        "Print the dimension of the d-Laplacian"
+        "Print the dimension of the d-Laplacian matrix"
     },
     {NULL}
 };
 
-/* Simplicial Complex Type Definition */
+/*
+ *  Definition of the Simplicial Complex (SCG) Python type
+ */
 static PyTypeObject pyslsa_SCGType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pyslsa.SCG",
@@ -289,6 +351,10 @@ static PyTypeObject pyslsa_SCGType = {
 
 static char pyslsa_docs[] = "PyCuSLSA: CUDA-Accelerated Simplicial Laplacian Spectral Analyzer";
 
+/*
+ *  Python method to build a simplicial complex from a list of top-level (max)
+ *  simplices
+ */
 static PyObject * build_SCG(PyObject * self, PyObject * args)
 {
     Py_ssize_t ind, vert_ind;
@@ -324,8 +390,11 @@ static PyObject * build_SCG(PyObject * self, PyObject * args)
     return (PyObject *)out;
 }
 
-/* Computes the KL divergence between two Simplicial Complexes in dimension
- * dim and with beta */
+/*
+ *  Compute the KL divergence between two python Simplicial Complexes 
+ *  in dimension dim and with inverse temperature beta.
+ *  NOT CUDA ACCELERATED
+ */
 static PyObject * KL(PyObject * self, PyObject * args)
 {
     double beta, div;
@@ -347,6 +416,11 @@ static PyObject * KL(PyObject * self, PyObject * args)
     return Py_BuildValue("d", div);
 }
 
+/*
+ *  Compute the KL divergence between two python Simplicial Complexes 
+ *  in dimension dim and with inverse temperature beta.
+ *  CUDA version of the above function
+ */
 static PyObject * cuKL(PyObject * self, PyObject * args)
 {
     double beta, div;
@@ -368,6 +442,11 @@ static PyObject * cuKL(PyObject * self, PyObject * args)
     return Py_BuildValue("d", div);
 }
 
+/*
+ *  Compute the Jensen-Shannon divergence between two python SCGs
+ *  in dimension dim and with inverse temperature beta.
+ *  NOT CUDA ACCELERATED
+ */
 static PyObject * JS(PyObject * self, PyObject * args)
 {
     /* Compute the JS divergence between two simplices */
@@ -399,6 +478,11 @@ static PyObject * JS(PyObject * self, PyObject * args)
     return Py_BuildValue("d", div);
 }
 
+/*
+ *  Compute the Jensen-Shannon divergence between two python SCGs
+ *  in dimension dim and with inverse temperature beta.
+ *  CUDA version of above function
+ */
 static PyObject * cuJS(PyObject * self, PyObject * args)
 {
     /* Compute the JS divergence between two simplices */
@@ -430,6 +514,9 @@ static PyObject * cuJS(PyObject * self, PyObject * args)
     return Py_BuildValue("d", div);
 }
 
+/*
+ *  Define the functions available from the pycuslsa module
+ */
 static PyMethodDef pyslsa_funcs[] = {
     {"KL", (PyCFunction)KL, METH_VARARGS, NULL},
     {"JS", (PyCFunction)JS, METH_VARARGS, NULL},
@@ -439,6 +526,9 @@ static PyMethodDef pyslsa_funcs[] = {
     {NULL}
 };
 
+/*
+ *  Define the pycuslsa module
+ */
 static struct PyModuleDef pyslsa_module = {
     PyModuleDef_HEAD_INIT,
     "pycuslsa",
@@ -447,6 +537,9 @@ static struct PyModuleDef pyslsa_module = {
     pyslsa_funcs
 };
 
+/*
+ *  Python initialization for the pycuslsa module
+ */
 PyMODINIT_FUNC
 PyInit_pycuslsa(void)
 {
