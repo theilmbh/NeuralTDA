@@ -11,7 +11,7 @@
  *       Compiler:  gcc
  *
  *         Author:  Brad Theilman (BHT), bradtheilman@gmail.com
- *   Organization:  
+ *   Organization:  Gentner Lab
  *
  * ============================================================================
  */
@@ -23,7 +23,18 @@
 #include "simplex.h"
 #include "hash_table.h" 
 
+/*
+ *  Simplexes can be represented by unsigned integers
+ *  Given a total number of vertices V, we form an unsigned integer N
+ *  with V bits in its binary representation.  For each vertex that is in the
+ *  simplex, we set that bit to one
+ *  Example:  Out of vertices {1 ... 8}, the simplex [1,3,5,7] is given by:
+ *    01010101 = 85
+ */
 
+/*
+ *  Count the number of ones in the binary representation of uint N
+ */
 unsigned int num_ones(unsigned int N)
 {
     unsigned int count = 0;
@@ -36,6 +47,9 @@ unsigned int num_ones(unsigned int N)
     return count;
 }
 
+/*
+ *  Check to see if bit i is 1 in the binary representation of uint N
+ */
 int check_bit(unsigned int N, unsigned int i)
 {
     if ( N & (1 << i) ) {
@@ -55,17 +69,37 @@ struct Simplex *get_simplex_from_integer(unsigned int N)
     return out;
 }
 
+/*
+ * Expand all the faces of a simplex into a simplicial complex
+ * The simplex is represented by the unsigned int N
+ * The vertices are labeled by the integer array verts
+ * dim is the dimension of the simplex
+ * scg_temp is the empty simplicial complex to store the faces
+ */
 void get_faces_common(unsigned int N, int *verts, int dim, SCG * scg_temp)
 {
    struct Simplex * s_new;
+
+   /* Loop through every possible face */
    for (int k = 1; k <= N; k++) {
-       if ( (k & N) == k ) {
+
+        /* (k & N) == k is true if the face k is in the simplex N */
+        if ( (k & N) == k ) {
             s_new = create_empty_simplex();
+
+            /* Loop through each possible vertex */
             for ( int j = 0; j < dim+1; j++) {
+
+                /* Add the vertex if it is in the face */
                 if (check_bit(k, j)) {
                     add_vertex(s_new, verts[j]);
                 }
             }
+
+            /* Add the face simplex to the scg
+             * We do not check to see if it's already present, cause it's not
+             * This is probably bad..
+             */
             scg_add_simplex_nocheck(scg_temp, s_new);
        }
    } 
@@ -78,6 +112,9 @@ unsigned int integer_from_simplex(struct Simplex * simp)
     return N;
 }
 
+/*
+ *  Construct a Simplicial Complex (SCG) containing all the faces of a simplex 
+ */
 SCG * get_faces(struct Simplex * simp)
 {
     SCG * out = get_empty_SCG();
@@ -88,11 +125,20 @@ SCG * get_faces(struct Simplex * simp)
     return out;
 }
 
+/* 
+ *  Messed up method to compare integers for sorting
+ *  0 if a = b
+ *  > 0 if a > b
+ *  < 0 if a < b
+ */
 int int_cmp(const void * a, const void * b)
 {
     return ( *(int*)a - *(int*)b );
 }
 
+/*
+ * Destroy a C simplex 
+ */
 void free_simplex(struct Simplex *s)
 {
 #ifdef DEBUG_S_MEM
@@ -101,6 +147,10 @@ void free_simplex(struct Simplex *s)
     free(s);
 }
 
+/*
+ *  Create an empty simplex.  The dimension is set to -1, and all the 
+ *  vertex labels are set to -1
+ */
 struct Simplex * create_empty_simplex()
 {
     struct Simplex * s_out = malloc(sizeof(struct Simplex));
@@ -118,6 +168,11 @@ struct Simplex * create_empty_simplex()
     return s_out;
 }
 
+/* 
+ *  Add a positive-int labeled vertex s to a simplex v
+ *  Vertices are sorted to be in numerical order.  
+ *  This provides an orientation for the simplex
+ */
 void add_vertex(struct Simplex * s, int v)
 {
     if (s->dim == MAXDIM) return;
@@ -126,6 +181,9 @@ void add_vertex(struct Simplex * s, int v)
     qsort(s->vertices, s->dim+1, sizeof(int), int_cmp);
 }
 
+/*
+ *  Create a simplex out of a list of vertices
+ */
 struct Simplex * create_simplex(unsigned int *vertices, int dim)
 {
     struct Simplex * s_out = malloc(sizeof(struct Simplex));
@@ -134,11 +192,13 @@ struct Simplex * create_simplex(unsigned int *vertices, int dim)
     return s_out;
 }
 
+/*
+ *  Determine if two simplices are identical
+ *  Returns 1 if they are identical, 0 if not
+ */
 int simplex_equals(struct Simplex * s1, struct Simplex * s2)
 {
-    // print_simplex(s1);
-    // print_simplex(s2);
-    /* Returns 1 if the two simplices are identical */
+    /* If either of the two simplices are NULL, return 0 */
     if ((!s1) || (!s2)) {
         return 0;
     } 
@@ -154,7 +214,6 @@ int simplex_equals(struct Simplex * s1, struct Simplex * s2)
 
     /* Check if arrays are equal */
     for (int i = 0; i <= s1->dim; i++) {
-        // printf("Simplex equals: s1 - %d  s2 - %d\n", s1->vertices[i], s2->vertices[i]);
         if (s1->vertices[i] != s2->vertices[i]) {
             return 0;
         }
@@ -163,6 +222,13 @@ int simplex_equals(struct Simplex * s1, struct Simplex * s2)
     return 1;
 }
 
+/*
+ *  Compute the union of two SCGs.  
+ *  This means for each dimension, compute the union of the sets of generators
+ *  This amounts to stitching the complexes together along common simplices
+ *  This function does not use the hash tables, it's veryyyyy slow
+ *  The result is stored in scg2
+ */
 void scg_list_union(SCG * scg1, SCG * scg2)
 {
     /*  form the union of scg lists */
@@ -186,6 +252,14 @@ void scg_list_union(SCG * scg1, SCG * scg2)
     }
 }
 
+/*
+ *  Compute the union of two SCGs.  
+ *  This means for each dimension, compute the union of the sets of generators
+ *  This amounts to stitching the complexes together along common simplices
+ *  This function uses the hash tables for faster unions.
+ *  The result is stored in scg2
+ *  scg1 is destroyed in the process
+ */
 void scg_list_union_hash(SCG * scg1, SCG * scg2,
                          struct simplex_hash_table *table2)
 {
