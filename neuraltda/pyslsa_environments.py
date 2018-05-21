@@ -6,6 +6,9 @@ import neuraltda.stimulus_space as ss
 import pandas as pd
 import h5py as h5
 import pickle
+import tempfile
+
+from scipy.optimize import fmin
 
 import tqdm
 
@@ -209,6 +212,8 @@ def generate_spikes(paths, fields, max_rate, rads):
     S = P1 - C1
     M = np.einsum('ijkl, ijkl->ijk', S, S)
     #SIGMA = sigma*np.ones(M.shape)
+    #forgot square root
+    M = np.sqrt(M)
     SIGMA = np.tile(rads[np.newaxis, np.newaxis, :], (ntrial, nwin, 1))
     # if distance is less than sigma, then p = max_rate
     probs = max_rate*np.less(M, SIGMA)
@@ -229,3 +234,116 @@ def spikes_to_dataframe(spikes, fs, nsecs):
         trials_frame = trials_frame.append(trial_frame, ignore_index=True)
     clusters_frame = pd.DataFrame({'cluster': range(ncells), 'quality': ncells*['Good']})
     return (spikes_frame.sort_values(by='time_samples'), trials_frame, clusters_frame)
+
+def plot_environment(env, fields, sigma):
+    # Plot environments
+    plt.style.use('/home/brad/code/NeuralTDA/gentnerlab.mplstyle')
+
+    rad = sigma
+
+    fig = plt.figure()
+    # plt.plot(pths1[0, :, 0], pths1[0, :, 1], alpha=0.5)
+    ax = fig.add_subplot(111)
+    #ax = plt.gca()
+    for hole in env.holes:
+
+        h1 = plt.Circle(hole, env.hole_rad, fill=False, color='r', )
+        ax.add_artist(h1)
+    for field in fields:
+        h2 = plt.Circle(field, rad, fill=True, color='g', alpha=0.15)
+        ax.add_artist(h2)
+    plt.xlim([-1, 1])
+    plt.ylim([-1, 1])
+    ax.set_xticks([])
+    ax.set_yticks([])
+    #plt.title('Environment 1')
+    ax.set_aspect('equal')
+
+
+class EnvironmentSimulation:
+
+    def __init__(self, L, v, hole_radius, nseconds, fs, ncells,
+                 ntrials, max_rate_hz, sigma, max_hole, nrepeats, exclusion_param):
+
+        self.L = L
+        self.v = v
+        self.vel = v*L
+
+        self.hole_radius = hole_radius 
+        self.nseconds = nseconds
+        self.fs = fs
+        self.nwin = nseconds*fs 
+
+        self.ncells = ncells 
+        self.ntrials = ntrials 
+        self.max_rate_hz = max_rate_hz
+        self.max_rate = max_rate_hz / fs 
+        self.sigma = sigma
+        self.sigmaL = sigma*L
+
+        self.max_hole = max_hole 
+        self.nrepeats = nrepeats
+        self.exclusion_param = exclusion_param
+        self.num_envs = max_hole*nrepeats
+
+        self._config()
+
+    def _config(self):
+
+        print('Generating environments...')
+        self.envs = generate_environments(self.max_hole, self.hole_radius, self.nrepeats)
+
+        print('Generating Place Fields...')
+        self.fields, self.rads = generate_place_fields_CI(self.ncells, [self.sigmaL, self.sigmaL], self.exclusion_param)
+
+        print('Generating spikes...')
+        self.spikes = []
+        self.paths = []
+        for env1 in self.envs:
+            pths1 = generate_paths(env1, self.nwin, self.ntrials, self.vel)
+            self.paths.append(pths1)
+            spikes1 = generate_spikes(pths1, self.fields, self.max_rate, self.rads)
+            self.spikes.append(spikes1)
+
+    def reconfigure(self):
+
+        self._config()
+
+    def compute_simplicial_complexes(self, windt, dtovr, thresh):
+
+        self.graphs = []
+        for ind, spikes1 in enumerate(self.spikes):
+            (f, tmpf) = tempfile.mkstemp()
+            os.close(f)
+            tspikes, ttrials, tclust = spikes_to_dataframe(spikes1, fs=self.fs, nsecs=self.nseconds)
+            print('Binning data...')
+            tp2.build_binned_file_quick(tspikes, ttrials, tclust, windt, self.fs, ['Good'], [0,0], tmpf, dt_overlap=dtovr)
+
+            print('Computing simplicial complexes...')
+            with h5.File(tmpf, 'r') as bf:
+                poptens = np.array(bf['joe']['pop_tens'])
+                ncell, nwin, ntrial = poptens.shape
+                for trial in range(ntrial):
+                    binmat = ss.binnedtobinary(poptens[:, :, trial], thresh)
+                    maxsimps = ss.binarytomaxsimplex(binmat, rDup=False)
+                    g = ss.stimspacegraph_nx(maxsimps, self.ncells, stimuli=None)
+                    self.graphs.append((g, maxsimps, binmat))
+
+            os.remove(tmpf)
+
+    def mds_embed(self, env_num):
+
+        g = self.graphs[env_num][0]
+        maxsimps = self.graphs[env_num][1]
+        binmat = self.graphs[env_num][2]
+        pths1 = self.paths[env_num]
+        stim = pths1[0,:, :].T
+        self.embed_pts, self.dmat, self.sorted_node_list = ss.mds_embed(g)
+        self.x, self.y = ss.prepare_affine_data(binmat, stim, self.embed_pts, self.sorted_node_list)
+
+        self.L = lambda a: ss.affine_loss(a, self.x, self.y, 2, 2)
+
+    def fit_affine(self):
+
+        a_min = fmin(self.L, [1, 0, 0, 1, 0, 0], maxfun=10000)
+        self.y_embed = ss.affine_transform(a_min, self.x, 2, 2)
