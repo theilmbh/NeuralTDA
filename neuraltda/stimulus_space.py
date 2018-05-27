@@ -180,28 +180,39 @@ def prepare_affine_data(binmat, stim, embed_pts, sorted_node_list):
     Prepare the data for training an affine transformation
     x -> y where x is MDS point of embedded stimulus space and 
     y is the actual stimulus
+
+    binmat : ncells x nwin binary matrix of spike data
+    stim : nstimdim x nwin matrix of stimuli values
+    embed_pts : npts x n_embed_dim matrix of embedded points
+    sorted_node_list : list of sorted nodes in graph, for distance matrix
     '''
 
     stimdim, nwin = np.shape(stim)
     _, embeddim = np.shape(embed_pts)
+
     # make sure we have same number of windows in stim as neural data
     assert np.shape(binmat)[1] == nwin 
 
-
+    # get the max simplices
     maxsimps = binarytomaxsimplex(binmat)
+
+    # find the indices of the columns of the binmat that have spikes
     inds = np.nonzero((np.sum(binmat, axis=0) > 0))[0]
+
+    # allocate output arrays
     y = np.zeros((stimdim, len(inds)))
     x = np.zeros((embeddim, len(inds)))
     
-    cg_stims = {}
+    # cg_stims = {}
 
+    # Loop over every cell group in chronological order
     for ptind, (cg, ind) in enumerate(zip(maxsimps, inds)):
         if cg not in sorted_node_list:
             continue
-        if cg not in cg_stims.keys():
-            cg_stims[cg] = [stim[:, ind]]
-        else:
-            cg_stims[cg].append(stim[:, ind])
+        # if cg not in cg_stims.keys():
+        #     cg_stims[cg] = [stim[:, ind]]
+        # else:
+        #     cg_stims[cg].append(stim[:, ind])
 
         y[:, ptind] = stim[:, ind]
         x[:, ptind] = get_mds_position_of_cg(cg, embed_pts, sorted_node_list)
