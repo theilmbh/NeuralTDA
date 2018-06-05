@@ -45,6 +45,71 @@ int check_square_matrix(gsl_matrix * a)
     return ret;
 }
 
+/* Get the eigenvalues of a list of matrices using cuda streams */
+gsl_vector * cuda_batch_get_eigenvalues(gsl_matrix * L_list, size_t n, size_t N_matrices)
+{
+    /* Initialize cuSolver Library */
+    cusolverDnHandle_t cusolverH = NULL;
+    cusolverStatus_t cusolver_status = CUSOLVER_STATUS_SUCCESS;
+    cudaError_t err;
+
+    cusolver_status = cusolverDnCreate(&cusolverH);
+    assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
+
+    /* Allocate space for eigenvalues */
+    double * Leigs = (double *) malloc(n*N_matrices*sizeof(double));
+
+    /* Declare Device Variables */
+    double *d_As[] = (double **) malloc(N_matrices*sizeof(double *));
+    double *d_Ws[] = (double **) malloc(N_matrices*sizeof(double *));
+    int *devInfos[] = (int **) malloc(N_matrices*sizeof(int *));
+    double *d_works[] = (double **) malloc(N_matrices*sizeof(double *));
+    int lworks[] = (int *) malloc(N_matrices*sizeof(int));
+    
+    /* Copy variables to device */
+    for (int i = 0; i < N_matrices; i++) {
+        err = cudaMalloc((void**)&d_As[i], n*n*sizeof(double));
+        assert(err == cudaSuccess);
+        err = cudaMalloc((void**)&d_Ws[i], n*sizeof(double));
+        assert(err == cudaSuccess);
+        err = cudaMalloc((void**)&devInfos[i], sizeof(int));
+        assert(err == cudaSuccess);
+    }
+
+    /* Create streams */
+    cudaStream_t streams[] = (cudaStream_t *)malloc(N_matrices*sizeof(cudaStream_t));
+    for (i = 0; i < N_matrices; i++) {
+        cudaStreamCreate(&streams[i]);
+    }
+
+    /* Setup solver */
+    cusolverEigMode_t jobz = CUSOLVER_EIG_MODE_NOVECTOR;
+    cublasFillMode_t uplo = CUBLAS_FILL_MODE_LOWER;
+
+    for (i = 0; i < N_matrices; i++) {
+        cudaMemcpy(d_As[i], L_list[i]->data, sizeof(double)*n*n, cudaMemcpyHostToDevice);
+        cusolver_status = cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, n, d_As[i], n, d_Ws[i], &lworks[i]);
+        assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
+        cudaMalloc((void*)&d_work[i], sizeof(double)*lworks[i]);
+    }
+
+    /* Get eigenvalues */
+    for (i = 0; i < N_matrices; i++) {
+        cusolver_status = cusolverDnSetStream(cusolverH, streams[i]);
+        cusolver_status = cusolverDnDsyevd(cusolverH, jobz, uplo, n,
+                                           d_As[i], n, d_Ws[i], d_works[i],
+                                           lworks[i], devInfos[i]);
+        assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
+    }
+    err = cudaDeviceSynchronize();
+    assert(err == cudaSuccess);
+
+    for (i = 0; i < N_matrices; i++) {
+        cudaMemcpy(Leigs[i], d_Ws[i], n*sizeof(double), cudaMemcpyDeviceToHost);
+    }
+
+
+}
 
 gsl_vector * cuda_get_eigenvalues(gsl_matrix *L1, size_t n)
 {
@@ -63,7 +128,6 @@ gsl_vector * cuda_get_eigenvalues(gsl_matrix *L1, size_t n)
             L1mat[i*L1->tda +j] = gsl_matrix_get(L1, i, j);
         }
     }
-
 
     // Allocate space for eigenvalues
     double *L1v = (double *)malloc(n*sizeof(double));
@@ -86,7 +150,6 @@ gsl_vector * cuda_get_eigenvalues(gsl_matrix *L1, size_t n)
     assert(err == cudaSuccess);
     err = cudaMalloc ((void**)&devInfo, sizeof(int));
     assert(err == cudaSuccess);
-
 
     // Get eigenvalues for matrix 1
     cudaMemcpy(d_A, L1mat, sizeof(double)*n*n, cudaMemcpyHostToDevice);
