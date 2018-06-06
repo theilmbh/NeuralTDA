@@ -30,6 +30,8 @@
 #include <gsl/gsl_sort_vector.h>
 #include <gsl/gsl_eigen.h>
 
+extern "C" void reconcile_laplacians(gsl_matrix *, gsl_matrix *,
+                                gsl_matrix **, gsl_matrix **);
 
 int check_square_matrix(gsl_matrix * a)
 {
@@ -286,13 +288,14 @@ double evaluate_divergence(gsl_vector * A, gsl_vector * B, double beta)
     double rval, sval;
     double r1, r2;
     double div = 0;
+    int i;
 
     gsl_vector * rhov = gsl_vector_calloc(n);
     gsl_vector * sigmav = gsl_vector_calloc(n);
 
     for (i = 0; i < n; i++) {
-        r1 = exp(beta*gsl_vector_get(L1v, i));
-        r2 = exp(beta*gsl_vector_get(L2v, i));
+        r1 = exp(beta*gsl_vector_get(A, i));
+        r2 = exp(beta*gsl_vector_get(B, i));
         gsl_vector_set(rhov, i, r1);
         gsl_vector_set(sigmav, i, r2);
         tr1 += r1; 
@@ -303,7 +306,7 @@ double evaluate_divergence(gsl_vector * A, gsl_vector * B, double beta)
     gsl_vector_scale(sigmav, 1.0/tr2);
     for (i = 0; i < n; i++) {
         rval = gsl_vector_get(rhov, i);
-        sval = gsl_vector_get(sigmav, i):
+        sval = gsl_vector_get(sigmav, i);
         div += rval*(log(rval) - log(sval))/log(2.0);
     }
     gsl_vector_free(rhov);
@@ -318,27 +321,35 @@ extern "C" double * cuda_par_JS(gsl_matrix * pairs[], int n_pairs, double beta)
     int v1_ind, v2_ind, m_ind;
     int n_Laps = 2*n_pairs;
     int n_mats = 3*n_pairs;
+    int i;
+    double div1, div2;
 
     /* Allocate, Reconcile, and build M */
-    gsl_matrix ** mats = malloc(n_mats*sizeof(gsl_matrix *));
+    gsl_matrix ** mats = (gsl_matrix **)malloc(n_mats*sizeof(gsl_matrix *));
     for (i = 0; i < n_pairs; i++) {
         v1_ind = 3*i;
         v2_ind = 3*i + 1;
         m_ind = 3*i + 2;
-
-        reconcile_laplacians(pairs[i], pairs[i+1], &mats[v1_ind], &mats[v2_ind]);
+        //printf("Reconciling Laplacians...\n");
+        //printf("L1: %lu, L2: %lu\n", pairs[2*i]->size1, pairs[2*i+1]->size1);
+        reconcile_laplacians(pairs[2*i], pairs[2*i+1], &mats[v1_ind], &mats[v2_ind]);
+        //printf("Allocating M matrix...\n");
+        //printf("M size: %lu, %lu\n", mats[v1_ind]->size1, mats[v1_ind]->size2);
         mats[m_ind] = gsl_matrix_alloc(mats[v1_ind]->size1, mats[v1_ind]->size2);
+        //printf("Computing M matrix...\n");
         gsl_matrix_memcpy(mats[m_ind], mats[v1_ind]);
         gsl_matrix_add(mats[m_ind], mats[v2_ind]);
         gsl_matrix_scale(mats[m_ind], 0.5);
+        printf("Prepared pair: %d\n", i);
     }
 
     /* Get Eigenvalues */
+    printf("Computing Eigenvalues...\n");
     gsl_vector ** ress = cuda_batch_get_eigenvalues(mats, n_mats);
 
     /* Parallel evaluate JS */
-    double * divs = malloc(n_pairs*sizeof(double));
-    int v1_ind, v2_ind, m_ind;
+    double * divs = (double *)malloc(n_pairs*sizeof(double));
+    printf("Evaluating JS...\n");
     for (i = 0; i < n_pairs; i++) {
         v1_ind = 3*i;
         v2_ind = 3*i + 1;
@@ -350,9 +361,9 @@ extern "C" double * cuda_par_JS(gsl_matrix * pairs[], int n_pairs, double beta)
         gsl_matrix_free(mats[v1_ind]);
         gsl_matrix_free(mats[v2_ind]);
         gsl_matrix_free(mats[m_ind]);
-        gsl_vector_vree(ress[v1_ind]);
-        gsl_vector_vree(ress[v2_ind]);
-        gsl_vector_vree(ress[m_ind]);
+        gsl_vector_free(ress[v1_ind]);
+        gsl_vector_free(ress[v2_ind]);
+        gsl_vector_free(ress[m_ind]);
     }
     free(mats);
     return divs;

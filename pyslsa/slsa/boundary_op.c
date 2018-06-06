@@ -304,6 +304,13 @@ void reconcile_laplacians(gsl_matrix * L1, gsl_matrix * L2,
 
     gsl_matrix * temp;
 
+    /* Same size already */
+    if (L1->size1 == L2->size2) {
+        *L1new = L1;
+        *L2new = L2;
+        return;
+    }
+
     if (L1->size1 > L2->size1) {
         temp = gsl_matrix_calloc(L1->size1, L1->size2);
         for (int i = 0; i<L2->size1; i++) {

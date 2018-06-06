@@ -533,6 +533,41 @@ static PyObject * cuJS(PyObject * self, PyObject * args)
     return Py_BuildValue("d", div);
 }
 
+/* compute the pairwise JS divergence for a list of pairs */
+static PyObject * cuJS_pairs(PyObject * self, PyObject * args)
+{
+    double beta;
+    double *divs;
+    int dim, n_pairs, i;
+    PyObject *scg_list, *pair, *ret_list;
+    pyslsa_SCGObject *scg1, *scg2;
+
+    if (!PyArg_ParseTuple(args, "Oid", &scg_list, &dim, &beta)) {
+        return NULL;
+    }
+
+    n_pairs = PyList_Size(scg_list);
+    gsl_matrix ** mats = malloc(2*n_pairs*sizeof(gsl_matrix *));
+    //printf("Computing Laplacians...\n");
+    for (i = 0; i < n_pairs; i++) {
+        pair = PyList_GetItem(scg_list, i);
+        scg1 = (pyslsa_SCGObject *) PyList_GetItem(pair, 0);
+        scg2 = (pyslsa_SCGObject *) PyList_GetItem(pair, 1);
+        //printf("Computing Laplacian %d:1...\n", i);
+        mats[2*i] = compute_simplicial_laplacian(scg1->scg, (size_t)dim);
+        //printf("Computing Laplacian %d:2...\n", i);
+        mats[2*i+1] = compute_simplicial_laplacian(scg2->scg, (size_t)dim);
+    }
+    //printf("Computing Divergences...\n");
+    divs = cuda_par_JS(mats, n_pairs, beta);
+    ret_list = PyList_New(n_pairs);
+    for (i = 0; i < n_pairs; i++) {
+        PyList_SetItem(ret_list, i, Py_BuildValue("d", divs[i]));
+    }
+
+    return ret_list;
+}
+
 static PyObject * PySLSA_get_laplacian_spectra(PyObject * self, PyObject * args)
 {
     PyObject * scg_list;
@@ -585,6 +620,7 @@ static PyMethodDef pyslsa_funcs[] = {
     {"build_SCG", (PyCFunction)build_SCG, METH_VARARGS, NULL},
     {"union", (PyCFunction)SCG_union, METH_VARARGS, NULL},
     {"get_laplacian_spectra", (PyCFunction)PySLSA_get_laplacian_spectra, METH_VARARGS, NULL},
+    {"cuJS_pairs", (PyCFunction)cuJS_pairs, METH_VARARGS, NULL},
     {NULL}
 };
 
