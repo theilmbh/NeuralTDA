@@ -19,7 +19,6 @@
  */
 
 #include <Python.h>
-
 #include <string.h>
 
 #include "simplex.h"
@@ -534,6 +533,47 @@ static PyObject * cuJS(PyObject * self, PyObject * args)
     return Py_BuildValue("d", div);
 }
 
+static PyObject * PySLSA_get_laplacian_spectra(PyObject * self, PyObject * args)
+{
+    PyObject * scg_list;
+    pyslsa_SCGObject *scg;
+    gsl_vector **ress;
+    int dim, n_scg, Lsize;
+    int i, j;
+
+    if (!PyArg_ParseTuple(args, "Oi", &scg_list, &dim)) {
+        return NULL;
+    }
+    n_scg = (int)PyList_Size(scg_list);
+
+    /* Allocate space for matrix list */
+    gsl_matrix ** mats = malloc(n_scg*sizeof(gsl_matrix *));
+
+    /* Compute laplacians */
+    for (i = 0; i < n_scg; i++) {
+        scg = (pyslsa_SCGObject *) PyList_GetItem(scg_list, i); 
+        mats[i] = compute_simplicial_laplacian(scg->scg, (size_t)dim);
+    }
+
+    ress = cuda_batch_get_eigenvalues(mats, n_scg);
+
+    /* Build Return Values */
+    PyObject * eigvals_list = PyList_New(n_scg);
+    for (i = 0; i < n_scg; i++) {
+        Lsize = mats[i]->size1;
+        PyObject * eigvals = PyList_New(Lsize);
+        for (j = 0; j < Lsize; j++) {
+            PyObject * val = Py_BuildValue("d", gsl_vector_get(ress[i], j));
+            PyList_SetItem(eigvals, j, val); 
+        }
+        PyList_SetItem(eigvals_list, i, eigvals);
+        gsl_matrix_free(mats[i]);
+    }
+    free(mats);
+
+    return eigvals_list;
+}
+
 /*
  *  Define the functions available from the pycuslsa module
  */
@@ -544,6 +584,7 @@ static PyMethodDef pyslsa_funcs[] = {
     {"cuJS", (PyCFunction)cuJS, METH_VARARGS, NULL},
     {"build_SCG", (PyCFunction)build_SCG, METH_VARARGS, NULL},
     {"union", (PyCFunction)SCG_union, METH_VARARGS, NULL},
+    {"get_laplacian_spectra", (PyCFunction)PySLSA_get_laplacian_spectra, METH_VARARGS, NULL},
     {NULL}
 };
 
