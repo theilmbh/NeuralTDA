@@ -46,8 +46,9 @@ int check_square_matrix(gsl_matrix * a)
 }
 
 /* Get the eigenvalues of a list of matrices using cuda streams */
-gsl_vector * cuda_batch_get_eigenvalues(gsl_matrix * L_list, size_t n, size_t N_matrices)
+gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_t n, size_t N_matrices)
 {
+    int i, j;
     /* Initialize cuSolver Library */
     cusolverDnHandle_t cusolverH = NULL;
     cusolverStatus_t cusolver_status = CUSOLVER_STATUS_SUCCESS;
@@ -60,14 +61,14 @@ gsl_vector * cuda_batch_get_eigenvalues(gsl_matrix * L_list, size_t n, size_t N_
     double * Leigs = (double *) malloc(n*N_matrices*sizeof(double));
 
     /* Declare Device Variables */
-    double *d_As[] = (double **) malloc(N_matrices*sizeof(double *));
-    double *d_Ws[] = (double **) malloc(N_matrices*sizeof(double *));
-    int *devInfos[] = (int **) malloc(N_matrices*sizeof(int *));
-    double *d_works[] = (double **) malloc(N_matrices*sizeof(double *));
-    int lworks[] = (int *) malloc(N_matrices*sizeof(int));
+    double **d_As = (double **) malloc(N_matrices*sizeof(double *));
+    double **d_Ws = (double **) malloc(N_matrices*sizeof(double *));
+    int **devInfos = (int **) malloc(N_matrices*sizeof(int *));
+    double **d_works = (double **) malloc(N_matrices*sizeof(double *));
+    int *lworks = (int *) malloc(N_matrices*sizeof(int));
     
     /* Copy variables to device */
-    for (int i = 0; i < N_matrices; i++) {
+    for (i = 0; i < N_matrices; i++) {
         err = cudaMalloc((void**)&d_As[i], n*n*sizeof(double));
         assert(err == cudaSuccess);
         err = cudaMalloc((void**)&d_Ws[i], n*sizeof(double));
@@ -77,7 +78,7 @@ gsl_vector * cuda_batch_get_eigenvalues(gsl_matrix * L_list, size_t n, size_t N_
     }
 
     /* Create streams */
-    cudaStream_t streams[] = (cudaStream_t *)malloc(N_matrices*sizeof(cudaStream_t));
+    cudaStream_t *streams = (cudaStream_t *)malloc(N_matrices*sizeof(cudaStream_t));
     for (i = 0; i < N_matrices; i++) {
         cudaStreamCreate(&streams[i]);
     }
@@ -90,7 +91,7 @@ gsl_vector * cuda_batch_get_eigenvalues(gsl_matrix * L_list, size_t n, size_t N_
         cudaMemcpy(d_As[i], L_list[i]->data, sizeof(double)*n*n, cudaMemcpyHostToDevice);
         cusolver_status = cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, n, d_As[i], n, d_Ws[i], &lworks[i]);
         assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
-        cudaMalloc((void*)&d_work[i], sizeof(double)*lworks[i]);
+        cudaMalloc(&d_works[i], sizeof(double)*lworks[i]);
     }
 
     /* Get eigenvalues */
@@ -104,11 +105,28 @@ gsl_vector * cuda_batch_get_eigenvalues(gsl_matrix * L_list, size_t n, size_t N_
     err = cudaDeviceSynchronize();
     assert(err == cudaSuccess);
 
+    gsl_vector **ress = (gsl_vector **)malloc(N_matrices*sizeof(gsl_vector *));
     for (i = 0; i < N_matrices; i++) {
-        cudaMemcpy(Leigs[i], d_Ws[i], n*sizeof(double), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&Leigs[i*n], d_Ws[i], n*sizeof(double), cudaMemcpyDeviceToHost);
+        ress[i] = gsl_vector_alloc(n);
+        for (j = 0; j < n; j++) {
+            gsl_vector_set(ress[i], j, Leigs[i*n + j]);
+        }
+        cudaFree(d_As[i]);
+        cudaFree(d_Ws[i]);
+        cudaFree(devInfos[i]);
+        cudaFree(d_works[i]);
     }
+    
+    free(d_As);
+    free(d_Ws);
+    free(devInfos);
+    free(d_works);
+    free(lworks);
+    free(Leigs);
+    cusolverDnDestroy(cusolverH);
 
-
+    return ress;
 }
 
 gsl_vector * cuda_get_eigenvalues(gsl_matrix *L1, size_t n)
@@ -209,8 +227,15 @@ extern "C" double KL_divergence_cuda(gsl_matrix * L1, gsl_matrix * L2, double be
 
 
     /* compute eigenvalues */
-    gsl_vector * L1v = cuda_get_eigenvalues(L1, n);
-    gsl_vector * L2v = cuda_get_eigenvalues(L2, n);
+    gsl_matrix *mats[2];
+    gsl_vector **ress;
+    mats[0] = L1;
+    mats[1] = L2;
+    ress = cuda_batch_get_eigenvalues(mats, n, 2);
+    /*  gsl_vector * L1v = cuda_get_eigenvalues(L1, n);
+    gsl_vector * L2v = cuda_get_eigenvalues(L2, n);*/
+    gsl_vector * L1v = ress[0];
+    gsl_vector * L2v = ress[1];
 
     gsl_vector * rhov = gsl_vector_alloc(n);
     gsl_vector * sigmav = gsl_vector_alloc(n);
