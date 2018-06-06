@@ -118,6 +118,7 @@ extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_
         for (j = 0; j < sizes[i]; j++) {
             gsl_vector_set(ress[i], j, Leigs[i*sizes[i] + j]);
         }
+        gsl_sort_vector(ress[i]);
         cudaFree(d_As[i]);
         cudaFree(d_Ws[i]);
         cudaFree(devInfos[i]);
@@ -275,6 +276,86 @@ extern "C" double KL_divergence_cuda(gsl_matrix * L1, gsl_matrix * L2, double be
     gsl_vector_free(L1v);
     gsl_vector_free(L2v);       
     return div;
+}
+
+double evaluate_divergence(gsl_vector * A, gsl_vector * B, double beta)
+{
+    size_t n = A->size;
+    double tr1 = 0;
+    double tr2 = 0;
+    double rval, sval;
+    double r1, r2;
+    double div = 0;
+
+    gsl_vector * rhov = gsl_vector_calloc(n);
+    gsl_vector * sigmav = gsl_vector_calloc(n);
+
+    for (i = 0; i < n; i++) {
+        r1 = exp(beta*gsl_vector_get(L1v, i));
+        r2 = exp(beta*gsl_vector_get(L2v, i));
+        gsl_vector_set(rhov, i, r1);
+        gsl_vector_set(sigmav, i, r2);
+        tr1 += r1; 
+        tr2 += r2;
+    }
+
+    gsl_vector_scale(rhov, 1.0/tr1);
+    gsl_vector_scale(sigmav, 1.0/tr2);
+    for (i = 0; i < n; i++) {
+        rval = gsl_vector_get(rhov, i);
+        sval = gsl_vector_get(sigmav, i):
+        div += rval*(log(rval) - log(sval))/log(2.0);
+    }
+    gsl_vector_free(rhov);
+    gsl_vector_free(sigmav);
+    return div;
+}
+
+/* Compute the JS divergences between a laplacian L1 and
+ * a list of other laplacians for the specified dimension */
+extern "C" double * cuda_par_JS(gsl_matrix * pairs[], int n_pairs, double beta)
+{
+    int v1_ind, v2_ind, m_ind;
+    int n_Laps = 2*n_pairs;
+    int n_mats = 3*n_pairs;
+
+    /* Allocate, Reconcile, and build M */
+    gsl_matrix ** mats = malloc(n_mats*sizeof(gsl_matrix *));
+    for (i = 0; i < n_pairs; i++) {
+        v1_ind = 3*i;
+        v2_ind = 3*i + 1;
+        m_ind = 3*i + 2;
+
+        reconcile_laplacians(pairs[i], pairs[i+1], &mats[v1_ind], &mats[v2_ind]);
+        mats[m_ind] = gsl_matrix_alloc(mats[v1_ind]->size1, mats[v1_ind]->size2);
+        gsl_matrix_memcpy(mats[m_ind], mats[v1_ind]);
+        gsl_matrix_add(mats[m_ind], mats[v2_ind]);
+        gsl_matrix_scale(mats[m_ind], 0.5);
+    }
+
+    /* Get Eigenvalues */
+    gsl_vector ** ress = cuda_batch_get_eigenvalues(mats, n_mats);
+
+    /* Parallel evaluate JS */
+    double * divs = malloc(n_pairs*sizeof(double));
+    int v1_ind, v2_ind, m_ind;
+    for (i = 0; i < n_pairs; i++) {
+        v1_ind = 3*i;
+        v2_ind = 3*i + 1;
+        m_ind = 3*i + 2;
+
+        div1 = evaluate_divergence(ress[v1_ind], ress[m_ind], beta);
+        div2 = evaluate_divergence(ress[v2_ind], ress[m_ind], beta);
+        divs[i] = 0.5*div1 + 0.5*div2;
+        gsl_matrix_free(mats[v1_ind]);
+        gsl_matrix_free(mats[v2_ind]);
+        gsl_matrix_free(mats[m_ind]);
+        gsl_vector_vree(ress[v1_ind]);
+        gsl_vector_vree(ress[v2_ind]);
+        gsl_vector_vree(ress[m_ind]);
+    }
+    free(mats);
+    return divs;
 }
 
 /* Computes the KL divergence between two density matrices, 

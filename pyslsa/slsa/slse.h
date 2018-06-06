@@ -26,6 +26,7 @@ int check_square_matrix(gsl_matrix * a);
 double KL_divergence(gsl_matrix * L1, gsl_matrix * L2, double beta);
 double KL_divergence_cuda(gsl_matrix * L1, gsl_matrix * L2, double beta);
 gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix ** mats, size_t n_scg);
+double * cuda_par_JS(gsl_matrix * pairs[], int n_pairs, double beta);
 
 
 #endif
