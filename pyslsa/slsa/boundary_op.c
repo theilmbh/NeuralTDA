@@ -337,3 +337,16 @@ void reconcile_laplacians(gsl_matrix * L1, gsl_matrix * L2,
         return; 
     }
 }
+
+gsl_matrix * copy_laplacian(gsl_matrix * L1)
+{
+    size_t n1, n2;
+
+    n1 = L1->size1;
+    n2 = L1->size2;
+
+    gsl_matrix * out = gsl_matrix_alloc(n1, n2);
+    gsl_matrix_memcpy(out, L1);
+
+    return out;
+}

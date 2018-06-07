@@ -60,4 +60,6 @@ void reconcile_laplacians(gsl_matrix * L1, gsl_matrix * L2,
 
 gsl_matrix * to_gsl(int * L, size_t dim);
 
+gsl_matrix * copy_laplacian(gsl_matrix * L);
+
 #endif
