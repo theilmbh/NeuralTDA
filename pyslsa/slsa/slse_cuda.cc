@@ -50,6 +50,7 @@ int check_square_matrix(gsl_matrix * a)
 /* Get the eigenvalues of a list of matrices using cuda streams */
 extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_t N_matrices)
 {
+    printf("cbge: %lu\n", L_list[0]->size1);
     int i, j;
     /* Initialize cuSolver Library */
     cusolverDnHandle_t cusolverH = NULL;
@@ -64,6 +65,7 @@ extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_
     size_t tot_size = 0;
     for (i = 0; i < N_matrices; i++) {
         sizes[i] = L_list[i]->size1;
+        printf("%d: %lu   Addr: %#x\n", i, sizes[i], L_list[i]);
         tot_size += sizes[i];
     }
     double * Leigs = (double *) malloc(tot_size*N_matrices*sizeof(double));
@@ -330,17 +332,19 @@ extern "C" double * cuda_par_JS(gsl_matrix * pairs[], int n_pairs, double beta)
         v1_ind = 3*i;
         v2_ind = 3*i + 1;
         m_ind = 3*i + 2;
-        //printf("Reconciling Laplacians...\n");
-        //printf("L1: %lu, L2: %lu\n", pairs[2*i]->size1, pairs[2*i+1]->size1);
+        printf("Reconciling Laplacians...\n");
+        printf("L1: %lu, L2: %lu\n", pairs[2*i]->size1, pairs[2*i+1]->size1);
         reconcile_laplacians(pairs[2*i], pairs[2*i+1], &mats[v1_ind], &mats[v2_ind]);
-        //printf("Allocating M matrix...\n");
-        //printf("M size: %lu, %lu\n", mats[v1_ind]->size1, mats[v1_ind]->size2);
+        printf("Allocating M matrix...\n");
+        printf("M size: %lu, %lu\n", mats[v1_ind]->size1, mats[v1_ind]->size2);
         mats[m_ind] = gsl_matrix_alloc(mats[v1_ind]->size1, mats[v1_ind]->size2);
-        //printf("Computing M matrix...\n");
+        printf("Computing M matrix...\n");
         gsl_matrix_memcpy(mats[m_ind], mats[v1_ind]);
         gsl_matrix_add(mats[m_ind], mats[v2_ind]);
         gsl_matrix_scale(mats[m_ind], 0.5);
         printf("Prepared pair: %d\n", i);
+        printf("(%d, %d, %d): %lu, %lu, %lu\n", v1_ind, v2_ind, m_ind, mats[v1_ind]->size1, mats[v2_ind]->size1, mats[m_ind]->size1);
+        printf("(%d, %d, %d): %#x, %#x, %#x\n", v1_ind, v2_ind, m_ind, mats[v1_ind], mats[v2_ind], mats[m_ind]);
     }
 
     /* Get Eigenvalues */
@@ -355,7 +359,10 @@ extern "C" double * cuda_par_JS(gsl_matrix * pairs[], int n_pairs, double beta)
         v2_ind = 3*i + 1;
         m_ind = 3*i + 2;
 
+        printf("V1: %d, V2: %d, M: %d\n", v1_ind, v2_ind, m_ind);
+        printf("L1: %lu, M: %lu\n", ress[v1_ind]->size, ress[m_ind]->size);
         div1 = evaluate_divergence(ress[v1_ind], ress[m_ind], beta);
+        printf("L2: %lu, M: %lu\n", ress[v2_ind]->size, ress[m_ind]->size);
         div2 = evaluate_divergence(ress[v2_ind], ress[m_ind], beta);
         divs[i] = 0.5*div1 + 0.5*div2;
         gsl_matrix_free(mats[v1_ind]);

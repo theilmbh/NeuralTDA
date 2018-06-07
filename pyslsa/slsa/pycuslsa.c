@@ -160,6 +160,7 @@ static PyTypeObject pyslsa_SimplexType = {
 typedef struct {
     PyObject_HEAD
     SCG * scg;
+    gsl_matrix * L1;
 } pyslsa_SCGObject;
 
 /*
@@ -188,6 +189,7 @@ static PyObject * SCG_new(PyTypeObject * type,
     self = (pyslsa_SCGObject *)type->tp_alloc(type, 0);
     if (self != NULL) {
         self->scg = get_empty_SCG();
+        self->L1 = NULL;
 
     }
     return (PyObject *)self;
@@ -386,6 +388,7 @@ static PyObject * build_SCG(PyObject * self, PyObject * args)
     compute_chain_groups(max_simp_list, n_max_simp, out->scg);
 
     free(max_simp_list);
+    out->L1 = compute_simplicial_laplacian(out->scg, 1);
     return (PyObject *)out;
 }
 
@@ -554,9 +557,11 @@ static PyObject * cuJS_pairs(PyObject * self, PyObject * args)
         scg1 = (pyslsa_SCGObject *) PyList_GetItem(pair, 0);
         scg2 = (pyslsa_SCGObject *) PyList_GetItem(pair, 1);
         //printf("Computing Laplacian %d:1...\n", i);
-        mats[2*i] = compute_simplicial_laplacian(scg1->scg, (size_t)dim);
+        //mats[2*i] = compute_simplicial_laplacian(scg1->scg, (size_t)dim);
         //printf("Computing Laplacian %d:2...\n", i);
-        mats[2*i+1] = compute_simplicial_laplacian(scg2->scg, (size_t)dim);
+        //mats[2*i+1] = compute_simplicial_laplacian(scg2->scg, (size_t)dim);
+        mats[2*i] = scg1->L1;
+        mats[2*i+1] = scg2->L1;
     }
     //printf("Computing Divergences...\n");
     divs = cuda_par_JS(mats, n_pairs, beta);
