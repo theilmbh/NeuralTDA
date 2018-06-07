@@ -35,6 +35,24 @@ extern "C" void reconcile_laplacians(gsl_matrix *, gsl_matrix *,
 
 extern "C" gsl_matrix * copy_laplacian(gsl_matrix *);
 
+char * cusolver_status_strings[] = {
+    "Success",
+    "Library Not Initialized",
+    "Resource Allocation Failed",
+    "Invalid Value",
+    "Architecture Mismatch",
+    "GPU Execution Failed",
+    "Internal cuSolver Error",
+    "Matrix Type Not Supported"
+};
+
+void print_cuda_error(cudaError_t err)
+{
+    if (err != cudaSuccess) {
+        printf("CUDA Error: %s\n", cudaGetErrorString(err);
+    }
+}
+
 int check_square_matrix(gsl_matrix * a)
 {
     int ret = 0;
@@ -84,10 +102,13 @@ extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_
     /* Copy variables to device */
     for (i = 0; i < N_matrices; i++) {
         err = cudaMalloc((void**)&d_As[i], sizes[i]*sizes[i]*sizeof(double));
+        print_cuda_error(err);
         assert(err == cudaSuccess);
         err = cudaMalloc((void**)&d_Ws[i], sizes[i]*sizeof(double));
+        print_cuda_error(err);
         assert(err == cudaSuccess);
         err = cudaMalloc((void**)&devInfos[i], sizeof(int));
+        print_cuda_error(err);
         assert(err == cudaSuccess);
     }
 
@@ -114,9 +135,11 @@ extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_
         cusolver_status = cusolverDnDsyevd(cusolverH, jobz, uplo, sizes[i],
                                            d_As[i], sizes[i], d_Ws[i], d_works[i],
                                            lworks[i], devInfos[i]);
+        printf("Eigenvalue computation complete. Status: %s\n", cusolver_status_strings[cusolver_status]); 
         assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
     }
     err = cudaDeviceSynchronize();
+    print_cuda_error(err);
     assert(err == cudaSuccess);
 
     gsl_vector **ress = (gsl_vector **)malloc(N_matrices*sizeof(gsl_vector *));
