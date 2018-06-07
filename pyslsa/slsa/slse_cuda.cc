@@ -53,6 +53,14 @@ void print_cuda_error(cudaError_t err)
     }
 }
 
+void print_cusolver_error(cusolverStatus_t err, int code);
+{
+    if (err != CUSOLVER_STATUS_SUCCESS) {
+        printf("CUSOLVER Error: %s\n", cusolver_status_strings[err]);
+        printf("Matrix:         %d\n", code);
+    }
+}
+
 int check_square_matrix(gsl_matrix * a)
 {
     int ret = 0;
@@ -135,7 +143,7 @@ extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_
         cusolver_status = cusolverDnDsyevd(cusolverH, jobz, uplo, sizes[i],
                                            d_As[i], sizes[i], d_Ws[i], d_works[i],
                                            lworks[i], devInfos[i]);
-        printf("Eigenvalue computation complete. Status: %s\n", cusolver_status_strings[cusolver_status]); 
+        print_cusolver_error(cusolver_status, i);
         assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
     }
     err = cudaDeviceSynchronize();

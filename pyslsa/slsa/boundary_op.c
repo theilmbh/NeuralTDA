@@ -30,7 +30,9 @@ struct bdry_op_dict * get_empty_bdry_op_dict()
 {
     /* We need to make sure that the hash is clear */
     struct bdry_op_dict * out  = calloc(1, sizeof(struct bdry_op_dict));
-    out->N = 0;
+    if (out != NULL) {
+        out->N = 0;
+    }
     return out;
 }
 
@@ -104,6 +106,12 @@ void add_bdry_simplex(struct bdry_op_dict * tab, struct Simplex * sp, int sgn)
     tab->N++;
 }
 
+/* 
+ * Check hash table for simplex 
+ * Returns 0 if not found 
+ * Returns 1 if found
+ * Places index of found simplex in var indx 
+ */
 unsigned int bdry_check_hash(struct bdry_op_dict * tab,
                              struct Simplex *sp,
                              unsigned int *indx)
