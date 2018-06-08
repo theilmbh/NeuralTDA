@@ -34,6 +34,7 @@ extern "C" void reconcile_laplacians(gsl_matrix *, gsl_matrix *,
                                 gsl_matrix **, gsl_matrix **);
 
 extern "C" gsl_matrix * copy_laplacian(gsl_matrix *);
+extern "C" void print_matrix(gsl_matrix *);
 
 char * cusolver_status_strings[] = {
     "Success",
