@@ -49,15 +49,16 @@ char * cusolver_status_strings[] = {
 void print_cuda_error(cudaError_t err)
 {
     if (err != cudaSuccess) {
-        printf("CUDA Error: %s\n", cudaGetErrorString(err);
+        printf("CUDA Error: %s\n", cudaGetErrorString(err));
     }
 }
 
-void print_cusolver_error(cusolverStatus_t err, int code);
+void print_cusolver_error(cusolverStatus_t err, gsl_matrix * L_list[], int i)
 {
     if (err != CUSOLVER_STATUS_SUCCESS) {
         printf("CUSOLVER Error: %s\n", cusolver_status_strings[err]);
-        printf("Matrix:         %d\n", code);
+        printf("Matrix:         %d\n", i);
+        printf("Size:           %lu, %lu\n", L_list[i]->size1, L_list[i]->size2);
     }
 }
 
@@ -92,6 +93,8 @@ extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_
     size_t *sizes = (size_t *)malloc(N_matrices*sizeof(size_t));
     size_t tot_size = 0;
     for (i = 0; i < N_matrices; i++) {
+        assert(L_list[i] != NULL); /* Matrix must be present */
+        assert(L_list[i]->size1 == L_list[i]->size2); /* Matrix must be square*/
         sizes[i] = L_list[i]->size1;
 #ifdef DEBUG_JS
         printf("%d: %lu   Addr: %#x\n", i, sizes[i], L_list[i]);
@@ -143,7 +146,7 @@ extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_
         cusolver_status = cusolverDnDsyevd(cusolverH, jobz, uplo, sizes[i],
                                            d_As[i], sizes[i], d_Ws[i], d_works[i],
                                            lworks[i], devInfos[i]);
-        print_cusolver_error(cusolver_status, i);
+        print_cusolver_error(cusolver_status, L_list, i);
         assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
     }
     err = cudaDeviceSynchronize();
