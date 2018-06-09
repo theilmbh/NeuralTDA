@@ -31,8 +31,8 @@ void print_matrix(gsl_matrix * mat)
     int row_end, col_end;
     int i, j;
 
-    nscreenx = mat->size1 / TERM_WIDTH + 1;
-    nscreeny = mat->size2 / TERM_HEIGHT + 1;
+    nscreenx = mat->size1 / TERM_WIDTH;
+    nscreeny = mat->size2 / TERM_HEIGHT;
 
     for (n1 = 0; n1 < nscreenx; n1++) {
         for (n2 = 0; n2 < nscreeny; n2++) {

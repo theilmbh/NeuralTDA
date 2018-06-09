@@ -60,6 +60,7 @@ void print_cusolver_error(cusolverStatus_t err, gsl_matrix * L_list[], int i)
         printf("CUSOLVER Error: %s\n", cusolver_status_strings[err]);
         printf("Matrix:         %d\n", i);
         printf("Size:           %lu, %lu\n", L_list[i]->size1, L_list[i]->size2);
+        print_matrix(L_list[i]);
     }
 }
 
