@@ -30,12 +30,17 @@
 #include <gsl/gsl_sort_vector.h>
 #include <gsl/gsl_eigen.h>
 
+/* 
+ * External C functions that we will need
+ */
 extern "C" void reconcile_laplacians(gsl_matrix *, gsl_matrix *,
                                 gsl_matrix **, gsl_matrix **);
-
 extern "C" gsl_matrix * copy_laplacian(gsl_matrix *);
 extern "C" void print_matrix(gsl_matrix *);
 
+/* 
+ * CuSOLVER Error Messages for debugging
+ */
 char * cusolver_status_strings[] = {
     "Success",
     "Library Not Initialized",
@@ -47,6 +52,10 @@ char * cusolver_status_strings[] = {
     "Matrix Type Not Supported"
 };
 
+/* 
+ * Checks to see if cudaError_t err is not success, and if so, prints
+ * the associated debug error message
+ */
 void print_cuda_error(cudaError_t err)
 {
     if (err != cudaSuccess) {
@@ -54,6 +63,10 @@ void print_cuda_error(cudaError_t err)
     }
 }
 
+/* 
+ * Checks to see if cusolverStatus_t status is not success, and if so, prints
+ * the associated debug error message along with the offending matrix
+ */
 void print_cusolver_error(cusolverStatus_t err, gsl_matrix * L_list[], int i)
 {
     if (err != CUSOLVER_STATUS_SUCCESS) {
@@ -64,6 +77,9 @@ void print_cusolver_error(cusolverStatus_t err, gsl_matrix * L_list[], int i)
     }
 }
 
+/* 
+ * Check to see if a given gsl_matrix is square
+ */
 int check_square_matrix(gsl_matrix * a)
 {
     int ret = 0;
@@ -78,8 +94,11 @@ int check_square_matrix(gsl_matrix * a)
     return ret;
 }
 
-/* Get the eigenvalues of a list of matrices using cuda streams */
-extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_t N_matrices)
+/* 
+ * Get the eigenvalues of a list of matrices using cuda streams 
+ */
+extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[],
+                                                    size_t N_matrices)
 {
     printf("cbge: %lu\n", L_list[0]->size1);
     int i, j;
@@ -136,8 +155,12 @@ extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_
     cublasFillMode_t uplo = CUBLAS_FILL_MODE_LOWER;
 
     for (i = 0; i < N_matrices; i++) {
-        cudaMemcpy(d_As[i], L_list[i]->data, sizeof(double)*sizes[i]*sizes[i], cudaMemcpyHostToDevice);
-        cusolver_status = cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, sizes[i], d_As[i], sizes[i], d_Ws[i], &lworks[i]);
+        cudaMemcpy(d_As[i], L_list[i]->data, sizeof(double)*sizes[i]*sizes[i],
+                   cudaMemcpyHostToDevice);
+        cusolver_status = cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo,
+                                                      sizes[i], d_As[i],
+                                                      sizes[i], d_Ws[i],
+                                                      &lworks[i]);
         assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
         cudaMalloc(&d_works[i], sizeof(double)*lworks[i]);
     }
@@ -157,7 +180,8 @@ extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_
 
     gsl_vector **ress = (gsl_vector **)malloc(N_matrices*sizeof(gsl_vector *));
     for (i = 0; i < N_matrices; i++) {
-        cudaMemcpy(&Leigs[i*sizes[i]], d_Ws[i], sizes[i]*sizeof(double), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&Leigs[i*sizes[i]], d_Ws[i], sizes[i]*sizeof(double),
+                   cudaMemcpyDeviceToHost);
         ress[i] = gsl_vector_alloc(sizes[i]);
         for (j = 0; j < sizes[i]; j++) {
             gsl_vector_set(ress[i], j, Leigs[i*sizes[i] + j]);
@@ -180,6 +204,9 @@ extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[], size_
     return ress;
 }
 
+/* 
+ * Get the eigenvalues of a laplacian L1 using the cusolver library
+ */
 gsl_vector * cuda_get_eigenvalues(gsl_matrix *L1, size_t n)
 {
 
@@ -224,12 +251,14 @@ gsl_vector * cuda_get_eigenvalues(gsl_matrix *L1, size_t n)
     cudaMemcpy(d_A, L1mat, sizeof(double)*n*n, cudaMemcpyHostToDevice);
     cusolverEigMode_t jobz = CUSOLVER_EIG_MODE_NOVECTOR;
     cublasFillMode_t uplo = CUBLAS_FILL_MODE_LOWER;
-    cusolver_status = cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, n, d_A, n, d_W, &lwork);
+    cusolver_status = cusolverDnDsyevd_bufferSize(cusolverH, jobz, uplo, n,
+                                                  d_A, n, d_W, &lwork);
     assert(cusolver_status == CUSOLVER_STATUS_SUCCESS);
     cudaMalloc((void**)&d_work, sizeof(double)*lwork);
 
     // compute spectrum
-    cusolver_status = cusolverDnDsyevd(cusolverH,jobz, uplo, n, d_A, n, d_W, d_work, lwork, devInfo);
+    cusolver_status = cusolverDnDsyevd(cusolverH,jobz, uplo, n, d_A, n, d_W,
+                                       d_work, lwork, devInfo);
     err = cudaDeviceSynchronize();
     //printf("stat: %d\n", cusolver_status);
     assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);

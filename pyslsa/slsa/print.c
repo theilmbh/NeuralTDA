@@ -23,6 +23,10 @@
 #define TERM_WIDTH 12
 #define TERM_HEIGHT 22
 
+/* 
+ * Print a large gsl_matrix by breaking it up into smaller chunks
+ * and printing each one separately
+ */
 void print_matrix(gsl_matrix * mat) 
 {
     int n1, n2;

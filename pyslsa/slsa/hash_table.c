@@ -24,6 +24,9 @@
 
 int ncollisions = 0;
 
+/* 
+ * Allocate an empty hash table
+ */
 struct simplex_hash_entry **get_empty_hash_table()
 {
     /* Allocate space for hash table */
@@ -46,6 +49,9 @@ struct simplex_hash_entry **get_empty_hash_table()
     return table;
 }
 
+/* 
+ * Allocate an empty hash table without initialization of hash lists
+ */
 struct simplex_hash_table * get_empty_hash_table_D()
 {
     struct simplex_hash_table *out = calloc(1,
@@ -57,6 +63,9 @@ struct simplex_hash_table * get_empty_hash_table_D()
     return out;
 }
 
+/* 
+ * Destroy a hash table
+ */
 void free_hash_table(struct simplex_hash_entry **table) 
 {
     /* Free all entries, then free the table */
@@ -79,9 +88,12 @@ void free_hash_table_D(struct simplex_hash_table * table)
     free(table);
 }
 
+/*
+ * Check the hash table for the presence of a simplex 
+ * Returns 1 if simplex found in hash table, 0 otherwise 
+ */
 int check_hash(struct simplex_hash_entry **table, struct Simplex * sp)
 {
-    /* Returns 1 if simplex found in hash table, 0 otherwise */
     if (!sp) {
         return 1;
     }
@@ -109,6 +121,9 @@ int check_hash(struct simplex_hash_entry **table, struct Simplex * sp)
     return 0;
 }
 
+/* 
+ * Add a simplex to a hash table hash list
+ */
 void add_to_hash_list(struct simplex_hash_entry *list, struct Simplex *sp)
 {
     if (list->s == NULL) {
@@ -127,6 +142,9 @@ void add_to_hash_list(struct simplex_hash_entry *list, struct Simplex *sp)
     list->next = s_new;
 }
 
+/* 
+ * Compute the hash value of a simplex
+ */
 unsigned int simplex_hash(struct Simplex *s)
 {
     /* Computes hash value for simplex s */
@@ -139,6 +157,10 @@ unsigned int simplex_hash(struct Simplex *s)
     return hc;
 }
 
+/* 
+ * Check hash table for a simplex
+ * Uses Linear Probing (KNUTH TAOCP V3 6.4 Algorithm L)
+ */
 int check_hash_D(struct simplex_hash_table *table, struct Simplex * sp)
 {
     /* Linear probing.  Knuth V3 6.4 Alg. L */
@@ -177,4 +199,3 @@ int check_hash_D(struct simplex_hash_table *table, struct Simplex * sp)
     }
     return 0;
 }
-

@@ -579,7 +579,8 @@ void print_SCG(SCG * scg)
     printf("\n");
 }
 
-/* Compute the chain group generators for the complex
+/* 
+ * Compute the chain group generators for the complex
  * defined by the max_simps 
  */
 void compute_chain_groups(struct Simplex ** max_simps,

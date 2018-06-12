@@ -196,7 +196,7 @@ static PyObject * SCG_new(PyTypeObject * type,
 }
 
 /*
- *  Adds a top-level simplex to the SCG, recomputing the chain groups of each
+ * Adds a top-level simplex to the SCG, recomputing the chain groups of each
  * dimension
  */
 static PyObject * PySCG_add_max_simplex(pyslsa_SCGObject * self,
@@ -350,7 +350,8 @@ static PyTypeObject pyslsa_SCGType = {
 /* PySLSA Module Definitions                                                 */
 /* ************************************************************************* */
 
-static char pyslsa_docs[] = "PyCuSLSA: CUDA-Accelerated Simplicial Laplacian Spectral Analyzer";
+static char pyslsa_docs[] = 
+    "PyCuSLSA: CUDA-Accelerated Simplicial Laplacian Spectral Analyzer";
 
 /*
  *  Python method to build a simplicial complex from a list of top-level (max)
@@ -536,7 +537,9 @@ static PyObject * cuJS(PyObject * self, PyObject * args)
     return Py_BuildValue("d", div);
 }
 
-/* compute the pairwise JS divergence for a list of pairs */
+/* 
+ * Compute the pairwise JS divergence for a list of pairs of SCGs
+ */
 static PyObject * cuJS_pairs(PyObject * self, PyObject * args)
 {
     double beta;
@@ -573,6 +576,10 @@ static PyObject * cuJS_pairs(PyObject * self, PyObject * args)
     return ret_list;
 }
 
+/* 
+ * Get the Laplacian spectra for the specified dimension for 
+ * a list of SCGs
+ */
 static PyObject * PySLSA_get_laplacian_spectra(PyObject * self, PyObject * args)
 {
     PyObject * scg_list;
@@ -624,7 +631,8 @@ static PyMethodDef pyslsa_funcs[] = {
     {"cuJS", (PyCFunction)cuJS, METH_VARARGS, NULL},
     {"build_SCG", (PyCFunction)build_SCG, METH_VARARGS, NULL},
     {"union", (PyCFunction)SCG_union, METH_VARARGS, NULL},
-    {"get_laplacian_spectra", (PyCFunction)PySLSA_get_laplacian_spectra, METH_VARARGS, NULL},
+    {"get_laplacian_spectra", (PyCFunction)PySLSA_get_laplacian_spectra,
+        METH_VARARGS, NULL},
     {"cuJS_pairs", (PyCFunction)cuJS_pairs, METH_VARARGS, NULL},
     {NULL}
 };
