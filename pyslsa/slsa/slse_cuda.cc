@@ -100,7 +100,7 @@ int check_square_matrix(gsl_matrix * a)
 extern "C" gsl_vector ** cuda_batch_get_eigenvalues(gsl_matrix * L_list[],
                                                     size_t N_matrices)
 {
-    printf("cbge: %lu\n", L_list[0]->size1);
+    //printf("cbge: %lu\n", L_list[0]->size1);
     int i, j;
     /* Initialize cuSolver Library */
     cusolverDnHandle_t cusolverH = NULL;
