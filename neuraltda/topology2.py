@@ -820,18 +820,38 @@ def extract_population_tensor(binned_data_file, stim,
 ##########################
 
 def num_trials(poptens):
+    '''
+    Return the number of trials in a population tensor
+    '''
     (ncells, nwin, ntrials) = np.shape(poptens)
     return ntrials
 
 def num_win(poptens):
+    '''
+    Return the number of windows in a population tensor
+    '''
     (ncells, nwin, ntrials) = np.shape(poptens)
     return nwin
 
 def num_cells(poptens):
+    '''
+    Return the number of cells in a population tensor
+    '''
     (ncells, nwin, ntrials) = np.shape(poptens)
     return ncells
 
 def rejection_sampling(command, seed=0):
+    '''
+    Perform MCMC rejection sampling using the Simplicial Configuration Model
+    Return the output as a facet list
+
+    Parameters
+    ----------
+    command : string
+        the SCM sampler command
+    seed : int
+        
+    '''
     # Call sampler with subprocess
     proc = subprocess.run(command, stdout=subprocess.PIPE)
     # Read output as a facet list
@@ -845,7 +865,19 @@ def rejection_sampling(command, seed=0):
     yield facet_list
 
 def prepare_scm_initial_condition(binmat, **kwargs):
+    '''
+    Build the input to the SCM model from a binary matrix of neural data
 
+    Parameters
+    ----------
+    binmat : numpy array
+        Ncells x Nwin array of spike counts for computing a simplicial complex
+
+    Returns
+    -------
+    fname : string
+        Name of input file for SCM model
+    '''
     facets = sc.binarytomaxsimplex(binmat, rDup=True, **kwargs)
     with tempfile.NamedTemporaryFile(mode='w+t', delete=False) as f:
         fname = f.name
@@ -858,7 +890,21 @@ def prepare_scm_initial_condition(binmat, **kwargs):
     return fname
 
 def prepare_scm_command(facet_file, nsamps):
+    '''
+    Build a command to run the scm model on a given input file
 
+    Parameters
+    ----------
+    facet_file : string
+        Path to file containing the input complex
+    nsamps : int
+        Number of MCMC samples to draw
+
+    Returns
+    -------
+    command : list
+        shell command to run SCM model on input file
+    '''
     command = [SCM_EXECUTABLE, facet_file, '-t', str(nsamps)]
     return command
 
@@ -867,6 +913,22 @@ def calc_scm_betti_distribution(poptens, thresh, trial, nsamples):
     Use the simplicial configuration model of Young et al. 2017
     to compute the null distribution of betti numbers for a specific trial
     in a population activity tensor
+
+    Parameters
+    ----------
+    poptens : numpy array
+        Ncells x Nwin x Ntrial array of binned neural activity
+    thresh : float
+        Threshold for computing cell groups
+    trial : int
+        Trial number to provide simplicial complex as input to SCM model
+    nsamplse : int
+        Number of samples to draw from SCM model
+
+    Returns
+    -------
+    sample_bettis : numpy array
+        Betti numbers from resulting SCM samples
     '''
     popmat = poptens[:, :, trial]
     popmat_bin = sc.binnedtobinary(popmat, thresh)

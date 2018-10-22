@@ -34,10 +34,10 @@ bps = {'B1083': '/home/brad/krista/B1083/P03S03/', 'B1075': '/home/brad/krista/B
        'B1056': '/home/brad/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
        'B1083-5': '/home/brad/krista/B1083/P03S05/'}
 
-bps = {'B1083': '/home/AD/btheilma/krista/B1083/P03S03/', 'B1075': '/home/AD/btheilma/krista/B1075/P01S03/',
-       'B1235': '/home/AD/btheilma/krista/B1235/P02S01/', 'B1056': '/home/AD/btheilma/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
-       'B1056': '/home/AD/btheilma/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
-       'B1083-5': '/home/AD/btheilma/krista/B1083/P03S05/'}
+# bps = {'B1083': '/home/AD/btheilma/krista/B1083/P03S03/', 'B1075': '/home/AD/btheilma/krista/B1075/P01S03/',
+#        'B1235': '/home/AD/btheilma/krista/B1235/P02S01/', 'B1056': '/home/AD/btheilma/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
+#        'B1056': '/home/AD/btheilma/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
+#        'B1083-5': '/home/AD/btheilma/krista/B1083/P03S05/'}
 
 learned_stimuli = {'B1083': ['M_scaled_burung', 'N_scaled_burung', 'O_scaled_burung', 'P_scaled_burung'], 'B1056': ['A_scaled_burung', 'B_scaled_burung', 'C_scaled_burung', 'D_scaled_burung'], 'B1235': [], 'B1075': []}
 peck_stimuli = {'B1083': {'L': ['N_40k','P_40k'], 'R': ['M_40k', 'O_40k']}, 'B1056': {'L': ['B_scaled_burung', 'D_scaled_burung'], 'R': ['A_scaled_burung', 'C_scaled_burung']}, 
