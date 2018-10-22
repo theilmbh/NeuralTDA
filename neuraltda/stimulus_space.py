@@ -55,8 +55,6 @@ def stimspacegraph_nx(maxsimps, Ncells, stimuli=None):
         The total number of cells in the population (for computing metric)
     '''
     g = nx.Graph()
-
-    
     depth = 0
     for maxsimp in maxsimps:
         add_cellgroups(g, maxsimp, Ncells, depth)
@@ -80,13 +78,11 @@ def binnedtobinary(popvec, thresh):
     Thresh : float
         Multiple of average firing rate to use for thresholding
     '''
-
     popvec = np.array(popvec)
     Ncells, Nwin = np.shape(popvec)
     means = popvec.sum(1)/Nwin
     means = np.tile(means, (Nwin, 1)).T
     meanthr = thresh*means
-
     activeUnits = np.greater(popvec, meanthr).astype(int)
     return activeUnits
 
@@ -107,9 +103,7 @@ def binarytomaxsimplex(binMat, rDup=False, clus=None, ):
         ui = np.ones(len(binMat.T), 'bool')
         ui[1:] = (diff != 0).any(axis=0)
         binMat = binMat[:, ui]
-
     Ncells, Nwin = np.shape(binMat)
-
     if not clus:
         clus = np.arange(Ncells)
     MaxSimps = []
@@ -119,8 +113,6 @@ def binarytomaxsimplex(binMat, rDup=False, clus=None, ):
     #        verts = np.arange(Ncells)[binMat[:, win] == 1]
     #        verts = np.sort(verts)
     #        MaxSimps.append(tuple(verts))
-
-
     return MaxSimps
 
 # def binarytomaxsimplex_withstim(binMat, rDup=False, clus=None, stimulus=None):

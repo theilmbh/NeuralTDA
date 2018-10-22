@@ -21,7 +21,7 @@ from scipy.interpolate import interp1d
 
 from ephys import events, core
 
-import neuraltda.simpComp as sc
+import neuraltda.stimulus_space as sc
 
 ################################
 ###### Module Definitions ######
