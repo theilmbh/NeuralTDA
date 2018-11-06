@@ -400,7 +400,7 @@ def prep_paths(analysis_id, binned_data_file, block_path, shuffle, nperms):
 
     return (analysis_id, analysis_path)
 
-def calc_CI_bettis_tensor(analysis_id, binned_data_file,
+def calc_CI_bettis_tensor_old(analysis_id, binned_data_file,
                           block_path, thresh, shuffle=False, nperms=0,
                           ncellsperm=1, clusters=None):
     '''
@@ -432,6 +432,64 @@ def calc_CI_bettis_tensor(analysis_id, binned_data_file,
             ### Compute Bettis
             poptens = np.array(stim_trials['pop_tens'])
             clusters = np.array(stim_trials['clusters'])
+            bpd = do_compute_betti(poptens, clusters, pfs, thresh,
+                                   shuffle, nperms, ncellsperm)
+            bpd_withstim[stim] = bpd
+            with open(bps, 'wb') as bpfile:
+                pickle.dump(bpd, bpfile)
+        bpdws_sfn = os.path.join(analysis_path,
+                                 analysis_id+'-bettiResultsDict.pkl')
+        with open(bpdws_sfn, 'wb') as bpdwsfile:
+            pickle.dump(bpd_withstim, bpdwsfile)
+        return (bpdws_sfn, bpd_withstim)
+
+def calc_CI_bettis_tensor(analysis_id, binned_data_file,
+                          block_path, thresh, shuffle=False, nperms=0,
+                          ncellsperm=1, clusters=None, **kwargs):
+    '''
+    Given a binned data file, compute the betti numbers of the Curto-Itskov
+
+    Parameters
+    ------
+    analysis_id : str
+        A string to identify this particular analysis run
+    binned_data_file : str
+        Path to the binned data file on which to compute topology
+    block_path : str
+        Path to the folder containing the data for the block
+    thresh : float
+        Threshold to use when identifying cell groups
+    '''
+    (analysis_id, analysis_path) = prep_paths(analysis_id, binned_data_file,
+                                              block_path, shuffle, nperms)
+    poptens_list = []
+    clusters_list = []
+    with h5py.File(binned_data_file, 'r') as bdf:
+        stims = bdf.keys()
+        bpd_withstim = dict()
+        # Prepare poptens list
+        for stim in stims:
+            binned_clusters = np.array(bdf[stim]['clusters'])
+            stim_trials = bdf[stim]
+            ### Compute Bettis
+            poptens = np.array(stim_trials['pop_tens'])
+            clusters = np.array(stim_trials['clusters'])
+            poptens_list.append(poptens)
+            clusters_list.append(clusters)
+        if 'shuffle_across_stims' in kwargs:
+            assert(callable(kwargs['shuffle_across_stims']))
+            shuff_func = kwargs['shuffle_across_stims']
+            poptens_list, clusters_list = shuff_func(poptens_list, 
+                                                     clusters_list)
+
+        # Compute Bettis from poptens list
+        for ind, stim in enumerate(stims):
+            (bs, bps, pfs) = get_analysis_paths(analysis_id,
+                                                analysis_path,
+                                                stim)
+            bpd = dict()
+            poptens = poptens_list[ind]
+            clusters = clusters_list[ind]
             bpd = do_compute_betti(poptens, clusters, pfs, thresh,
                                    shuffle, nperms, ncellsperm)
             bpd_withstim[stim] = bpd
@@ -495,11 +553,21 @@ def do_compute_betti(poptens, clusters, pfile_stem, thresh,
 
     '''
     Function to actually perform the betti number computation
+    
     '''
+    # Ensure data are in numpy arrays
     data_tensor = np.array(poptens)
     clusters = np.array(clusters)
+
+    # deprecated..
     levels = (data_tensor.shape)[2:] # First two axes are cells, windows.
     assert len(levels) == 1, 'Cant handle more than one level yet'
+
+    # Perform any shuffling
+    if shuffle == True:
+        data_tensor = shuffle_tensor_within_cell(data_tensor)
+    if callable(shuffle):                       # If shuffle is a function,
+        data_tensor = shuffle(data_tensor)      # use it to shuffle the data
     ntrials = levels[0]
     bettidict = {}
     for trial in range(ntrials):
@@ -512,15 +580,15 @@ def do_compute_betti(poptens, clusters, pfile_stem, thresh,
             for perm in range(nperms):
                 pfile = get_pfile_name(pfile_stem, rep=trial, perm=perm)
                 nmat = new_tensor[:, :, perm]
-                if shuffle:
-                    nmat = get_shuffle(nmat)
+                #if shuffle:
+                #    nmat = get_shuffle(nmat)
                 perm_clus = clusters[perm_cells[:, perm]]
                 bettis = calc_bettis(nmat, perm_clus, pfile, thresh)
                 bettipermdict[str(perm)] = {'bettis': bettis}
             bettidict[str(trial)] = bettipermdict
         else:
             if shuffle:
-                data_mat = get_shuffle(data_mat)
+                #data_mat = get_shuffle(data_mat)
                 pfile = get_pfile_name(pfile_stem, rep=trial, shuffled=1)
             bettis = calc_bettis(data_mat, clusters, pfile, thresh)
             bettidict[str(trial)] = {'0': {'bettis': bettis}}
@@ -534,6 +602,39 @@ def get_shuffle(data_mat):
     for cell in range(cells):
         np.random.shuffle(data_mat[cell, :])
     return data_mat
+
+def shuffle_tensor_within_cell(poptens):
+    '''
+    Shuffles a data tensor, each trial and each cell independently across time
+    '''
+    (cells, wins, trials) = poptens.shape
+    for trial in range(trials):
+        for cell in range(cells):
+            np.random.shuffle(poptens[cell, :, trial])
+    return poptens
+
+def shuffle_tensor_across_trials(poptens):
+    '''
+    Shuffles a data tensor by permuting cell responses across trials,
+    indpendently for each cell and window
+    '''
+    (cells, wins, trials) = poptens.shape
+    for win in range(wins):
+        for cell in range(cells):
+            np.random.shuffle(poptens[cell, win, :])
+    return poptens
+
+def shuffle_across_trials_across_stims(poptens_list, clusters_list):
+    '''
+    Join all the stimuli poptens together along trials, shuffle across trials 
+    within cells, split back into poptens
+    '''
+    ntrials_list = [x.shape[2] for x in poptens_list]
+    ntrials = np.unique(ntrials_list)[0]
+    poptens_concat = np.concatenate(poptens_list, axis=2)
+    poptens_concat = shuffle_tensor_across_trials(poptens_concat)
+    poptens_list = np.array_split(poptens_concat, ntrials, axis=2)
+    return (poptens_list, clusters_list)
 
 def get_perms(data_mat, nperms, ncellsperm):
     '''
@@ -1028,13 +1129,13 @@ def betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr):
 
 def compute_betti_curves(analysis_id, block_path, bdf,
                          thresh, nperms, ncellsperm, dims, twin,
-                         windt, dtovr, shuffle=False):
+                         windt, dtovr, shuffle=False, **kwargs):
     '''
     Computes betti numbers and returns betti curves 
     '''
     (resf, betti_dict) = calc_CI_bettis_tensor(analysis_id, bdf,
                               block_path, thresh, shuffle=shuffle,
-                              nperms=nperms, ncellsperm=ncellsperm)
+                              nperms=nperms, ncellsperm=ncellsperm, **kwargs)
 
     return betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr)
 
