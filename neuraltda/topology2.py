@@ -624,17 +624,42 @@ def shuffle_tensor_across_trials(poptens):
             np.random.shuffle(poptens[cell, win, :])
     return poptens
 
+def shuffle_spiketrains_across_trials(poptens):
+    '''
+    Shuffles a data tensor by permuting cell responses across trials,
+    indpendently for each cell but keeping cell spike trains intact
+    '''
+    (cells, wins, trials) = poptens.shape
+    for cell in range(cells):
+        np.random.shuffle(poptens[cell, :, :].T)
+    return poptens
+
 def shuffle_across_trials_across_stims(poptens_list, clusters_list):
     '''
     Join all the stimuli poptens together along trials, shuffle across trials 
     within cells, split back into poptens
     '''
     ntrials_list = [x.shape[2] for x in poptens_list]
+    assert(len(np.unique(ntrials_list)) == 1) # must all have same number of trials
     ntrials = np.unique(ntrials_list)[0]
     poptens_concat = np.concatenate(poptens_list, axis=2)
     poptens_concat = shuffle_tensor_across_trials(poptens_concat)
     poptens_list = np.array_split(poptens_concat, ntrials, axis=2)
     return (poptens_list, clusters_list)
+
+def shuffle_whole_spiketrains_across_stims(poptens_list, clusters_list):
+    '''
+    Shuffle full spike trains of cells across stimuli, preserving spike trains
+    '''
+    ntrials_list = [x.shape[2] for x in poptens_list]
+    assert(len(np.unique(ntrials_list)) == 1) # must all have same number of trials
+    ntrials = np.unique(ntrials_list)[0]
+    # concatenate all trials from all stimuli together
+    poptens_concat = np.concatenate(poptens_list, axis=2)
+    poptens_concat = shuffle_spiketrains_across_trials(poptens_concat)
+    poptens_list = np.array_split(poptens_concat, ntrials, axis=2)
+    return (poptens_list, clusters_list)
+
 
 def get_perms(data_mat, nperms, ncellsperm):
     '''
