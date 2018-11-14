@@ -1191,6 +1191,15 @@ def compute_mean_stderr_betti_curves(betti_curves):
         bc_plot_dict[stim] = (avg, stderr)
     return bc_plot_dict
 
+def compute_stimulus_specificity(betti_curves, stimulus_files):
+
+    # get stimuli wavs
+
+    # compute correlations of stimuli
+
+    # 
+    pass
+
 ##############################
 ###### Computation Dags ######
 ##############################

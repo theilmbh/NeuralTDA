@@ -6,7 +6,7 @@ import glob
 import os
 from sklearn.linear_model import LogisticRegression
 
-def predict_stimuli_classes(betti_curves, npercurve, stimuli, stim_classes,
+def predict_stimuli_classes(betti_curves, stimuli, stim_classes,
                             pc_test, n_predict, shuff_Y=False):
     '''
     Run n_predict logist regressions to classify stimuli according to their
@@ -58,10 +58,11 @@ def predict_arbitrary_classes(betti_curves, stimuli, stim_class_labels, pc_test,
     (ndims, ntimes, ntrials) = betti_curves[list(betti_curves.keys())[0]].shape
     print(stimuli)
     accuracies = []
+    stim_classes = assign_arbitary_classes(list(stimuli), stim_class_labels)
     for pred in range(n_predict):
         pred_y = np.array([])
         pred_x = np.empty((0, ndims*ntimes))
-        stim_classes = assign_arbitary_classes(list(stimuli), stim_class_labels)
+   #     stim_classes = assign_arbitary_classes(list(stimuli), stim_class_labels)
         for stim in stimuli:
             dat = np.reshape(betti_curves[stim], (ndims*ntimes, ntrials)).T
             stim_vec = np.array(ntrials*[stim_classes[stim]])
@@ -90,6 +91,7 @@ def run_prediction(pred_Y, pred_X, pc_test):
     inds_predict = inds[ntrain:]
     L.fit(pred_X[inds_train, :], pred_Y[inds_train])
     test = L.predict(pred_X[inds_predict, :])
-    acc = [test[x] == pred_Y[inds_predict][x] for x in range(len(inds_predict))]
-    accuracy = np.sum(acc) / len(inds_predict)
-    return accuracy
+    acc = L.score(pred_X[inds_predict, :], pred_Y[inds_predict])
+    #acc = [test[x] == pred_Y[inds_predict][x] for x in range(len(inds_predict))]
+    #accuracy = np.sum(acc) / len(inds_predict)
+    return acc
