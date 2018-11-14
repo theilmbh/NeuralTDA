@@ -28,91 +28,90 @@
 
 int check_square_matrix(gsl_matrix * a)
 {
-    int ret = 0;
-    size_t size1 = a->size1;
-    size_t size2 = a->size2;
-    
-    if (size1 != size2) {
-        ret = -1;
-    } else {
-        ret = size1;
-    }
-    return ret;
-}
+	int ret = 0;
+	size_t size1 = a->size1;
+	size_t size2 = a->size2;
 
+	if (size1 != size2) {
+		ret = -1;
+	} else {
+		ret = size1;
+	}
+	return ret;
+}
 
 /* Computes the KL divergence between two density matrices.
  * Computes eigenvalues independently, sorts them, then 
  * computes divergence */
-double __attribute__((optimize("O0"))) KL_divergence(gsl_matrix * L1, 
-                                                     gsl_matrix * L2,
-                                                     double beta)
+double __attribute__ ((optimize("O0"))) KL_divergence(gsl_matrix * L1,
+						      gsl_matrix * L2,
+						      double beta)
 {
-    double div = 0.0;
-    double rval, sval;
+	double div = 0.0;
+	double rval, sval;
 
-    int i;
-    size_t n;
+	int i;
+	size_t n;
 
-    /* Check if they are square matrices and report size */
-    if ((n = check_square_matrix(L1)) < 0) {
-        printf("Rho matrix not Square!! \n");
-        return 0;
-    } else if ( check_square_matrix(L2) != n) {
-        printf("Rho and Sigma dimensions do not match! \n");
-        return 0;
-    }
+	/* Check if they are square matrices and report size */
+	if ((n = check_square_matrix(L1)) < 0) {
+		printf("Rho matrix not Square!! \n");
+		return 0;
+	} else if (check_square_matrix(L2) != n) {
+		printf("Rho and Sigma dimensions do not match! \n");
+		return 0;
+	}
 
-    gsl_vector * L1v = gsl_vector_alloc(n);
-    gsl_vector * L2v = gsl_vector_alloc(n);
+	gsl_vector *L1v = gsl_vector_alloc(n);
+	gsl_vector *L2v = gsl_vector_alloc(n);
 
-    gsl_vector * rhov = gsl_vector_alloc(n);
-    gsl_vector * sigmav = gsl_vector_alloc(n);
+	gsl_vector *rhov = gsl_vector_alloc(n);
+	gsl_vector *sigmav = gsl_vector_alloc(n);
 
-    /* Allocate workspace for eigendecomposition */
-    gsl_eigen_symm_workspace * w =  gsl_eigen_symm_alloc(n);
+	/* Allocate workspace for eigendecomposition */
+	gsl_eigen_symm_workspace *w = gsl_eigen_symm_alloc(n);
 
-    /* Copy the matrices */
-    /* We need this because GSL destroys matrices 
-     * during eigenvalue computation */
-    gsl_matrix * L1copy = gsl_matrix_alloc(n, n);
-    gsl_matrix * L2copy = gsl_matrix_alloc(n, n);
-    gsl_matrix_memcpy(L1copy, L1);
-    gsl_matrix_memcpy(L2copy, L2);
+	/* Copy the matrices */
+	/* We need this because GSL destroys matrices 
+	 * during eigenvalue computation */
+	gsl_matrix *L1copy = gsl_matrix_alloc(n, n);
+	gsl_matrix *L2copy = gsl_matrix_alloc(n, n);
+	gsl_matrix_memcpy(L1copy, L1);
+	gsl_matrix_memcpy(L2copy, L2);
 
-    /* Compute eigenvalues */ 
-    gsl_eigen_symm(L1copy, L1v, w);
-    gsl_eigen_symm(L2copy, L2v, w); 
-    gsl_eigen_symm_free(w);
+	/* Compute eigenvalues */
+	gsl_eigen_symm(L1copy, L1v, w);
+	gsl_eigen_symm(L2copy, L2v, w);
+	gsl_eigen_symm_free(w);
 
-    /* Compute density eigenvalues */
-    double r1, r2;
-    double tr1=0, tr2=0;
-    for (i = 0; i<n; i++) {
-        r1 = exp(beta*gsl_vector_get(L1v, i));
-        r2 = exp(beta*gsl_vector_get(L2v, i));
-        gsl_vector_set(rhov, i, r1);
-        gsl_vector_set(sigmav, i, r2);
-        tr1 += r1; 
-        tr2 += r2;
-    }
+	/* Compute density eigenvalues */
+	double r1, r2;
+	double tr1 = 0, tr2 = 0;
+	for (i = 0; i < n; i++) {
+		r1 = exp(beta * gsl_vector_get(L1v, i));
+		r2 = exp(beta * gsl_vector_get(L2v, i));
+		gsl_vector_set(rhov, i, r1);
+		gsl_vector_set(sigmav, i, r2);
+		tr1 += r1;
+		tr2 += r2;
+	}
 
-    /* Sort eigenvalues */
-    gsl_sort_vector(rhov);
-    gsl_sort_vector(sigmav);
+	/* Sort eigenvalues */
+	gsl_sort_vector(rhov);
+	gsl_sort_vector(sigmav);
 
-    /* Compute divergence */
-    for (i = 0; i < n; i++) {
-        rval = gsl_vector_get(rhov, i) / tr1;
-        sval = gsl_vector_get(sigmav, i) / tr2;
-        div += rval*(log(rval) - log(sval))/log(2.0);
-    }
-    /* Free Memory */
-    gsl_matrix_free(L1copy);
-    gsl_matrix_free(L2copy);
-    gsl_vector_free(rhov);
-    gsl_vector_free(sigmav);
-    gsl_vector_free(L1v);
-    gsl_vector_free(L2v);       
-    return div;
+	/* Compute divergence */
+	for (i = 0; i < n; i++) {
+		rval = gsl_vector_get(rhov, i) / tr1;
+		sval = gsl_vector_get(sigmav, i) / tr2;
+		div += rval * (log(rval) - log(sval)) / log(2.0);
+	}
+	/* Free Memory */
+	gsl_matrix_free(L1copy);
+	gsl_matrix_free(L2copy);
+	gsl_vector_free(rhov);
+	gsl_vector_free(sigmav);
+	gsl_vector_free(L1v);
+	gsl_vector_free(L2v);
+	return div;
 }
