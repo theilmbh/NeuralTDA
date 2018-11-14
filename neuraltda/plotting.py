@@ -5,10 +5,11 @@
 ####################################################################
 import os
 import numpy as np
-import neuraltda.topology2 as tp2 
+import neuraltda.topology2 as tp2
+
 
 def plot_betti_curve(bc, t, stim, betti, ax, **kwargs):
-    '''
+    """
     Plots a betti curve for a fixed stimulus and betti number
     on the given axis.
 
@@ -30,19 +31,20 @@ def plot_betti_curve(bc, t, stim, betti, ax, **kwargs):
     lines : matplotlib lines
         the plot lines
 
-    '''
+    """
     avg = bc[stim][0]
     stderr = bc[stim][1]
 
     y = avg[betti, :]
     s = stderr[betti, :]
 
-    lines = ax.plot(t/1000., y, **kwargs)
-    ax.fill_between(t/1000., y-s, y+s, alpha=0.5, **kwargs)
-    ax.set_xticks(range(int(np.amax(t)/1000.) + 1))
+    lines = ax.plot(t / 1000.0, y, **kwargs)
+    ax.fill_between(t / 1000.0, y - s, y + s, alpha=0.5, **kwargs)
+    ax.set_xticks(range(int(np.amax(t) / 1000.0) + 1))
+
 
 def plot_normalized_betti_curve(bc, t, stim, betti, ax, **kwargs):
-    '''
+    """
     Plots a betti curve for a fixed stimulus and betti number
     on the given axis.
 
@@ -64,7 +66,7 @@ def plot_normalized_betti_curve(bc, t, stim, betti, ax, **kwargs):
     lines : matplotlib lines
         the plot lines
 
-    '''
+    """
     avg = bc[stim][0]
     stderr = bc[stim][1]
 
@@ -72,15 +74,16 @@ def plot_normalized_betti_curve(bc, t, stim, betti, ax, **kwargs):
     s = stderr[betti, :]
     ymax = np.amax(y)
     if ymax < 1e-6:
-        ymax=1
+        ymax = 1
 
-    lines = ax.plot(t/1000., y/ymax, **kwargs)
-    ax.fill_between(t/1000., (y-s)/ymax, (y+s)/ymax, alpha=0.5, **kwargs)
-    ax.set_xticks(range(int(np.amax(t)/1000.) + 1))
+    lines = ax.plot(t / 1000.0, y / ymax, **kwargs)
+    ax.fill_between(t / 1000.0, (y - s) / ymax, (y + s) / ymax, alpha=0.5, **kwargs)
+    ax.set_xticks(range(int(np.amax(t) / 1000.0) + 1))
     return lines
     return lines
+
 
 def save_fig(fig, fig_save_dir, figfname):
 
-    figsave = os.path.join(fig_save_dir, figfname + '.pdf')
-    fig.savefig(figsave, orientation='landscape')
+    figsave = os.path.join(fig_save_dir, figfname + ".pdf")
+    fig.savefig(figsave, orientation="landscape")

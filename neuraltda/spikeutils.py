@@ -17,6 +17,7 @@ from ephys import events, core
 import neuraltda.simpComp as sc
 import neuraltda.topology2 as tp2
 
+
 def get_population_firing_rate(binned_datafile, shuffle=False, clusters=None):
 
     stim_tensors = tp2.extract_population_tensors(binned_datafile, shuffle, clusters)
