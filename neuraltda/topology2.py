@@ -516,6 +516,7 @@ def calc_CI_bettis_tensor(
             assert callable(kwargs["shuffle_across_stims"])
             shuff_func = kwargs["shuffle_across_stims"]
             poptens_list, clusters_list = shuff_func(poptens_list, clusters_list)
+            #print(len(poptens_list), poptens_list[0].shape)
 
         # Compute Bettis from poptens list
         for ind, stim in enumerate(stims):
@@ -694,9 +695,10 @@ def shuffle_across_trials_across_stims(poptens_list, clusters_list):
     ntrials_list = [x.shape[2] for x in poptens_list]
     assert len(np.unique(ntrials_list)) == 1  # must all have same number of trials
     ntrials = np.unique(ntrials_list)[0]
+    nstims = len(poptens_list)
     poptens_concat = np.concatenate(poptens_list, axis=2)
     poptens_concat = shuffle_tensor_across_trials(poptens_concat)
-    poptens_list = np.array_split(poptens_concat, ntrials, axis=2)
+    poptens_list = np.array_split(poptens_concat, nstims, axis=2)
     return (poptens_list, clusters_list)
 
 
@@ -707,10 +709,11 @@ def shuffle_whole_spiketrains_across_stims(poptens_list, clusters_list):
     ntrials_list = [x.shape[2] for x in poptens_list]
     assert len(np.unique(ntrials_list)) == 1  # must all have same number of trials
     ntrials = np.unique(ntrials_list)[0]
+    nstims = len(poptens_list)
     # concatenate all trials from all stimuli together
     poptens_concat = np.concatenate(poptens_list, axis=2)
     poptens_concat = shuffle_spiketrains_across_trials(poptens_concat)
-    poptens_list = np.array_split(poptens_concat, ntrials, axis=2)
+    poptens_list = np.array_split(poptens_concat, nstims, axis=2)
     return (poptens_list, clusters_list)
 
 
