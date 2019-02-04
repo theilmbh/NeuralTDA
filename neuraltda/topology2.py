@@ -515,7 +515,7 @@ def calc_CI_bettis_tensor(
         if "shuffle_across_stims" in kwargs:
             assert callable(kwargs["shuffle_across_stims"])
             shuff_func = kwargs["shuffle_across_stims"]
-            poptens_list, clusters_list = shuff_func(poptens_list, clusters_list)
+            poptens_list = shuff_func(poptens_list)
             #print(len(poptens_list), poptens_list[0].shape)
 
         # Compute Bettis from poptens list
@@ -687,7 +687,7 @@ def shuffle_spiketrains_across_trials(poptens):
     return poptens
 
 
-def shuffle_across_trials_across_stims(poptens_list, clusters_list):
+def shuffle_across_trials_across_stims(poptens_list):
     """
     Join all the stimuli poptens together along trials, shuffle across trials 
     within cells, split back into poptens
@@ -698,11 +698,11 @@ def shuffle_across_trials_across_stims(poptens_list, clusters_list):
     nstims = len(poptens_list)
     poptens_concat = np.concatenate(poptens_list, axis=2)
     poptens_concat = shuffle_tensor_across_trials(poptens_concat)
-    poptens_list = np.array_split(poptens_concat, nstims, axis=2)
-    return (poptens_list, clusters_list)
+    poptens_list_out = np.array_split(poptens_concat, nstims, axis=2)
+    return poptens_list_out
 
 
-def shuffle_whole_spiketrains_across_stims(poptens_list, clusters_list):
+def shuffle_whole_spiketrains_across_stims(poptens_list):
     """
     Shuffle full spike trains of cells across stimuli, preserving spike trains
     """
@@ -713,9 +713,48 @@ def shuffle_whole_spiketrains_across_stims(poptens_list, clusters_list):
     # concatenate all trials from all stimuli together
     poptens_concat = np.concatenate(poptens_list, axis=2)
     poptens_concat = shuffle_spiketrains_across_trials(poptens_concat)
-    poptens_list = np.array_split(poptens_concat, nstims, axis=2)
-    return (poptens_list, clusters_list)
+    poptens_list_out = np.array_split(poptens_concat, nstims, axis=2)
+    return poptens_list_out
 
+def get_shuffle_mask(ncells, nwin):
+    wins = np.arange(nwin, dtype=np.int64)
+    mask = np.zeros((ncells, nwin), dtype=np.int64)
+    for cell in range(ncells):
+        mask[cell, :] = np.random.permutation(wins)
+    return mask
+
+def apply_shuffle_mask(poptens, shuffle_mask):
+    ''' Use shuffle mask to shuffle all trials in poptens the same way'''
+    ncells, nwins, ntrials = poptens.shape
+    poptens_out = np.zeros(poptens.shape)
+    for trial in range(ntrials):
+        for cell in range(ncells):
+            poptens_out[cell, :, trial] = poptens[cell, shuffle_mask[cell, :], trial]
+    return poptens_out
+
+def shuffle_mask_within_stims(poptens_list):
+    ''' Apply a fixed shuffle mask to all the trials within a single stimulus
+        use a different shuffle mask for each stimulus
+    '''
+    ncells = np.unique([x.shape[0] for x in poptens_list])[0]
+    nwin = np.unique([x.shape[1] for x in poptens_list])[0]
+    ntrials = np.unique([x.shape[2] for x in poptens_list])[0]
+    poptens_list_out = []
+    for x in poptens_list:
+        shuffle_mask = get_shuffle_mask(ncells, nwin)
+        poptens_list_out.append(apply_shuffle_mask(x, shuffle_mask))
+    return poptens_list_out 
+
+def shuffle_mask_across_stims(poptens_list):
+    ''' Apply a fixed shuffle mask to all trials from all sitmuli 
+        use the same shuffle mask for all stimuli
+    '''
+    ncells = np.unique([x.shape[0] for x in poptens_list])[0]
+    nwin = np.unique([x.shape[1] for x in poptens_list])[0]
+    ntrials = np.unique([x.shape[2] for x in poptens_list])[0]
+    shuffle_mask = get_shuffle_mask(ncells, nwin)
+    poptens_list_out = [apply_shuffle_mask(x, shuffle_mask) for x in poptens_list]
+    return poptens_list_out 
 
 def get_perms(data_mat, nperms, ncellsperm):
     """
