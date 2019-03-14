@@ -462,6 +462,23 @@ def sparse_JS_divergence2_fast(L1, L2, specL1, specL2, beta):
     JS = (sparse_spectrum_KL(r, m) + sparse_spectrum_KL(s, m)) / 2.0
     return JS
 
+def compute_M_spec(L1, L2):
+
+    (L1, L2) = sparse_reconcile_laplacians(L1, L2)
+    M = (L1 + L2) / 2.0
+    m = sparse_spectrum(M)
+    return m
+
+def sparse_JS_divergence2_spec(specL1, specL2, specM, beta):
+    (specL1, specL2) = sparse_reconcile_spectrum(specL1, specL2)
+    r = np.exp(-beta * specL1)
+    s = np.exp(-beta * specL2)
+    m = np.exp(-beta * specM)
+    r = np.array(sorted(r)) / np.sum(r)
+    s = np.array(sorted(s)) / np.sum(s)
+    m = np.array(sorted(m)) / np.sum(m)
+    JS = (sparse_spectrum_KL(r, m) + sparse_spectrum_KL(s, m)) / 2.0
+    return JS
 
 def sparse_JS_SCG(E1, E2, dim, beta):
     L1 = sparse_laplacian(E1, dim)

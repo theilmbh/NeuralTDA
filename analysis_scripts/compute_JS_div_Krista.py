@@ -134,6 +134,10 @@ def get_JS(i, j, Li, Lj, speci, specj, beta):
     print((i, j))
     return js
 
+def get_JS_spec(i, j, speci, specj, specm, beta):
+	js = (i, j, sc.sparse_JS_divergence2_spec(speci, specj, specm, beta))
+	return js
+
 def get_Lap(trial_matrix, sh):
     if sh == 'shuffled':
         mat = shuffle_binmat(trial_matrix)
@@ -144,6 +148,10 @@ def get_Lap(trial_matrix, sh):
     L = sc.sparse_laplacian(scg1, dim)
     return L
 
+def get_M(i, j, L1, L2):
+	mspec = sc.compute_M_spec(L1, L2)
+	print((i, j))
+	return (i, j, mspec)
 
 poptens = {'familiar': population_tensors_familiar, 'unfamiliar': population_tensors_unfamiliar}
 
@@ -152,7 +160,7 @@ poptens = {'familiar': population_tensors_familiar, 'unfamiliar': population_ten
 reload(sc)
 dim = 1
 
-betas = [1,2,3]
+betas = [1, 0.25, 0.5, 2, 3]
 
 for bird in test_birds:
     for sh in ['original', 'shuffled']:
@@ -161,30 +169,41 @@ for bird in test_birds:
             bird_tensors = poptens[fam][bird]
             SCG = []
             spectra = []
-            laplacians = []
+            laplacians_save = []
             print('Computing Laplacians for {} {} {}...'.format(bird, sh, fam))
             for bird_tensor, stim in bird_tensors:
                 binmatlist = []
                 print(bird, stim)
                 ncells, nwin, _ = bird_tensor.shape
                 bin_tensor = threshold_poptens(bird_tensor, threshold)
-                laplacians.append(Parallel(n_jobs=23)(delayed(get_Lap)(bin_tensor[:, :, trial], sh) for trial in range(ntrials)))
-            laplacians = sum(laplacians, [])
+                laps = Parallel(n_jobs=24)(delayed(get_Lap)(bin_tensor[:, :, trial], sh) for trial in range(ntrials))
+                laplacians_save.append((bird, stim, laps))
+            laplacians = sum([s[2] for s in laplacians_save], [])
             N = len(laplacians)
             # compute spectra
             print('Computing Spectra...')
-            spectra = Parallel(n_jobs=23)(delayed(sc.sparse_spectrum)(L) for L in laplacians)
+            spectra = Parallel(n_jobs=24)(delayed(sc.sparse_spectrum)(L) for L in laplacians)
 
-            # compute density matrices
+            # Precompute M spectra
             pairs = [(i, j) for i in range(N) for j in range(i, N)]
+            print('Computing M spectra...')
+            M_spec = Parallel(n_jobs=24)(delayed(get_M)(i, j, laplacians[i], laplacians[j]) for (i, j) in pairs)
+            M_spec = {(p[0], p[1]): p[2] for p in M_spec}
+            
+            # Save computed spectra
+            with open(os.path.join(figsavepth, 'Mspectra_{}-{}-{}-{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
+                pickle.dump(M_spec, f)
+            with open(os.path.join(figsavepth, 'Lapspectra_{}-{}-{}-{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
+                pickle.dump(laplacians_save, f)
+            # compute density matrices
+            
             for beta in betas:
                 print('Computing JS Divergences with beta {}...'.format(beta))
                 jsmat = np.zeros((N, N))
                 
-                jsdat = Parallel(n_jobs=23)(delayed(get_JS)(i, j, laplacians[i], laplacians[j], spectra[i], spectra[j], beta) for (i, j) in pairs)
+                jsdat = Parallel(n_jobs=24)(delayed(get_JS_spec)(i, j, spectra[i], spectra[j], M_spec[(i,j)], beta) for (i, j) in pairs)
                 for d in jsdat:
                     jsmat[d[0], d[1]] = d[2]
             
                 with open(os.path.join(figsavepth, 'JSpop_fast_{}-{}-{}-{}_LvsR-{}-{}.pkl'.format(bird, dim, beta, ntrials, fam, sh)), 'wb') as f:
                     pickle.dump(jsmat, f)
-            
