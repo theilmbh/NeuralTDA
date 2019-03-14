@@ -16,7 +16,7 @@ import pandas as pd
 import h5py as h5
 from tqdm import tqdm as tqdm
 import matplotlib.pyplot as plt
-%matplotlib inline
+
 
 import neuraltda.topology2 as tp2
 import neuraltda.spectralAnalysis as sa
