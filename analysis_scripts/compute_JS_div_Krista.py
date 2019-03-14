@@ -19,7 +19,7 @@ from tqdm import tqdm as tqdm
 
 
 import neuraltda.topology2 as tp2
-import neuraltda.spectralAnalysis as sa
+
 import neuraltda.simpComp as sc
 
 from joblib import Parallel, delayed
