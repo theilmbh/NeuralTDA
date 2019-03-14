@@ -22,6 +22,7 @@ import neuraltda.topology2 as tp2
 import neuraltda.spectralAnalysis as sa
 import neuraltda.simpComp as sc
 import pycuslsa as pyslsa
+from joblib import Parallel, delayed
 
 daystr = datetime.datetime.now().strftime('%Y%m%d')
 figsavepth = '/home/btheilma/DailyLog/'+daystr+'/'
