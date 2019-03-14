@@ -8,7 +8,7 @@
 
 #### Deprecated
 
-import neuraltda.stimulus_space as ss 
+import neuraltda.stimulus_space as ss
 import neuraltda.topology2 as tp2
 import h5py
 import os
@@ -17,11 +17,12 @@ import numpy as np
 from joblib import Parallel, delayed
 import pycuslsa as pyslsa
 
+
 def pyslsa_compute_chain_group(poptens, thresh, trial):
-    '''
+    """
     Computes the chain complex using PySLSA
 
-    '''
+    """
     popmat = poptens[:, :, trial]
     popmat_binary = ss.binnedtobinary(popmat, thresh)
     maxsimps = ss.binarytomaxsimplex(popmat_binary, rDup=True)
@@ -29,12 +30,13 @@ def pyslsa_compute_chain_group(poptens, thresh, trial):
     scgGens = pyslsa.build_SCG(maxsimps)
     return scgGens
 
-def computeChainGroup(poptens, thresh, trial):
-    '''
-    Computes the Chain complex for the population data in poptens
-    '''
 
-    #print(trial)
+def computeChainGroup(poptens, thresh, trial):
+    """
+    Computes the Chain complex for the population data in poptens
+    """
+
+    # print(trial)
     popmat = poptens[:, :, trial]
     popmatbinary = ss.binnedtobinary(popmat, thresh)
     maxsimps = ss.binarytomaxsimplex(popmatbinary, rDup=True)
@@ -45,162 +47,172 @@ def computeChainGroup(poptens, thresh, trial):
     scgGens = ss.simplicialChainGroups(newms)
     return scgGens
 
+
 def parallel_compute_chain_group(bdf, stim, thresh):
-    poptens = np.array(bdf[stim]['pop_tens'])
+    poptens = np.array(bdf[stim]["pop_tens"])
     try:
         (ncell, nwin, ntrial) = np.shape(poptens)
     except ValueError:
-        print('Empty Poptens')
+        print("Empty Poptens")
         return
-    if  nwin == 0:
+    if nwin == 0:
         return
     scgGenSave = dict()
-    scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)
-                                     (poptens, thresh, trial)
-                                     for trial in range(ntrial))
+    scgGenSave = Parallel(n_jobs=14)(
+        delayed(computeChainGroup)(poptens, thresh, trial) for trial in range(ntrial)
+    )
 
-def pyslsa_compute_chain_groups_binned(blockPath, binned_datafile,
-                       thresh, comment='',
-                       shuffle=False, clusters=None,
-                       nperms=None, ncellsperm=30):
-    ''' Takes a binned data file and computes the chain group 
+
+def pyslsa_compute_chain_groups_binned(
+    blockPath,
+    binned_datafile,
+    thresh,
+    comment="",
+    shuffle=False,
+    clusters=None,
+    nperms=None,
+    ncellsperm=30,
+):
+    """ Takes a binned data file and computes the chain group 
         generators and saves them
         Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg
-    '''
-    print('Computing Chain Groups...')
-    with h5py.File(binned_datafile, 'r') as bdf:
+    """
+    print("Computing Chain Groups...")
+    with h5py.File(binned_datafile, "r") as bdf:
         stims = bdf.keys()
         print(stims)
         stimGenSave = dict()
         for ind, stim in enumerate(stims):
-            binned_clusters = np.array(bdf[stim]['clusters'])
-            poptens = np.array(bdf[stim]['pop_tens'])
-            print('Stim: {}, Clusters:{}'.format(stim, str(clusters)))
+            binned_clusters = np.array(bdf[stim]["clusters"])
+            poptens = np.array(bdf[stim]["pop_tens"])
+            print("Stim: {}, Clusters:{}".format(stim, str(clusters)))
             try:
                 if clusters is not None:
                     poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
-                    print("Selecting Clusters: poptens:" 
-                            + str(np.shape(poptens)))
+                    print("Selecting Clusters: poptens:" + str(np.shape(poptens)))
                 (ncell, nwin, ntrial) = np.shape(poptens)
             except (ValueError, IndexError):
-                print('Poptens Error')
+                print("Poptens Error")
                 continue
             if shuffle:
                 poptens = tp2.build_shuffled_data_tensor(poptens, 1)
                 poptens = poptens[:, :, :, 0]
             if nperms:
-                print('Permuting Poptens')
-                poptens = tp2.build_permuted_data_tensor(poptens,
-                                                         ncellsperm,
-                                                         nperms)
-                poptens = np.reshape(poptens,
-                        (ncellsperm, nwin, ntrial*nperms))
-                ntrial = ntrial*nperms
-            if  nwin == 0:
+                print("Permuting Poptens")
+                poptens = tp2.build_permuted_data_tensor(poptens, ncellsperm, nperms)
+                poptens = np.reshape(poptens, (ncellsperm, nwin, ntrial * nperms))
+                ntrial = ntrial * nperms
+            if nwin == 0:
                 continue
-            print('Calling PySLSA...')
+            print("Calling PySLSA...")
             scgGenSave = []
             for trial in range(ntrial):
-                 scgGenSave.append(pyslsa_compute_chain_group(poptens, thresh, trial))
+                scgGenSave.append(pyslsa_compute_chain_group(poptens, thresh, trial))
             stimGenSave[stim] = scgGenSave
     return stimGenSave
     # Create output filename
-    #(binFold, binFile) = os.path.split(binned_datafile)
-    #(binFileName, binExt) = os.path.splitext(binFile)
-    #scg_prefix = '-{}'.format(thresh)
-    #if not (comment == ''):
+    # (binFold, binFile) = os.path.split(binned_datafile)
+    # (binFileName, binExt) = os.path.splitext(binFile)
+    # scg_prefix = '-{}'.format(thresh)
+    # if not (comment == ''):
     #    scg_prefix = scg_prefix + '-{}'.format(comment)
-    #scgGenFile = binFileName + scg_prefix + '.scg'
+    # scgGenFile = binFileName + scg_prefix + '.scg'
 
     # Create scg Folder
-    #scgFold = os.path.join(blockPath, 'scg/')
-    #if not os.path.exists(scgFold):
+    # scgFold = os.path.join(blockPath, 'scg/')
+    # if not os.path.exists(scgFold):
     #    os.makedirs(scgFold)
 
     # Create output file
-    #scgGenFile = os.path.join(scgFold, scgGenFile)
-    #with open(scgGenFile, 'wb') as scggf:
+    # scgGenFile = os.path.join(scgFold, scgGenFile)
+    # with open(scgGenFile, 'wb') as scggf:
     #    #print(stimGenSave)
     #    pickle.dump(stimGenSave, scggf)
-    #return scgGenFile
+    # return scgGenFile
 
-def computeChainGroups(blockPath, binned_datafile,
-                       thresh, comment='',
-                       shuffle=False, clusters=None,
-                       nperms=None, ncellsperm=30):
-    ''' Takes a binned data file and computes the chain group 
+
+def computeChainGroups(
+    blockPath,
+    binned_datafile,
+    thresh,
+    comment="",
+    shuffle=False,
+    clusters=None,
+    nperms=None,
+    ncellsperm=30,
+):
+    """ Takes a binned data file and computes the chain group 
         generators and saves them
         Output file has 3 params in name:  Winsize-dtOverlap-Thresh.scg
-    '''
-    print('Computing Chain Groups...')
-    with h5py.File(binned_datafile, 'r') as bdf:
+    """
+    print("Computing Chain Groups...")
+    with h5py.File(binned_datafile, "r") as bdf:
         stims = bdf.keys()
         print(stims)
         stimGenSave = dict()
         for ind, stim in enumerate(stims):
-            binned_clusters = np.array(bdf[stim]['clusters'])
-            poptens = np.array(bdf[stim]['pop_tens'])
-            print('Stim: {}, Clusters:{}'.format(stim, str(clusters)))
+            binned_clusters = np.array(bdf[stim]["clusters"])
+            poptens = np.array(bdf[stim]["pop_tens"])
+            print("Stim: {}, Clusters:{}".format(stim, str(clusters)))
             try:
                 if clusters is not None:
                     poptens = poptens[np.in1d(binned_clusters, clusters), :, :]
-                    print("Selecting Clusters: poptens:" 
-                            + str(np.shape(poptens)))
+                    print("Selecting Clusters: poptens:" + str(np.shape(poptens)))
                 (ncell, nwin, ntrial) = np.shape(poptens)
             except (ValueError, IndexError):
-                print('Poptens Error')
+                print("Poptens Error")
                 continue
             if shuffle:
                 poptens = tp2.build_shuffled_data_tensor(poptens, 1)
                 poptens = poptens[:, :, :, 0]
             if nperms:
-                print('Permuting Poptens')
-                poptens = tp2.build_permuted_data_tensor(poptens,
-                                                         ncellsperm,
-                                                         nperms)
-                poptens = np.reshape(poptens,
-                        (ncellsperm, nwin, ntrial*nperms))
-                ntrial = ntrial*nperms
-            if  nwin == 0:
+                print("Permuting Poptens")
+                poptens = tp2.build_permuted_data_tensor(poptens, ncellsperm, nperms)
+                poptens = np.reshape(poptens, (ncellsperm, nwin, ntrial * nperms))
+                ntrial = ntrial * nperms
+            if nwin == 0:
                 continue
-            print('Starting jobs...')
-            scgGenSave = Parallel(n_jobs=14)(delayed(computeChainGroup)
-                    (poptens, thresh, trial) for trial in range(ntrial))
+            print("Starting jobs...")
+            scgGenSave = Parallel(n_jobs=14)(
+                delayed(computeChainGroup)(poptens, thresh, trial)
+                for trial in range(ntrial)
+            )
             stimGenSave[stim] = scgGenSave
 
     # Create output filename
     (binFold, binFile) = os.path.split(binned_datafile)
     (binFileName, binExt) = os.path.splitext(binFile)
-    scg_prefix = '-{}'.format(thresh)
-    if not (comment == ''):
-        scg_prefix = scg_prefix + '-{}'.format(comment)
-    scgGenFile = binFileName + scg_prefix + '.scg'
+    scg_prefix = "-{}".format(thresh)
+    if not (comment == ""):
+        scg_prefix = scg_prefix + "-{}".format(comment)
+    scgGenFile = binFileName + scg_prefix + ".scg"
 
     # Create scg Folder
-    scgFold = os.path.join(blockPath, 'scg/')
+    scgFold = os.path.join(blockPath, "scg/")
     if not os.path.exists(scgFold):
         os.makedirs(scgFold)
 
     # Create output file
     scgGenFile = os.path.join(scgFold, scgGenFile)
-    with open(scgGenFile, 'wb') as scggf:
-        #print(stimGenSave)
+    with open(scgGenFile, "wb") as scggf:
+        # print(stimGenSave)
         pickle.dump(stimGenSave, scggf)
     return scgGenFile
 
+
 def computeSimplicialLaplacians(scgf):
-    ''' Takes a path to a Simplicial Complex Generator File
+    """ Takes a path to a Simplicial Complex Generator File
         Computes Laplacians
         Stores the matrcies
-    '''
+    """
 
     # create output file
     (scgFold, scgFile) = os.path.split(scgf)
     (scgFileName, scgExt) = os.path.splitext(scgFile)
-    LapFile = scgFileName + '.laplacians'
+    LapFile = scgFileName + ".laplacians"
 
     # Load the SCGs
-    with open(scgf, 'r') as scgff:
+    with open(scgf, "r") as scgff:
         E = pickle.load(scgff)
     LapDict = dict()
 
@@ -208,27 +220,28 @@ def computeSimplicialLaplacians(scgf):
         stimSCGs = E[stim]
         trialDict = dict()
         for trial in stimSCGs.keys():
-            print('Stim: {}  Trial: {}'.format(stim, trial))
+            print("Stim: {}  Trial: {}".format(stim, trial))
             scg = stimSCGs[trial]
             D = ss.boundaryOperatorMatrix(scg)
             trialDict[trial] = ss.laplacians(D)
         LapDict[stim] = trialDict
 
     LapFile = os.path.join(scgFold, LapFile)
-    with open(LapFile, 'w') as lpf:
+    with open(LapFile, "w") as lpf:
         pickle.dump(LapDict, lpf)
 
+
 def compute_JS_expanded(scgA, scgB, d, beta):
-    '''
+    """
     Computes the Jensen-Shannon Divergence between
     simplicial complexes A and B in dimension d
     using parameter beta.
     The bases are expanded according to reconcile_laplacians
-    '''
+    """
     # print('Computing Boundary Operators')
     # DA = ss.boundaryOperatorMatrix(scgA)
     # DB = ss.boundaryOperatorMatrix(scgB)
-    #print('Computing Laplacians')
+    # print('Computing Laplacians')
 
     # Compute Laplacian Matrices in dimension d
     LA = ss.compute_laplacian(scgA, d)
@@ -245,10 +258,11 @@ def compute_JS_expanded(scgA, scgB, d, beta):
     div = sc.JSdivergence(rho1, rho2)
     return div
 
+
 def compute_JS_expanded_SSG(scgA, scgB, beta):
-    '''
+    """
     Computes stim space graph (SSG) JS divergence
-    '''
+    """
 
     DA = sc.boundaryOperatorMatrices(scgA)
     DB = sc.boundaryOperatorMatrices(scgB)
@@ -258,14 +272,14 @@ def compute_JS_expanded_SSG(scgA, scgB, beta):
     LA = np.diag(np.sum(GA, axis=0)) - GA
     LB = np.diag(np.sum(GB, axis=0)) - GB
 
-    #print('Reconciling Laplacians')
+    # print('Reconciling Laplacians')
     (LA, LB) = sc.reconcile_laplacians(LA, LB)
 
-    #print('Computing Density Matrices')
+    # print('Computing Density Matrices')
     rho1 = sc.densityMatrix(LA, beta)
     rho2 = sc.densityMatrix(LB, beta)
 
-    #print('Computing JS divergence')
+    # print('Computing JS divergence')
     div = sc.JSdivergence(rho1, rho2)
     return div
 
@@ -277,10 +291,11 @@ def compute_JS_expanded_negativeL(scgA, scgB, d, beta):
     LA = sc.laplacian(DA, d)
     LB = sc.laplacian(DB, d)
     (LA, LB) = sc.reconcile_laplacians(LA, LB)
-    rho1 = sc.densityMatrix(-1.0*LA, beta)
-    rho2 = sc.densityMatrix(-1.0*LB, beta)
+    rho1 = sc.densityMatrix(-1.0 * LA, beta)
+    rho2 = sc.densityMatrix(-1.0 * LB, beta)
     div = sc.JSdivergence(rho1, rho2)
     return div
+
 
 def compute_entropy(scgA, d, beta):
 

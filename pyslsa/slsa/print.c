@@ -27,32 +27,33 @@
  * Print a large gsl_matrix by breaking it up into smaller chunks
  * and printing each one separately
  */
-void print_matrix(gsl_matrix * mat) 
+void print_matrix(gsl_matrix * mat)
 {
-    int n1, n2;
-    int nscreenx, nscreeny;
-    int row_start, col_start;
-    int row_end, col_end;
-    int i, j;
+	int n1, n2;
+	int nscreenx, nscreeny;
+	int row_start, col_start;
+	int row_end, col_end;
+	int i, j;
 
-    nscreenx = mat->size1 / TERM_WIDTH;
-    nscreeny = mat->size2 / TERM_HEIGHT;
+	nscreenx = mat->size1 / TERM_WIDTH;
+	nscreeny = mat->size2 / TERM_HEIGHT;
 
-    for (n1 = 0; n1 < nscreenx; n1++) {
-        for (n2 = 0; n2 < nscreeny; n2++) {
-            row_start = n2*TERM_HEIGHT;
-            row_end = (n2+1)*TERM_HEIGHT;
-            col_start = n1*TERM_WIDTH;
-            col_end = (n1+1)*TERM_WIDTH;
-            printf("Matrix Elements (%d:%d, %d:%d)\n", 
-                    row_start+1, row_end, col_start+1, col_end);
-            for (i = row_start; i < row_end; i++) {
-                for(j = col_start; j < col_end; j++) {
-                    printf("%4.2f ", gsl_matrix_get(mat, i, j));
-                }
-                printf("\n");
-            }
-            printf("\n\n");
-        }
-    }
+	for (n1 = 0; n1 < nscreenx; n1++) {
+		for (n2 = 0; n2 < nscreeny; n2++) {
+			row_start = n2 * TERM_HEIGHT;
+			row_end = (n2 + 1) * TERM_HEIGHT;
+			col_start = n1 * TERM_WIDTH;
+			col_end = (n1 + 1) * TERM_WIDTH;
+			printf("Matrix Elements (%d:%d, %d:%d)\n",
+			       row_start + 1, row_end, col_start + 1, col_end);
+			for (i = row_start; i < row_end; i++) {
+				for (j = col_start; j < col_end; j++) {
+					printf("%4.2f ",
+					       gsl_matrix_get(mat, i, j));
+				}
+				printf("\n");
+			}
+			printf("\n\n");
+		}
+	}
 }
