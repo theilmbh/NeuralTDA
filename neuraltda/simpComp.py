@@ -12,6 +12,7 @@
 
 import numpy as np
 import scipy.linalg as spla
+import scipy.sparse as sp
 import networkx as nx
 
 
@@ -301,6 +302,24 @@ def boundaryOperatorMatrix(E, dim):
         mat[:, j] = canonicalCoordinates(c, E[dim])
     return mat
 
+def sparseBoundaryOperatorMatrix(E, dim):
+    """
+    Return the matrix of the boundary operator
+    in dimension dim for simplicial complex E
+
+    """
+    m = len(E[dim])
+    n = len(E[dim + 1])
+    rowind = np.empty(m*n, dtype=np.int32)
+    colind = np.empty(m*n, dtype=np.int32)
+    data = np.empty(m*n)
+    for j in range(n):
+        c = boundaryOperator(E[dim + 1][j])
+        col = canonicalCoordinates(c, E[dim])
+        rowind[j*m:(j+1)*m] = range(m)
+        colind[j*m:(j+1)*m] = m*[j]
+        data[j*m:(j+1)*m] = col
+    return sp.csc_matrix((data, (rowind, colind)))
 
 def maskedBoundaryOperatorMatrix(E, Emask):
     """ Emask is the simplicial Chain groups you want to mask in
@@ -328,6 +347,143 @@ def maskedBoundaryOperatorMatrix(E, Emask):
 #### Laplacian Functions ####
 #############################
 
+
+def sparse_laplacian(E, dim):
+    d_low = sparseBoundaryOperatorMatrix(E, dim)
+    d_high = sparseBoundaryOperatorMatrix(E, dim+1)
+
+    return (d_low.T).dot(d_low) + d_high.dot(d_high.T)
+
+def sparse_reconcile_laplacians(L1, L2):
+    if L1.size >= L2.size:
+        L2.resize(L1.shape)
+    elif L1.size < L2.size:
+        L1.resize(L2.shape)
+    return (L1, L2)
+
+def sparse_reconcile_spectrum(r, s):
+    assert r.ndim == 1
+    assert s.ndim == 1
+    if len(r) >= len(s):
+        t = np.zeros(r.shape)
+        t[:s.size] = s
+        q = r
+    else:
+        q = np.zeros(s.shape)
+        q[:r.size] = r
+        t = s
+    return (q, t)
+
+def sparse_density_matrix(L, beta):
+    ''' Computes the sparse density matrix associated to laplacian L '''
+    rho = sp.linalg.expm(-beta*L.tocsc())
+    rho = rho / (np.sum(rho.diagonal()))
+    return rho
+
+def sparse_spectrum(rho):
+    '''
+    Returns the spectrum of the sparse matrix rho
+    '''
+    return sp.linalg.svds(rho, k=(min(rho.shape)-1), return_singular_vectors = False)
+
+def sparse_reconciled_spectrum_KL(r, s):
+    if len(r) >= len(s):
+        t = np.zeros(r.shape)
+        t[:s.length] = s
+        q = r
+    else:
+        q = np.zeros(s.shape)
+        q[:r.length] = r
+        t = s
+    # renormalize
+    q /= np.sum(q)
+    t /= np.sum(t)
+    return sparse_spectrum_KL(sorted(q), sorted(t))
+        
+def sparse_spectrum_KL(r, s):
+    div = 0.0
+    for rval, sval in zip(r, s):
+        if rval < 1e-14 or sval < 1e-14:
+            div += 0
+        else:
+            div += rval * (np.log(rval) - np.log(sval)) / np.log(2.0)
+    return div
+
+def sparse_KL_divergence(L1, L2, beta):
+    (L1, L2) = sparse_reconcile_laplacians(L1, L2)
+    rho = sparse_density_matrix(L1, beta)
+    sigma = sparse_density_matrix(L2, beta)
+    r = sparse_spectrum(rho)
+    s = sparse_spectrum(sigma)
+    KL = sparse_spectrum_KL(sorted(r), sorted(s))
+    return KL
+
+def sparse_JS_divergence(L1, L2, beta):
+    (L1, L2) = sparse_reconcile_laplacians(L1, L2)
+    rho = sparse_density_matrix(L1, beta)
+    sigma = sparse_density_matrix(L2, beta)
+    M = (rho + sigma) / 2.0
+    r = sorted(sparse_spectrum(rho))
+    s = sorted(sparse_spectrum(sigma))
+    m = sorted(sparse_spectrum(M))
+    JS = (sparse_spectrum_KL(r, m) + sparse_spectrum_KL(s, m))/2.0
+
+    return JS
+
+def sparse_JS_divergence2(L1, L2, beta):
+    '''
+    This matches the cuda code
+    '''
+    (L1, L2) = sparse_reconcile_laplacians(L1, L2)
+    M = (L1 + L2) / 2.0
+    r = np.exp(-beta* sparse_spectrum(L1))
+    s = np.exp(-beta* sparse_spectrum(L2))
+    m = np.exp(-beta* sparse_spectrum(M))
+    r = np.array(sorted(r)) / np.sum(r)
+    s = np.array(sorted(s)) / np.sum(s)
+    m = np.array(sorted(m)) / np.sum(m)
+    JS = (sparse_spectrum_KL(r, m) + sparse_spectrum_KL(s, m))/2.0
+
+    return JS
+
+def sparse_JS_divergence2_fast(L1, L2, specL1, specL2, beta):
+    '''
+    Uses precomputed spectra for L1 and L2
+    '''
+    (specL1, specL2) = sparse_reconcile_spectrum(specL1, specL2)
+    (L1, L2) = sparse_reconcile_laplacians(L1, L2)
+    M = (L1 + L2) / 2.0
+    r = np.exp(-beta * specL1)
+    s = np.exp(-beta * specL2)
+    m = np.exp(-beta * sparse_spectrum(M))
+    r = np.array(sorted(r)) / np.sum(r)
+    s = np.array(sorted(s)) / np.sum(s)
+    m = np.array(sorted(m)) / np.sum(m)
+    JS = (sparse_spectrum_KL(r, m) + sparse_spectrum_KL(s, m)) / 2.0
+    return JS
+
+
+def sparse_JS_SCG(E1, E2, dim, beta):
+    L1 = sparse_laplacian(E1, dim)
+    L2 = sparse_laplacian(E2, dim)
+    return sparse_JS_divergence(L1, L2, beta)
+
+def sparse_reconciled_spectrum_JS(r, s):
+    if len(r) >= len(s):
+        t = np.ones(r.shape)
+        t[:len(s)] = s
+        q = r
+    else:
+        q = np.ones(s.shape)
+        q[:len(r)] = r
+        t = s
+    # renormalize
+    q = np.array(sorted(q/ np.sum(q)))
+    t = np.array(sorted(t/np.sum(t)))
+    m = np.array(sorted((q+t)/2.0))
+    m /= np.sum(m)
+    js = (sparse_spectrum_KL(q, m) + sparse_spectrum_KL(t, m))/2.0
+    return js
 
 def laplacian(D, dim):
 
