@@ -16,7 +16,7 @@ import pandas as pd
 import h5py as h5
 from tqdm import tqdm as tqdm
 import matplotlib.pyplot as plt
-
+%matplotlib inline
 
 import neuraltda.topology2 as tp2
 import neuraltda.spectralAnalysis as sa
@@ -24,37 +24,39 @@ import neuraltda.simpComp as sc
 import pycuslsa as pyslsa
 
 daystr = datetime.datetime.now().strftime('%Y%m%d')
-figsavepth = '/home/brad/DailyLog/'+daystr+'/'
+figsavepth = '/home/btheilma/DailyLog/'+daystr+'/'
 print(figsavepth)
 
 # Set up birds and block_paths
 birds = ['B1083', 'B1056', 'B1235', 'B1075']
-bps = {'B1083': '/home/brad/krista/B1083/P03S03/', 'B1075': '/home/brad/krista/B1075/P01S03/',
-       'B1235': '/home/brad/krista/B1235/P02S01/', 'B1056': '/home/brad/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
-       'B1056': '/home/brad/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
-       'B1083-5': '/home/brad/krista/B1083/P03S05/'}
+bps = {'B1083': '/home/btheilma/krista/B1083/P03S03/', 'B1075': '/home/btheilma/krista/B1075/P01S03/',
+       'B1235': '/home/btheilma/krista/B1235/P02S01/', 'B1056': '/home/btheilma/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
+       'B1056': '/home/btheilma/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
+       'B1083-5': '/home/btheilma/krista/B1083/P03S05/'}
 
-# bps = {'B1083': '/home/AD/btheilma/krista/B1083/P03S03/', 'B1075': '/home/AD/btheilma/krista/B1075/P01S03/',
-#        'B1235': '/home/AD/btheilma/krista/B1235/P02S01/', 'B1056': '/home/AD/btheilma/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
-#        'B1056': '/home/AD/btheilma/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
-#        'B1083-5': '/home/AD/btheilma/krista/B1083/P03S05/'}
 
 learned_stimuli = {'B1083': ['M_scaled_burung', 'N_scaled_burung', 'O_scaled_burung', 'P_scaled_burung'], 'B1056': ['A_scaled_burung', 'B_scaled_burung', 'C_scaled_burung', 'D_scaled_burung'], 'B1235': [], 'B1075': []}
 peck_stimuli = {'B1083': {'L': ['N_40k','P_40k'], 'R': ['M_40k', 'O_40k']}, 'B1056': {'L': ['B_scaled_burung', 'D_scaled_burung'], 'R': ['A_scaled_burung', 'C_scaled_burung']}, 
                 'B1235': {'L': ['F_scaled_burung', 'H_scaled_burung'], 'R': ['E_scaled_burung', 'G_scaled_burung'],}, 'B1075': {'L': ['F_40k', 'H_40k'], 'R': ['E_40k', 'G_40k']},
                'B1083-5': {'L': ['N_40k','P_40k'], 'R': ['M_40k', 'O_40k']}}
 
-unfamiliar_stimuli = {'B1083': ['I_40k', 'J_40k', 'K_40k', 'L_40k'], 'B1083-5': ['I_40k', 'J_40k', 'K_40k', 'L_40k']}
+unfamiliar_stimuli = {'B1083': ['I_40k', 'J_40k', 'K_40k', 'L_40k'], 
+                      'B1083-5': ['I_40k', 'J_40k', 'K_40k', 'L_40k'],
+                      'B1235': ['A_scaled_burung', 'B_scaled_burung', 'C_scaled_burung', 'D_scaled_burung'], 
+                      'B1075': ['A_40k', 'B_40k', 'C_40k', 'D_40k'], 
+                      'B1056': ['E_scaled_burung', 'F_scaled_burung', 'G_scaled_burung', 'H_scaled_burung']
+                     }
 
 #bps =  {'B1056': '/home/AD/btheilma/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
 #        'B1235': '/home/AD/btheilma/krista/B1235/P02S01/'}
-# test_birds = ['B1075', 'B1083','B1056', 'B1235']
-# test_birds = ['B1075', 'B1235']
-# #test_birds = ['B1056', 'B1235']
-# #test_birds =['B1056', 'B1083']
-# #test_birds = ['B1083']
-
-test_birds = ['B1083', 'B1083-5']
+#test_birds = ['B1056', 'B1235']
+#test_birds = ['B1075', 'B1235']
+#test_birds = ['B1056', 'B1235']
+#test_birds =['B1056', 'B1083']
+#test_birds = ['B1083']
+#test_birds = ['B1083', 'B1083-5']
+test_birds = ['B1056', 'B1235', 'B1083', 'B1083-5']
+#test_birds = ['B1056']
 # Binning Parameters
 windt = 10.0                      # milliseconds
 dtovr = 0.5*windt                 # milliseconds
@@ -109,7 +111,7 @@ for bird in test_birds:
             poptens = np.array(f[stim]['pop_tens'])
             population_tensors_unfamiliar[bird].append([poptens, stim])
 
- # flatten the list of population tensors for each population
+# flatten the list of population tensors for each population
 threshold = 6
 
 def threshold_poptens(tens, thresh):
@@ -126,20 +128,30 @@ def shuffle_binmat(binmat):
         binmat[i, :] = np.random.permutation(binmat[i, :])
     return binmat
 
+def get_JS(i, j, Li, Lj, speci, specj, beta):
+    js = (i, j, sc.sparse_JS_divergence2_fast(Li, Lj, speci, specj, beta))
+    print((i, j))
+    return js
+
 
 poptens = {'familiar': population_tensors_familiar, 'unfamiliar': population_tensors_unfamiliar}
-# Compute JS popA:
-#Left vs right
 
+# mirroring cuda code
+#Left vs right
+reload(sc)
 dim = 1
-beta = -1.0
+
+betas = [1,2]
 
 for bird in test_birds:
     for sh in ['original', 'shuffled']:
         for fam in ['familiar', 'unfamiliar']:
-            ntrials = 20 # Only do half the trials for each stim
+            ntrials = 10 # Only do half the trials for each stim
             bird_tensors = poptens[fam][bird]
             SCG = []
+            spectra = []
+            laplacians = []
+            print('Computing Laplacians and Spectra for {} {} {}...'.format(bird, sh, fam))
             for bird_tensor, stim in bird_tensors:
                 binmatlist = []
                 print(bird, stim)
@@ -151,12 +163,24 @@ for bird in test_birds:
                     else:
                         binmatlist.append(bin_tensor[:, :, trial])
                     ms = sc.binarytomaxsimplex(bin_tensor[:, :, trial], rDup=True)
-                    SCG.append(pyslsa.build_SCG(ms))
+                    scg1 = sc.simplicialChainGroups(ms)
+                    SCG.append(scg1)
+                    L = sc.sparse_laplacian(scg1, dim)
+#                     rho = sc.sparse_density_matrix(L, beta)
+#                     r = sc.sparse_density_spectrum(rho)
+                    laplacians.append(L)
+                    spectra.append(sc.sparse_spectrum(L))
             N = len(SCG)
-            jsmat = np.zeros((N, N))
-            for i in tqdm(range(N)):
-                for j in tqdm(range(i, N)):
-                    jsmat[i, j] = pyslsa.cuJS(SCG[i], SCG[j], dim, beta)
-            with open(os.path.join(figsavepth, 'JSpop_{}-{}-{}-{}_LvsR-{}-{}'.format(bird, dim, beta, ntrials, fam, sh)), 'wb') as f:
-                pickle.dump(jsmat, f)
+            # compute density matrices
+            pairs = [(i, j) for i in range(N) for j in range(i, N)]
+            for beta in betas:
+                print('Computing JS Divergences with beta {}...'.format(beta))
+                jsmat = np.zeros((N, N))
+                
+                jsdat = Parallel(n_jobs=23)(delayed(get_JS)(i, j, laplacians[i], laplacians[j], spectra[i], spectra[j], beta) for (i, j) in pairs)
+                for d in jsdat:
+                    jsmat[d[0], d[1]] = d[2]
+            
+                with open(os.path.join(figsavepth, 'JSpop_fast_{}-{}-{}-{}_LvsR-{}-{}.pkl'.format(bird, dim, beta, ntrials, fam, sh)), 'wb') as f:
+                    pickle.dump(jsmat, f)
             
