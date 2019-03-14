@@ -152,12 +152,12 @@ poptens = {'familiar': population_tensors_familiar, 'unfamiliar': population_ten
 reload(sc)
 dim = 1
 
-betas = [1,2]
+betas = [1,2,3]
 
 for bird in test_birds:
     for sh in ['original', 'shuffled']:
         for fam in ['familiar', 'unfamiliar']:
-            ntrials = 10 # Only do half the trials for each stim
+            ntrials = 20 # Only do half the trials for each stim
             bird_tensors = poptens[fam][bird]
             SCG = []
             spectra = []
@@ -168,7 +168,8 @@ for bird in test_birds:
                 print(bird, stim)
                 ncells, nwin, _ = bird_tensor.shape
                 bin_tensor = threshold_poptens(bird_tensor, threshold)
-                laplacians = Parallel(n_jobs=23)(delayed(get_Lap)(bin_tensor[:, :, trial], sh) for trial in range(ntrials))
+                laplacians.append(Parallel(n_jobs=23)(delayed(get_Lap)(bin_tensor[:, :, trial], sh) for trial in range(ntrials)))
+            laplacians = sum(laplacians, [])
             N = len(laplacians)
             # compute spectra
             print('Computing Spectra...')
