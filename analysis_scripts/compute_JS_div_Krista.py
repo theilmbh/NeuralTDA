@@ -56,7 +56,7 @@ unfamiliar_stimuli = {'B1083': ['I_40k', 'J_40k', 'K_40k', 'L_40k'],
 #test_birds =['B1056', 'B1083']
 #test_birds = ['B1083']
 #test_birds = ['B1083', 'B1083-5']
-test_birds = ['B1056', 'B1235', 'B1083', 'B1083-5']
+test_birds = ['B1083', 'B1083-5', 'B1056', 'B1235']
 #test_birds = ['B1056']
 # Binning Parameters
 windt = 10.0                      # milliseconds
@@ -134,6 +134,16 @@ def get_JS(i, j, Li, Lj, speci, specj, beta):
     print((i, j))
     return js
 
+def get_Lap(trial_matrix, sh):
+    if sh == 'shuffled':
+        mat = shuffle_binmat(trial_matrix)
+    else:
+        mat = trial_matrix
+    ms = sc.binarytomaxsimplex(trial_matrix, rDup=True)
+    scg1 = sc.simplicialChainGroups(ms)
+    L = sc.sparse_laplacian(scg1, dim)
+    return L
+
 
 poptens = {'familiar': population_tensors_familiar, 'unfamiliar': population_tensors_unfamiliar}
 
@@ -152,26 +162,18 @@ for bird in test_birds:
             SCG = []
             spectra = []
             laplacians = []
-            print('Computing Laplacians and Spectra for {} {} {}...'.format(bird, sh, fam))
+            print('Computing Laplacians for {} {} {}...'.format(bird, sh, fam))
             for bird_tensor, stim in bird_tensors:
                 binmatlist = []
                 print(bird, stim)
                 ncells, nwin, _ = bird_tensor.shape
                 bin_tensor = threshold_poptens(bird_tensor, threshold)
-                for trial in tqdm(range(ntrials)):
-                    if sh == 'shuffled':
-                        binmatlist.append(shuffle_binmat(bin_tensor[:, :, trial]))
-                    else:
-                        binmatlist.append(bin_tensor[:, :, trial])
-                    ms = sc.binarytomaxsimplex(bin_tensor[:, :, trial], rDup=True)
-                    scg1 = sc.simplicialChainGroups(ms)
-                    SCG.append(scg1)
-                    L = sc.sparse_laplacian(scg1, dim)
-#                     rho = sc.sparse_density_matrix(L, beta)
-#                     r = sc.sparse_density_spectrum(rho)
-                    laplacians.append(L)
-                    spectra.append(sc.sparse_spectrum(L))
-            N = len(SCG)
+                laplacians = Parallel(n_jobs=23)(delayed(get_Lap)(bin_tensor[:, :, trial], sh) for trial in range(ntrials))
+            N = len(laplacians)
+            # compute spectra
+            print('Computing Spectra...')
+            spectra = Parallel(n_jobs=23)(delayed(sc.sparse_spectrum)(L) for L in laplacians)
+
             # compute density matrices
             pairs = [(i, j) for i in range(N) for j in range(i, N)]
             for beta in betas:
