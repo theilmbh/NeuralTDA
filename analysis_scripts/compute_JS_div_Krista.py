@@ -12,16 +12,16 @@ import datetime
 
 import numpy as np
 import scipy as sp
-import pandas as pd
+
 import h5py as h5
 from tqdm import tqdm as tqdm
-import matplotlib.pyplot as plt
+
 
 
 import neuraltda.topology2 as tp2
 import neuraltda.spectralAnalysis as sa
 import neuraltda.simpComp as sc
-import pycuslsa as pyslsa
+
 from joblib import Parallel, delayed
 
 daystr = datetime.datetime.now().strftime('%Y%m%d')
