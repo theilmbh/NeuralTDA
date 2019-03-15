@@ -193,8 +193,10 @@ for bird in test_birds:
             # Save computed spectra
             with open(os.path.join(figsavepth, 'Mspectra_{}-{}-{}-{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
                 pickle.dump(M_spec, f)
-            with open(os.path.join(figsavepth, 'Lapspectra_{}-{}-{}-{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
+            with open(os.path.join(figsavepth, 'Laplacians_{}-{}-{}-{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
                 pickle.dump(laplacians_save, f)
+            with open(os.path.join(figsavepth, 'Lapspectra_{}-{}-{}-{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
+                pickle.dump(spectra, f)
             # compute density matrices
             
             for beta in betas:
