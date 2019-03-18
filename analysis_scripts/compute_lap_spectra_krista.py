@@ -56,7 +56,7 @@ unfamiliar_stimuli = {'B1083': ['I_40k', 'J_40k', 'K_40k', 'L_40k'],
 #test_birds =['B1056', 'B1083']
 #test_birds = ['B1083']
 #test_birds = ['B1083', 'B1083-5']
-test_birds = ['B1056', 'B1235', 'B1083', 'B1083-5']
+test_birds = ['B1083', 'B1083-5', 'B1056', 'B1235']
 #test_birds = ['B1056']
 # Binning Parameters
 windt = 10.0                      # milliseconds
