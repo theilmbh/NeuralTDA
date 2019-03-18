@@ -191,10 +191,10 @@ for bird in test_birds:
             M_spec = {(p[0], p[1]): p[2] for p in M_spec}
             
             # Save computed spectra
-            # with open(os.path.join(figsavepth, 'Mspectra_{}-{}-{}-{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
-            #     pickle.dump(M_spec, f)
-            with open(os.path.join(figsavepth, 'Laplacians_{}-{}-{}-{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
+            with open(os.path.join(figsavepth, 'Mspectra_{}_{}_{}_{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
+                pickle.dump(M_spec, f)
+            with open(os.path.join(figsavepth, 'Laplacians_{}_{}_{}_{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
                 pickle.dump(laplacians_save, f)
-            with open(os.path.join(figsavepth, 'Lapspectra_{}-{}-{}-{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
+            with open(os.path.join(figsavepth, 'Lapspectra_{}_{}_{}_{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
                 pickle.dump(spectra, f)
      
