@@ -158,7 +158,7 @@ poptens = {'familiar': population_tensors_familiar, 'unfamiliar': population_ten
 # mirroring cuda code
 #Left vs right
 reload(sc)
-dim = 1
+dim = 2
 
 betas = [1, 0.25, 0.5, 2, 3]
 
@@ -185,10 +185,10 @@ for bird in test_birds:
             spectra = Parallel(n_jobs=24)(delayed(sc.sparse_spectrum)(L) for L in laplacians)
 
             # Precompute M spectra
-            # pairs = [(i, j) for i in range(N) for j in range(i, N)]
-            # print('Computing M spectra...')
-            # M_spec = Parallel(n_jobs=24)(delayed(get_M)(i, j, laplacians[i], laplacians[j]) for (i, j) in pairs)
-            # M_spec = {(p[0], p[1]): p[2] for p in M_spec}
+            pairs = [(i, j) for i in range(N) for j in range(i, N)]
+            print('Computing M spectra...')
+            M_spec = Parallel(n_jobs=24)(delayed(get_M)(i, j, laplacians[i], laplacians[j]) for (i, j) in pairs)
+            M_spec = {(p[0], p[1]): p[2] for p in M_spec}
             
             # Save computed spectra
             # with open(os.path.join(figsavepth, 'Mspectra_{}-{}-{}-{}.pkl'.format(bird, ntrials, sh, fam)), 'wb') as f:
