@@ -309,6 +309,8 @@ def sparseBoundaryOperatorMatrix(E, dim):
 
     """
     m = len(E[dim])
+    if dim+1 >= len(E):
+        return sp.csc_matrix(([0], ([0], [0])))
     n = len(E[dim + 1])
     rowind = np.empty(m*n, dtype=np.int32)
     colind = np.empty(m*n, dtype=np.int32)
@@ -384,6 +386,8 @@ def sparse_spectrum(rho):
     '''
     Returns the spectrum of the sparse matrix rho
     '''
+    if (min(rho.shape) - 1) <= 0:
+        return np.array([0])
     return sp.linalg.svds(rho, k=(min(rho.shape)-1), return_singular_vectors = False)
 
 def sparse_reconciled_spectrum_KL(r, s):
