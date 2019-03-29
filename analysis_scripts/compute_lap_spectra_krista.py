@@ -1,27 +1,18 @@
 ###
-# The goal of this notebook is to:
-# - Take two neural populations
-# - Compute the JS divergence between stimuli pairs for each population (the same stimuli pairs)
-# - Compute the mutual information between the distributions of JS divergences
+# Compute the laplacian spectra and M spectra between trials
+###
 
 import glob
 import os
 from importlib import reload
 import pickle
 import datetime
-
 import numpy as np
 import scipy as sp
-
 import h5py as h5
 from tqdm import tqdm as tqdm
-
-
-
 import neuraltda.topology2 as tp2
-
 import neuraltda.simpComp as sc
-
 from joblib import Parallel, delayed
 
 daystr = datetime.datetime.now().strftime('%Y%m%d')
@@ -33,16 +24,16 @@ birds = ['B1083', 'B1056', 'B1235', 'B1075']
 bps = {'B1083': '/home/btheilma/krista/B1083/P03S03/', 'B1075': '/home/btheilma/krista/B1075/P01S03/',
        'B1235': '/home/btheilma/krista/B1235/P02S01/', 'B1056': '/home/btheilma/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
        'B1056': '/home/btheilma/krista/B1056/klusta/phy020516/Pen01_Lft_AP100_ML1300__Site03_Z2500__B1056_cat_P01_S03_1/',
-       'B1083-5': '/home/btheilma/krista/B1083/P03S05/'}
+       'B1083_5': '/home/btheilma/krista/B1083/P03S05/'}
 
 
 learned_stimuli = {'B1083': ['M_scaled_burung', 'N_scaled_burung', 'O_scaled_burung', 'P_scaled_burung'], 'B1056': ['A_scaled_burung', 'B_scaled_burung', 'C_scaled_burung', 'D_scaled_burung'], 'B1235': [], 'B1075': []}
 peck_stimuli = {'B1083': {'L': ['N_40k','P_40k'], 'R': ['M_40k', 'O_40k']}, 'B1056': {'L': ['B_scaled_burung', 'D_scaled_burung'], 'R': ['A_scaled_burung', 'C_scaled_burung']}, 
                 'B1235': {'L': ['F_scaled_burung', 'H_scaled_burung'], 'R': ['E_scaled_burung', 'G_scaled_burung'],}, 'B1075': {'L': ['F_40k', 'H_40k'], 'R': ['E_40k', 'G_40k']},
-               'B1083-5': {'L': ['N_40k','P_40k'], 'R': ['M_40k', 'O_40k']}}
+               'B1083_5': {'L': ['N_40k','P_40k'], 'R': ['M_40k', 'O_40k']}}
 
 unfamiliar_stimuli = {'B1083': ['I_40k', 'J_40k', 'K_40k', 'L_40k'], 
-                      'B1083-5': ['I_40k', 'J_40k', 'K_40k', 'L_40k'],
+                      'B1083_5': ['I_40k', 'J_40k', 'K_40k', 'L_40k'],
                       'B1235': ['A_scaled_burung', 'B_scaled_burung', 'C_scaled_burung', 'D_scaled_burung'], 
                       'B1075': ['A_40k', 'B_40k', 'C_40k', 'D_40k'], 
                       'B1056': ['E_scaled_burung', 'F_scaled_burung', 'G_scaled_burung', 'H_scaled_burung']
@@ -56,7 +47,7 @@ unfamiliar_stimuli = {'B1083': ['I_40k', 'J_40k', 'K_40k', 'L_40k'],
 #test_birds =['B1056', 'B1083']
 #test_birds = ['B1083']
 #test_birds = ['B1083', 'B1083-5']
-test_birds = ['B1083', 'B1083-5', 'B1056', 'B1235']
+test_birds = ['B1083', 'B1083_5', 'B1056', 'B1235']
 #test_birds = ['B1056']
 # Binning Parameters
 windt = 10.0                      # milliseconds
@@ -165,7 +156,7 @@ betas = [1, 0.25, 0.5, 2, 3]
 for bird in test_birds:
     for sh in ['original', 'shuffled']:
         for fam in ['familiar', 'unfamiliar']:
-            ntrials = 20 # Only do half the trials for each stim
+            ntrials = 20 
             bird_tensors = poptens[fam][bird]
             SCG = []
             spectra = []
