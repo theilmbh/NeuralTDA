@@ -353,8 +353,20 @@ def maskedBoundaryOperatorMatrix(E, Emask):
 def sparse_laplacian(E, dim):
     d_low = sparseBoundaryOperatorMatrix(E, dim)
     d_high = sparseBoundaryOperatorMatrix(E, dim+1)
+    h_shape = d_high.get_shape()
+    l_shape = d_low.get_shape()
 
-    return (d_low.T).dot(d_low) + d_high.dot(d_high.T)
+    if h_shape[0] <= 0:
+        L_high = 0
+    else:
+        L_high = d_high.dot(d_high.T)
+
+    if l_shape[0] <= 0:
+        L_low = 0
+    else:
+        L_low = (d_low.T).dot(d_low)
+
+    return L_low + L_high
 
 def sparse_reconcile_laplacians(L1, L2):
     if L1.size >= L2.size:
