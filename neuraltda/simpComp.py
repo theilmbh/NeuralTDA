@@ -356,15 +356,16 @@ def sparse_laplacian(E, dim):
     h_shape = d_high.get_shape()
     l_shape = d_low.get_shape()
 
-    if h_shape[0] <= 0:
-        L_high = 0
-    else:
-        L_high = d_high.dot(d_high.T)
-
     if l_shape[0] <= 0:
         L_low = 0
     else:
         L_low = (d_low.T).dot(d_low)
+
+    if h_shape[0] <= 0:
+        L_high = 0
+        return L_low
+    else:
+        L_high = d_high.dot(d_high.T)
 
     return L_low + L_high
 
