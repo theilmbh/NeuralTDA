@@ -10,7 +10,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import neuraltda.topology2 as tp2
 import neuraltda.simpComp as sc
-import neuraltda.spectralAnalysis as sa
 import pandas as pd
 import h5py as h5
 import pickle
@@ -345,13 +344,17 @@ for ind, spikes1 in enumerate(spikes):
             print(np.amax(np.sum(binmat, axis = 0)))
 
 # precompute laplacians and laplacian spectra
+print("Computing Laplacians...")
 laplacians_trials = Parallel(n_jobs=24)(delayed(get_lap)(binmat, None) for binmat in trial_binmats)
 n_laplacians = len(laplacians_trials)
+print("N Laplacians: {}".format(n_laplacians))
 
 # precompute laplacian spectra
+print("Computing Laplacian Spectra")
 laplacian_spectra_trials = Parallel(n_jobs=24)(delayed(sc.sparse_spectrum)(L) for L in laplacians_trials)
 
 # precompute M spectra
+print("Computing M Spectra")
 pairs = [(i, j) for i in range(n_laplacians) for j in range(i, n_laplacians)]
 M_spec = Parallel(n_jobs=24)(delayed(get_M)(i, j, laplacians_trials[i], laplacians_trials[j]) for (i, j) in pairs)
 M_spec = {(p[0], p[1]): p[2] for p in M_spec}
