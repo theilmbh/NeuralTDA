@@ -7,7 +7,6 @@
 
 
 import numpy as np
-import pycuslsa as pyslsa
 import matplotlib.pyplot as plt
 import neuraltda.topology2 as tp2
 import neuraltda.simpComp as sc
