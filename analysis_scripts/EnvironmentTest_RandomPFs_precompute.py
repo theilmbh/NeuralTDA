@@ -312,6 +312,7 @@ print('Generating placefields...')
 (fields, rads) = generate_place_fields_CI(ncells, [sigma, 0.1*L], exclusion_param)
 
 spikes = []
+fields = []
 
 print('Generating spikes...')
 for env1 in tqdm.tqdm(envs):
@@ -320,6 +321,11 @@ for env1 in tqdm.tqdm(envs):
     pths1 = generate_paths(env1, nwin, ntrials, dl)  # 10 walks through environment 1
     spikes1 = generate_spikes(pths1, fields1, max_rate, rads1)
     spikes.append(spikes1)
+    fields.append((fields1, rads1))
+
+print('Saving environments...')
+with open(os.path.join(figsavepth,'environment_out_random_place_fields_precompute_{}_{}_{}.pkl'.format(ntrials, max_hole, nrepeats)), 'wb') as f:
+    pickle.dump((spikes, fields, envs, corrmat), f)
 
 
 # Bin Data
