@@ -263,7 +263,7 @@ def get_M(i, j, L1, L2):
 L = 2 # meter
 vel = 0.1*L # meters / second
 
-hole_rad = 0.3
+hole_rad = 0.2
 nsecs = 30*60
 fs = 10
 nwin = nsecs*fs
@@ -324,7 +324,7 @@ for env1 in tqdm.tqdm(envs):
     fields.append((fields1, rads1))
 
 print('Saving environments...')
-with open(os.path.join(figsavepth,'environment_out_random_place_fields_precompute_{}_{}_{}.pkl'.format(ntrials, max_hole, nrepeats)), 'wb') as f:
+with open(os.path.join(datsavepth,'environment_out_random_place_fields_precompute_{}_{}_{}.pkl'.format(ntrials, max_hole, nrepeats)), 'wb') as f:
     pickle.dump((spikes, fields, envs, corrmat), f)
 
 
