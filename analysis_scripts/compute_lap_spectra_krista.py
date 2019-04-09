@@ -32,8 +32,8 @@ peck_stimuli = {'B1083': {'L': ['N_40k','P_40k'], 'R': ['M_40k', 'O_40k']}, 'B10
                 'B1235': {'L': ['F_scaled_burung', 'H_scaled_burung'], 'R': ['E_scaled_burung', 'G_scaled_burung'],}, 'B1075': {'L': ['F_40k', 'H_40k'], 'R': ['E_40k', 'G_40k']},
                'B1083_5': {'L': ['N_40k','P_40k'], 'R': ['M_40k', 'O_40k']}}
 
-unfamiliar_stimuli = {'B1083': ['I_40k', 'J_40k', 'K_40k', 'L_40k'], 
-                      'B1083_5': ['I_40k', 'J_40k', 'K_40k', 'L_40k'],
+unfamiliar_stimuli = {'B1083': [ 'J_40k', 'I_40k', 'K_40k', 'L_40k'], 
+                      'B1083_5': ['I_40k', , 'K_40k', 'L_40k', 'J_40k'],
                       'B1235': ['A_scaled_burung', 'B_scaled_burung', 'C_scaled_burung', 'D_scaled_burung'], 
                       'B1075': ['A_40k', 'B_40k', 'C_40k', 'D_40k'], 
                       'B1056': ['E_scaled_burung', 'F_scaled_burung', 'G_scaled_burung', 'H_scaled_burung']
