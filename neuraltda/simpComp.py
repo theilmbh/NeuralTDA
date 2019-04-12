@@ -420,7 +420,7 @@ def sparse_reconciled_spectrum_KL(r, s):
 def sparse_spectrum_KL(r, s):
     div = 0.0
     for rval, sval in zip(r, s):
-        if rval < 1e-14 or sval < 1e-14:
+        if rval < 1e-16 or sval < 1e-16:
             div += 0
         else:
             div += rval * (np.log(rval) - np.log(sval)) / np.log(2.0)
