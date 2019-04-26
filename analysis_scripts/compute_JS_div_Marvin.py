@@ -95,33 +95,33 @@ for sh in ['original', 'shuffled']:
                 spectra = []
                 laplacians_save = []
                 print('Computing Laplacians for {} {}...'.format(block, sh))
-                for stim in block_tensors.keys():
-                    block_tensor = block_tensors[stim]
+                for morphdim in block_tensors.keys():
+                    block_tensor = block_tensors[morphdim]
                     binmatlist = []
-                    print(stim)
+                    print(morphdim)
                     ncells, nwin, ntrials = block_tensor.shape
                     print(ncells, nwin, ntrials)
                     bin_tensor = threshold_poptens(block_tensor, threshold)
                     laps = Parallel(n_jobs=24)(delayed(get_Lap)(bin_tensor[:, :, trial], sh, trial) for trial in range(ntrials))
-                    laplacians_save.append((block, stim, laps))
-                laplacians = sum([s[2] for s in laplacians_save], [])
-                N = len(laplacians)
-                # compute spectra
-                print('Computing Spectra...')
-                spectra = Parallel(n_jobs=24)(delayed(sc.sparse_spectrum)(L) for L in laplacians)
+                    laplacians_save.append((block, morphdim, laps))
+                    laplacians = laps
+                    N = len(laplacians)
+                    # compute spectra
+                    print('Computing Spectra...')
+                    spectra = Parallel(n_jobs=24)(delayed(sc.sparse_spectrum)(L) for L in laplacians)
 
-                # Precompute M spectra
-                pairs = [(i, j) for i in range(N) for j in range(i, N)]
-                print('Computing M spectra...')
-                M_spec = Parallel(n_jobs=24)(delayed(get_M)(i, j, laplacians[i], laplacians[j]) for (i, j) in pairs)
-                M_spec = {(p[0], p[1]): p[2] for p in M_spec}
-                
-                # Save computed spectra
-                with open(os.path.join(datsavepth, 'Mspectra_{}_{}.pkl'.format(block, sh)), 'wb') as f:
-                    pickle.dump(M_spec, f)
-                with open(os.path.join(datsavepth, 'Laplacians_{}_{}.pkl'.format(block, sh)), 'wb') as f:
-                    pickle.dump(laplacians_save, f)
-                with open(os.path.join(datsavepth, 'Lapspectra_{}_{}.pkl'.format(block, sh)), 'wb') as f:
-                    pickle.dump(spectra, f)
-                # compute density matrices
+                    # Precompute M spectra
+                    pairs = [(i, j) for i in range(N) for j in range(i, N)]
+                    print('Computing M spectra...')
+                    M_spec = Parallel(n_jobs=24)(delayed(get_M)(i, j, laplacians[i], laplacians[j]) for (i, j) in pairs)
+                    M_spec = {(p[0], p[1]): p[2] for p in M_spec}
+                    
+                    # Save computed spectra
+                    with open(os.path.join(datsavepth, 'Mspectra_{}_{}_{}.pkl'.format(block, morphdim, sh)), 'wb') as f:
+                        pickle.dump(M_spec, f)
+                    with open(os.path.join(datsavepth, 'Laplacians_{}_{}_{}.pkl'.format(block, morphdim, sh)), 'wb') as f:
+                        pickle.dump(laplacians_save, f)
+                    with open(os.path.join(datsavepth, 'Lapspectra_{}_{}_{}.pkl'.format(block, morphdim, sh)), 'wb') as f:
+                        pickle.dump(spectra, f)
+                    # compute density matrices
             
