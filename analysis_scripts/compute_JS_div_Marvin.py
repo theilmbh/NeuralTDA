@@ -24,7 +24,7 @@ import neuraltda.simpComp as sc
 
 from joblib import Parallel, delayed
 
-homef = 'brad'
+homef = 'btheilma'
 
 daystr = datetime.datetime.now().strftime('%Y%m%d')
 datsavepth = '/home/{}/marvinTDAdat/'.format(homef)
@@ -89,7 +89,7 @@ blocks = list(poptensors.keys())
 for sh in ['original', 'shuffled']:
 
     for block in blocks:
-
+                blockname = os.path.splitext(os.path.split(block)[-1])[0]
                 block_tensors = poptensors[block]
                 SCG = []
                 spectra = []
@@ -117,11 +117,11 @@ for sh in ['original', 'shuffled']:
                     M_spec = {(p[0], p[1]): p[2] for p in M_spec}
                     
                     # Save computed spectra
-                    with open(os.path.join(datsavepth, 'Mspectra_{}_{}_{}.pkl'.format(block, morphdim, sh)), 'wb') as f:
+                    with open(os.path.join(datsavepth, 'Mspectra_{}_{}_{}.pkl'.format(blockname, morphdim, sh)), 'wb') as f:
                         pickle.dump(M_spec, f)
-                    with open(os.path.join(datsavepth, 'Laplacians_{}_{}_{}.pkl'.format(block, morphdim, sh)), 'wb') as f:
+                    with open(os.path.join(datsavepth, 'Laplacians_{}_{}_{}.pkl'.format(blockname, morphdim, sh)), 'wb') as f:
                         pickle.dump(laplacians_save, f)
-                    with open(os.path.join(datsavepth, 'Lapspectra_{}_{}_{}.pkl'.format(block, morphdim, sh)), 'wb') as f:
+                    with open(os.path.join(datsavepth, 'Lapspectra_{}_{}_{}.pkl'.format(blockname, morphdim, sh)), 'wb') as f:
                         pickle.dump(spectra, f)
                     # compute density matrices
             
