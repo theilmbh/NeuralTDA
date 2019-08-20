@@ -24,7 +24,7 @@ import neuraltda.simpComp as sc
 
 from joblib import Parallel, delayed
 
-homef = 'btheilma'
+homef = 'btheilmaQ'
 
 daystr = datetime.datetime.now().strftime('%Y%m%d')
 datsavepth = '/home/{}/marvinTDAdat/'.format(homef)

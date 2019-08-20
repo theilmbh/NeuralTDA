@@ -936,6 +936,50 @@ def build_activity_tensor_quick(
     poptens /= win_size / 1000.0
     return poptens
 
+def build_activity_matrix(
+    spike_times,
+    spike_IDs,
+    n_IDs,
+    win_len,
+    fs,
+    pct_overlap,
+    s_start,
+    s_stop):
+    
+    '''
+    Bins spikes into a matrix
+
+    spike_times : list
+        spike times in samples
+    spike_IDs : list
+        integer neuron IDs for each spike
+    win_len : float
+        window length in milliseconds
+    fs : float
+        sampling rate samples/second
+    pct_overlap : float
+        percent overlap of windows (0-1)
+    s_start :int
+        starting sample of matrix
+    s_stop : int
+        last sample of matrix
+    '''
+
+
+    win_len_samples = np.round(win_len * fs / 1000.0)
+    n_overlap = int(np.round(pct_overlap * win_len_samples))
+    skip = int(np.round((1 - pct_overlap) * win_len_samples))
+    duration = s_stop - s_start
+
+    n_wins = int(np.round(float(duration) / float(skip)))
+    mat = np.zeros((n_IDs, n_wins))
+    ID_list = np.arange(n_IDs)
+
+    for sp_t, sp_i in zip(spike_times, spike_IDs):
+        wins = get_windows_for_spike(sp_t, win_len_samples, n_overlap, (s_start, s_stop))
+        mat[ID_list == sp_i, wins] += 1
+    mat /= (win_len / 1000.0)
+    return mat
 
 def build_poptens_given_windows(stim_trials, spikes, windows, clusters_list, segment):
     nreps = len(stim_trials.index)
@@ -1288,6 +1332,31 @@ def betti_dict_to_betti_curves(betti_dict, dims, twin, windt, dtovr):
         stim_betticurves[stim] = np.array(betticurve_save)
     return (stim_betticurves, t_vals, t_vals_milliseconds)
 
+def interpolate_betti(betti_result, t_out, dims, win_len, pct_overlap):
+
+    t = np.array([int(x[0]) for x in dat])
+    t_ms = t * win_len*(1-pct_overlap) + win_len / 2.0
+    t_vals = np.round((t_out - win_len/2.0) / (win_len*(1-pct_overlap)))
+    t_vals_ms = t_out
+    b = [x[1] for x in dat]
+
+    # Pad to have at least 10 dimensions of betti values
+    b = [np.pad(np.array(x), (0, 10), "constant", constant_values=0) for x in b]
+    
+    betti_curves_all_dims = np.empty((0, len(t_out)))
+    for dim in dims:
+
+        # Extract betti values of a given dimension
+        b_val = np.array([x[dim] for x in b])
+
+        # Interpolate
+        b_func = interp1d(t, b_val, kind="zero", bounds_error=False, fill_value=(b_val[0], b_val[-1]))
+        
+        # Save
+        betti_curve_dim = b_func(t_vals)
+        betti_curves_all_dims = np.vstack((betti_curves_all_dims, betti_curve_dim))
+
+    return (betti_curves_all_dims, t_vals, t_vals_ms)
 
 def compute_betti_curves(
     analysis_id,
