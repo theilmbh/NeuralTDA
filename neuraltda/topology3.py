@@ -14,11 +14,42 @@ import numpy as np
 import scipy.sparse as sp
 from scipy.special import comb
 import scipy.sparse.linalg as spla
+from scipy.interpolate import interp1d
 
 ################################################################################
 ## Spike Pipeline ##############################################################
 ################################################################################
 
+def kwik_get_trials(kwikfile):
+    ''' 
+    Get all the trials from a sorted, merged kwikfile
+    Trials are returned as a list with tuples for each trial: 
+        (stim_name, stim_start_time, stim_end_time)
+    All times are in samples relative to start of kwikfile (block)
+    '''
+
+    with h5.File(kwikfile, 'r') as f:
+        stim_names = list(f['/event_types/Stimulus/text'])
+        stim_names = [x.decode('utf-8') for x in stim_names]
+        stim_start_times = list(f['/event_types/Stimulus/time_samples'])
+        stim_end_times = list(f['/event_types/Stimulus/stimulus_end'])
+    return list(zip(stim_names, stim_start_times, stim_end_times))
+        
+    
+def kwik_get_spikes(kwikfile):
+    '''
+    Get all the spikes froma sorted, merged kwikfile
+    Spikes are returned as an Nspike x 2 numpy array
+    spikes[:, 0] is spike time in samples relative to kwikfile (block) start
+    spikes[:, 1] is cluster id
+    '''
+    
+    with h5.File(kwikfile, 'r') as f:
+        spikes_clus = np.array(f['/channel_groups/0/spikes/clusters/main'])
+        spikes_times = np.array(f['/channel_groups/0/spikes/time_samples'])
+        
+    spikes = np.vstack((spikes_times, spikes_clus)).T
+    return spikes
 
 def spikes_in_interval(spikes, t_lo, t_hi, cell_group):
     """ 
@@ -55,14 +86,12 @@ def get_windows(t_start, t_end, win_len, skip):
     win_ends = win_starts + win_len - 1
     return (win_starts, win_ends)
 
-
 def total_firing_rates(spikes, stim_start, stim_end):
 
     stim_spikes = []
     spikes_in_interval(spikes, stim_start, stim_end, stim_spikes)
     c = Counter(stim_spikes)
     return c
-
 
 def spike_list_to_cell_group(spike_list, clu_rates, thresh, dt, T):
     """ 
@@ -78,7 +107,6 @@ def spike_list_to_cell_group(spike_list, clu_rates, thresh, dt, T):
         if (c[clu] / dt) >= (thresh * clu_rates[clu] / T):
             cg.add(clu)
     return cg
-
 
 def spikes_to_cell_groups(spikes, stim_start, stim_end, win_len, fs):
 
@@ -101,14 +129,12 @@ def spikes_to_cell_groups(spikes, stim_start, stim_end, win_len, fs):
             )
     return cell_groups
 
-
 def cell_groups_to_bin_mat(cell_groups, ncells, nwins):
 
     bin_mat = np.zeros((ncells, nwins))
     for cg in cell_groups:
         bin_mat[cg[2], cg[0]] = 1
     return bin_mat
-
 
 def build_perseus_persistent_input(cell_groups, savefile):
     """
@@ -147,7 +173,6 @@ def build_perseus_persistent_input(cell_groups, savefile):
             pfile.write(out_str)
     return savefile
 
-
 def run_perseus(pfile):
     """
     Runs Perseus persistent homology software on the data in pfile
@@ -175,7 +200,6 @@ def run_perseus(pfile):
 
     return betti_file
 
-
 def read_perseus_result(betti_file):
     bettis = []
     f_time = []
@@ -192,7 +216,6 @@ def read_perseus_result(betti_file):
         bettis.append([-1, [-1]])
     return bettis
 
-
 def compute_bettis(spikes, stim_start, stim_end, win_len, fs):
 
     win_starts, win_ends = get_windows(stim_start, stim_end, win_len, win_len)
@@ -201,8 +224,18 @@ def compute_bettis(spikes, stim_start, stim_end, win_len, fs):
     betti_file = run_perseus("./test.betti")
     betti_nums = read_perseus_result(betti_file)
 
-    betti_nums = [[win_starts[x[0]] - stim_start, x[0], x[1]] for x in betti_nums]
+    betti_nums = [[win_starts[x[0]-1] - stim_start, x[0], x[1]] for x in betti_nums]
     return betti_nums
+
+def betti_curve_func(betti_nums, dim, stim_start, stim_end, fs, t_in_seconds=False):
+    
+    betti_ts = [x[0] for x in betti_nums]
+    betti_vals = [x[2][dim] for x in betti_nums]
+    if t_in_seconds:
+        betti_ts = list(map(lambda x: x / fs, betti_ts))
+    f = interp1d(betti_ts, betti_vals, kind='zero', bounds_error=False, fill_value=(0, betti_vals[-1]))
+    return f
+
 
 
 ################################################################################
