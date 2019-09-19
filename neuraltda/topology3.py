@@ -16,6 +16,8 @@ from scipy.special import comb
 import scipy.sparse.linalg as spla
 from scipy.interpolate import interp1d
 
+import h5py as h5
+
 ################################################################################
 ## Spike Pipeline ##############################################################
 ################################################################################
@@ -64,7 +66,7 @@ def spikes_in_interval(spikes, t_lo, t_hi, cell_group):
     if t_lo < spikes[m, 0]:
         spikes_in_interval(spikes[0:m], t_lo, t_hi, cell_group)
     if t_lo <= spikes[m, 0] and t_hi >= spikes[m, 0]:
-        cell_group.append(spikes[m, 1])
+        cell_group.append( (spikes[m, 0], spikes[m, 1]))
     if t_hi > spikes[m, 0]:
         spikes_in_interval(spikes[m + 1 :], t_lo, t_hi, cell_group)
 
@@ -87,12 +89,13 @@ def get_windows(t_start, t_end, win_len, skip):
     return (win_starts, win_ends)
 
 def total_firing_rates(spikes, stim_start, stim_end):
-
+    
     stim_spikes = []
     spikes_in_interval(spikes, stim_start, stim_end, stim_spikes)
-    c = Counter(stim_spikes)
+    spike_ids = [x[1] for x in stim_spikes]
+    c = Counter(spike_ids)
     return c
-
+    
 def spike_list_to_cell_group(spike_list, clu_rates, thresh, dt, T):
     """ 
     Given a spike list, first counts number of each spikes from each cluster
@@ -100,7 +103,8 @@ def spike_list_to_cell_group(spike_list, clu_rates, thresh, dt, T):
     rate in the spike list exceeded some threshold by dividing the cluster's number of in-window spikes by the 
     window length in seconds and then checking if that value is greater than the threshold times the cluster total firing rate givne in clu_rates
     """
-    c = Counter(spike_list)
+    spike_ids = [x[1] for x in spike_list]
+    c = Counter(spike_ids)
     cg = set()
 
     for clu in clu_rates.keys():
@@ -211,24 +215,24 @@ def read_perseus_result(betti_file):
         bettis.append([-1, [-1]])
     return bettis
 
-def compute_bettis(spikes, stim_start, stim_end, win_len, fs):
-
+def compute_bettis(spikes, stim_start, stim_end, win_len, fs, thresh):
+    
     win_starts, win_ends = get_windows(stim_start, stim_end, win_len, win_len)
-    cell_groups = spikes_to_cell_groups(spikes, stim_start, stim_end, win_len, fs)
-    build_perseus_persistent_input(cell_groups, "./test.betti")
-    betti_file = run_perseus("./test.betti")
+    cell_groups = spikes_to_cell_groups(spikes, stim_start, stim_end, win_len, fs, thresh)
+    build_perseus_persistent_input(cell_groups, './test.betti')
+    betti_file = run_perseus('./test.betti')
     betti_nums = read_perseus_result(betti_file)
-
     betti_nums = [[win_starts[x[0]-1] - stim_start, x[0], x[1]] for x in betti_nums]
+    
     return betti_nums
-
+    
 def betti_curve_func(betti_nums, dim, stim_start, stim_end, fs, t_in_seconds=False):
     
     betti_ts = [x[0] for x in betti_nums]
     betti_vals = [x[2][dim] for x in betti_nums]
     if t_in_seconds:
         betti_ts = list(map(lambda x: x / fs, betti_ts))
-    f = interp1d(betti_ts, betti_vals, kind='zero', bounds_error=False, fill_value=(0, betti_vals[-1]))
+    f = interp1d(betti_ts, betti_vals, kind='zero', bounds_error = False, fill_value=(0, betti_vals[-1]))
     return f
 
 
