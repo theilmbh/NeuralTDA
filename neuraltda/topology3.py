@@ -108,32 +108,27 @@ def spike_list_to_cell_group(spike_list, clu_rates, thresh, dt, T):
             cg.add(clu)
     return cg
 
-def spikes_to_cell_groups(spikes, stim_start, stim_end, win_len, fs):
-
+def spikes_to_cell_groups(spikes, stim_start, stim_end, win_len, fs, thresh):
+    
     total_frs = total_firing_rates(spikes, stim_start, stim_end)
     win_starts, win_ends = get_windows(stim_start, stim_end, win_len, win_len)
     cell_groups = []
+    dt = win_len / fs
+    T = (stim_end - stim_start) / fs
     for ind, (ws, we) in enumerate(zip(win_starts, win_ends)):
         spike_list = []
         spikes_in_interval(spikes, ws, we, spike_list)
         if spike_list:
             window_time = (we + ws) / 2 - stim_start
-            cell_groups.append(
-                (
-                    ind,
-                    window_time,
-                    sorted(
-                        tuple(spike_list_to_cell_group(spike_list, total_frs, dt, 1, T))
-                    ),
-                )
-            )
+            cell_groups.append((ind, window_time, sorted(tuple(spike_list_to_cell_group(spike_list, total_frs, dt, thresh, T)))))
     return cell_groups
 
-def cell_groups_to_bin_mat(cell_groups, ncells, nwins):
-
+def cell_groups_to_bin_mat(cell_groups, clus, nwins):
+    ncells = len(clus)
     bin_mat = np.zeros((ncells, nwins))
     for cg in cell_groups:
-        bin_mat[cg[2], cg[0]] = 1
+        cginds = np.isin(clus, cg[2])
+        bin_mat[cginds, cg[0]] = 1
     return bin_mat
 
 def build_perseus_persistent_input(cell_groups, savefile):
