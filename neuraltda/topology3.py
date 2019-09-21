@@ -202,6 +202,7 @@ def run_perseus(pfile):
 def read_perseus_result(betti_file):
     bettis = []
     f_time = []
+    maxbetti = 10
     try:
         with open(betti_file, "r") as bf:
             for bf_line in bf:
@@ -210,6 +211,7 @@ def read_perseus_result(betti_file):
                 betti_data = bf_line.split()
                 filtration_time = int(betti_data[0])
                 betti_numbers = list(map(int, betti_data[1:]))
+                betti_numbers = (betti_numbers + maxbetti*[0])[:maxbetti]
                 bettis.append([filtration_time, betti_numbers])
     except:
         bettis.append([-1, [-1]])
