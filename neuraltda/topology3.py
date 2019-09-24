@@ -7,7 +7,7 @@ import os
 import subprocess
 
 from collections import Counter
-from itertools import repeat, combinations
+from itertools import repeat, combinations, groupby
 from functools import lru_cache
 
 import numpy as np
@@ -70,6 +70,43 @@ def spikes_in_interval(spikes, t_lo, t_hi, cell_group):
     if t_hi > spikes[m, 0]:
         spikes_in_interval(spikes[m + 1 :], t_lo, t_hi, cell_group)
 
+def get_trial_spiketrains(spikes, trials, padding_secs, fs):
+    ''' Organize all trials into a dictionary:
+    trial_spiketrains[stim] = list of spiketrains
+    '''
+    trial_spiketrains = {}
+    for trial in trials:
+        
+        stim_name = trial[0]
+        stim_start = trial[1]
+        stim_end = trial[2]
+        
+        padding_samps = np.round(padding_secs*fs)
+        trial_start = np.amax([0, stim_start - padding_samps])
+        trial_end = stim_end + padding_samps
+        
+        trial_spikes = []
+        tp3.spikes_in_interval(spikes, trial_start, trial_end, trial_spikes)
+        if stim_name not in trial_spiketrains.keys():
+            trial_spiketrains[stim_name] = []
+        trial_spiketrains[stim_name].append((trial_start, trial_end, stim_start, stim_end, trial_spikes))
+    return trial_spiketrains
+
+def spike_id(spike):
+    return spike[1]
+
+def spike_time(spike):
+    return spike[0]
+
+def get_unit_spike_times(spikes):
+    sorted_spikes = sorted(spikes, key=spike_id)
+    spiketimes = []
+    units = []
+    for k, g in groupby(sorted_spikes, spike_id):
+        unit_spiketimes = [x[0] for x in g]
+        spiketimes.append(unit_spiketimes)
+        units.append(k)
+    return (units, spiketimes)
 
 ################################################################################
 ## Betti Number Pipeline #######################################################
