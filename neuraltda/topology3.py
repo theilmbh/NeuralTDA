@@ -255,7 +255,7 @@ def read_perseus_result(betti_file):
     return bettis
 
 def compute_bettis(spikes, stim_start, stim_end, win_len, fs, thresh):
-    
+    ''' win_len in samples'''
     win_starts, win_ends = get_windows(stim_start, stim_end, win_len, win_len)
     cell_groups = spikes_to_cell_groups(spikes, stim_start, stim_end, win_len, fs, thresh)
     build_perseus_persistent_input(cell_groups, './test.betti')
@@ -274,6 +274,34 @@ def betti_curve_func(betti_nums, dim, stim_start, stim_end, fs, t_in_seconds=Fal
     f = interp1d(betti_ts, betti_vals, kind='zero', bounds_error = False, fill_value=(0, betti_vals[-1]))
     return f
 
+def shuffle_trial_spikes(spikes, stim_start, stim_end):
+    # trial_spikes is a list of (sample, id) spikes
+    # for each spike, generate a new sample in range stim_start, stim_end
+    trial_spikes = []
+    tp3.spikes_in_interval(spikes, stim_start, stim_end, trial_spikes)
+    new_spikes_times = []
+    new_spikes_ids = []
+    for spike in trial_spikes:
+        new_sample = np.random.randint(stim_start, high=stim_end+1)
+        new_spikes_times.append(new_sample)
+        new_spikes_ids.append(spike[1])
+    out_spikes = np.vstack((new_spikes_times, new_spikes_ids)).T
+    out_spikes_ind = np.argsort(out_spikes[:, 0])
+    
+    return out_spikes[out_spikes_ind, :]
+
+def get_betti_curves(spikes, stim_start, stim_end, win_len, fs, thresh, maxdim):
+
+    t = np.linspace(0, stim_end - stim_start, 2000) / fs
+    betti_nums = compute_bettis(spikes, stim_start, stim_end, win_len, fs, thresh=4.0)
+
+    betti_curves_dims = {}
+    for dim in range(maxdim):
+        betti_func = betti_curve_func(betti_nums, dim, stim_start, stim_end, fs, t_in_seconds=True)
+        betti_curve = betti_func(t)
+        betti_curves_dims[dim] = betti_curve
+    return (t, betti_curves_dims)
+  
 
 
 ################################################################################
