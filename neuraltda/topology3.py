@@ -70,6 +70,12 @@ def spikes_in_interval(spikes, t_lo, t_hi, cell_group):
     if t_hi > spikes[m, 0]:
         spikes_in_interval(spikes[m + 1 :], t_lo, t_hi, cell_group)
 
+
+def get_spikes_in_interval(spikes, t_lo, t_hi):
+    cg = []
+    spikes_in_interval(spikes, t_lo, t_hi, cg)
+    return cg
+
 def get_trial_spiketrains(spikes, trials, padding_secs, fs):
     ''' Organize all trials into a dictionary:
     trial_spiketrains[stim] = list of spiketrains
