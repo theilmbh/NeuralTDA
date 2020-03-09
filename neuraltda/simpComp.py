@@ -308,9 +308,9 @@ def sparseBoundaryOperatorMatrix(E, dim):
     in dimension dim for simplicial complex E
 
     """
-    m = len(E[dim])
     if dim+1 >= len(E):
         return sp.csc_matrix(([0], ([0], [0])))
+    m = len(E[dim])
     n = len(E[dim + 1])
     rowind = np.empty(m*n, dtype=np.int32)
     colind = np.empty(m*n, dtype=np.int32)
@@ -356,18 +356,39 @@ def sparse_laplacian(E, dim):
     h_shape = d_high.get_shape()
     l_shape = d_low.get_shape()
 
+    ret = 0
+
     if l_shape[0] <= 0:
         L_low = 0
+        ret = 1
     else:
         L_low = (d_low.T).dot(d_low)
 
+
     if h_shape[0] <= 0:
         L_high = 0
-        return L_low
+        ret = 2
     else:
         L_high = d_high.dot(d_high.T)
 
-    return L_low + L_high
+
+    if ret == 1:
+        return L_high
+    if ret == 2:
+        return L_low
+
+    if L_high.shape[0] == 1:
+        return L_low
+    if L_low.shape[0] == 1:
+        return L_high
+
+    try:
+        x = L_low + L_high
+    except ValueError:
+        print("error: L_low shape = {}, L_high shape = {}".format(L_low.shape, L_high.shape))
+
+
+    return x
 
 def sparse_reconcile_laplacians(L1, L2):
     if L1.size >= L2.size:
