@@ -245,7 +245,7 @@ def run_perseus(pfile):
     """
     pfile_split = os.path.splitext(pfile)
     of_string = pfile_split[0]
-    perseus_command = "perseus"
+    perseus_command = "/home/brad/bin/perseus"
     perseus_return_code = subprocess.call(
         [perseus_command, "nmfsimtop", pfile, of_string]
     )
