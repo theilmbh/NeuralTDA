@@ -32,7 +32,7 @@ def kwik_get_clusters(kwikfile):
     with h5.File(kwikfile, 'r') as f:
         cluster_ids = list(f['/channel_groups/0/clusters/main/'].keys())
         cluster_ids = sorted([int(x) for x in cluster_ids])
-        cluster_groups = [f['/channel_groups/0/clusters/main/{}'.format(x)].attrs.get('cluster_group')]
+        cluster_groups = [f['/channel_groups/0/clusters/main/{}'.format(x)].attrs.get('cluster_group') for x in cluster_ids]
     return zip(cluster_ids, cluster_groups)
 
 def kwik_get_trials(kwikfile):
