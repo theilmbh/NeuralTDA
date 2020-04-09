@@ -21,6 +21,19 @@ import h5py as h5
 ################################################################################
 ## Spike Pipeline ##############################################################
 ################################################################################
+def kwik_get_clusters(kwikfile):
+    ''' 
+    Get all the trials from a sorted, merged kwikfile
+    Trials are returned as a list with tuples for each trial: 
+        (stim_name, stim_start_time, stim_end_time)
+    All times are in samples relative to start of kwikfile (block)
+    '''
+
+    with h5.File(kwikfile, 'r') as f:
+        cluster_ids = list(f['/channel_groups/0/clusters/main/'].keys())
+        cluster_ids = sorted([int(x) for x in cluster_ids])
+        cluster_groups = [f['/channel_groups/0/clusters/main/{}'.format(x)].attrs.get('cluster_group')]
+    return zip(cluster_ids, cluster_groups)
 
 def kwik_get_trials(kwikfile):
     ''' 
