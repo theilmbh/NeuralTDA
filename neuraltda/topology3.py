@@ -21,6 +21,16 @@ import h5py as h5
 ################################################################################
 ## Spike Pipeline ##############################################################
 ################################################################################
+def kwik_get_clusters(kwikfile):
+    ''' 
+    Get all the clusters and their corresponding cluster group.
+    '''
+
+    with h5.File(kwikfile, 'r') as f:
+        cluster_ids = list(f['/channel_groups/0/clusters/main/'].keys())
+        cluster_ids = sorted([int(x) for x in cluster_ids])
+        cluster_groups = [f['/channel_groups/0/clusters/main/{}'.format(x)].attrs.get('cluster_group')]
+    return zip(cluster_ids, cluster_groups)
 
 def kwik_get_trials(kwikfile):
     ''' 
@@ -232,7 +242,7 @@ def run_perseus(pfile):
     """
     pfile_split = os.path.splitext(pfile)
     of_string = pfile_split[0]
-    perseus_command = "perseus"
+    perseus_command = "/home/brad/bin/perseus"
     perseus_return_code = subprocess.call(
         [perseus_command, "nmfsimtop", pfile, of_string]
     )
